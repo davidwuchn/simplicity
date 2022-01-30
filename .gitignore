@@ -1,0 +1,43 @@
+**/classes
+**/.artifacts
+**/target
+**/.cpcache
+**/.DS_Store
+**/.gradle
+**/.metadata
+
+# User-specific stuff
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/shelf
+.idea/**/statistic.xml
+.idea/dictionaries/**
+.idea/libraries/**
+
+
+# File-based project format
+*.iws
+*.ipr
+
+# Cursive Clojure plugin
+.idea/replstate.xml
+
+.nrepl-port
+.socket-repl-port
+.nrepl-history
+
+*.iml
+
+projects/**/pom.xml
+
+# clojure-lsp
+.lsp/sqlite*.db
+.lsp/.cache
+.clj-kondo/.cache
+
+# Calva
+.calva/output-window/output.calva-repl
+
+# Portal (VS Code)
+.portal
