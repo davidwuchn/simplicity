@@ -1,5 +1,6 @@
 (ns cc.mindward.web-server.core
   (:require [cc.mindward.auth.interface :as auth]
+            [clojure.tools.logging :as log]
             [reitit.ring :as ring]
             [ring.adapter.jetty :as jetty]
             [hiccup2.core :as h]
@@ -263,65 +264,65 @@
                         }
                         function loop() { update(); draw(); requestAnimationFrame(loop); }
                         loop();
-                     ")])}))))
-      (res/redirect "/login")
-
-(defn save-score [{:keys [session params]}]
-  (if-let [username (:username session)]
-    (let [score (Integer/parseInt (str (or (:score params) "0")))]
-      (user/update-high-score! username score)
-      (let [new-high-score (user/get-high-score username)]
-        {:status 200
-         :headers {"Content-Type" "application/json"}
-         :body (str "{\"highScore\": " new-high-score "}")}))
-    {:status 401}))
+                     ")])})
+      (res/redirect "/login")))
 
 (defn landing-page [{:keys [session]}]
-  {:status 200
-   :headers {"Content-Type" "text/html"}
-   :body (layout session "Welcome"
-                 [:div {:class "text-center py-20"}
-                  [:h1 {:class "text-5xl font-extrabold text-white mb-4"} "Simplicity is the Ultimate Sophistication"]
-                  [:p {:class "text-xl text-slate-400 mb-8"} "Now with Retro Space Shooter and SQLite persistence."]
-                  (if (:username session)
-                    [:div {:class "space-y-4"}
-                     [:p {:class "text-indigo-400 font-bold text-2xl"} "Welcome back, " (:username session) "!"]
-                     [:a {:href "/game" :class "inline-block bg-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-indigo-700"} "Launch Mission"]]
+  (if (:username session)
+    (res/redirect "/game")
+    {:status 200
+     :headers {"Content-Type" "text/html"}
+     :body (layout session "Welcome"
+                   [:div {:class "text-center mt-16"}
+                    [:h1 {:class "text-5xl font-bold text-indigo-400 mb-6"} "Mindward Simplicity"]
+                    [:p {:class "text-xl text-gray-300 mb-8"} "Welcome to the Space Shooter Game"]
                     [:div {:class "space-x-4"}
-                     [:a {:href "/login" :class "bg-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-indigo-700"} "Get Started"]
-                     [:a {:href "/signup" :class "bg-slate-700 text-white px-8 py-3 rounded-lg font-semibold hover:bg-slate-600"} "Create Account"]])])})
+                     [:a {:href "/login" :class "bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"} "Login"]
+                     [:a {:href "/signup" :class "bg-slate-600 text-white px-6 py-3 rounded-lg hover:bg-slate-700"} "Sign Up"]]])}))
 
-(defn login-page [request]
-  (let [{:keys [session params anti-forgery-token]} request]
-    (if (:username session)
-      (res/redirect "/game")
-      {:status 200
-       :headers {"Content-Type" "text/html"}
-       :body (layout session "Login"
-                     [:div {:class "max-w-md mx-auto bg-white p-8 rounded-xl shadow-md"}
-                      [:h2 {:class "text-2xl font-bold mb-6 text-center text-white"} "Login to your account"]
-                      (when (:error params)
-                        [:div {:class "bg-red-900 border border-red-400 text-red-200 px-4 py-3 rounded mb-4"}
-                         "Invalid username or password"])
-                      [:form {:method "POST" :action "/login"}
-                       [:input {:type "hidden" :name "__anti-forgery-token" :value anti-forgery-token}]
-                       [:div {:class "mb-4"}
-                        [:label {:class "block text-gray-300 text-sm font-bold mb-2"} "Username"]
-                        [:input {:type "text" :name "username" :class "w-full px-3 py-2 border border-slate-700 bg-slate-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" :required true}]]
-                       [:div {:class "mb-6"}
-                        [:label {:class "block text-gray-300 text-sm font-bold mb-2"} "Password"]
-                        [:input {:type "password" :name "password" :class "w-full px-3 py-2 border border-slate-700 bg-slate-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" :required true}]]
-                       [:button {:type "submit" :class "w-full bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700 transition duration-200"} "Sign In"]]])})))
+(defn login-page [{:keys [session params]}]
+  (if (:username session)
+    (res/redirect "/game")
+    {:status 200
+     :headers {"Content-Type" "text/html"}
+     :body (layout session "Login"
+                   [:div {:class "max-w-md mx-auto"}
+                    [:h2 {:class "text-2xl font-bold mb-6 text-center text-white"} "Pilot Login"]
+                    (when (:error params)
+                      [:div {:class "bg-red-900 border border-red-400 text-red-200 px-4 py-3 rounded mb-4"}
+                       "Invalid credentials."])
+                    [:form {:method "POST" :action "/login"}
+                     [:input {:type "hidden" :name "__anti-forgery-token" :value (:anti-forgery-token params)}]
+                     [:div {:class "mb-4"}
+                      [:label {:class "block text-gray-300 text-sm font-bold mb-2"} "Username"]
+                      [:input {:type "text" :name "username"
+                               :class "w-full px-3 py-2 border border-slate-700 bg-slate-800 text-white rounded-lg"
+                               :required true}]]
+                     [:div {:class "mb-6"}
+                      [:label {:class "block text-gray-300 text-sm font-bold mb-2"} "Password"]
+                      [:input {:type "password" :name "password"
+                               :class "w-full px-3 py-2 border border-slate-700 bg-slate-800 text-white rounded-lg"
+                               :required true}]]
+                     [:button {:type "submit"
+                               :class "w-full bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700"}
+                      "Login"]]])}))
 
 (defn handle-login [{:keys [params session]}]
-  (let [username (:username params)
-        password (:password params)]
-    (if (auth/authenticate username password)
+  (let [auth-result (auth/authenticate (:username params) (:password params))]
+    (if auth-result
       (-> (res/redirect "/game")
-          (assoc :session (assoc session :username username)))
+          (assoc :session (assoc session :username (:username params))))
       (res/redirect "/login?error=true"))))
 
-(defn handle-logout [{:keys [session]}]
+(defn save-score [{:keys [params session]}]
+  (when-let [username (:username session)]
+    (let [score (Integer/parseInt (:score params "0"))]
+      (user/update-high-score! username score)
+      {:status 200
+       :headers {"Content-Type" "application/json"}
+       :body (str "{\"highScore\": " (user/get-high-score username) "}")})))
+
+(defn handle-logout [{:keys [_session]}]
   (-> (res/redirect "/login")
       (assoc :session nil)))
 
@@ -342,7 +343,7 @@
 (def site-app
   (wrap-defaults app site-defaults))
 
-(defn -main [& args]
+(defn -main [& _args]
   (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
-    (println "Starting Retro Game Server on port" port "...")
-    (jetty/run-jetty site-app {:port port :join? false})))
+    (log/info "Starting Retro Game Server on port" port "...")
+    (jetty/run-jetty site-app {:port port :join? false}))))
