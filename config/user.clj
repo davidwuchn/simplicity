@@ -9,10 +9,10 @@
   (clerk/serve! {})
 
   ;; start with file watcher
-  (clerk/serve! {:watch-paths ["notebooks" "src"]})
+  (clerk/serve! {:watch-paths ["notebooks" "src" "config"]})
 
   ;; start with file watcher and show filter function to enable notebook pinning
-  (clerk/serve! {:watch-paths ["notebooks" "src"] :show-filter-fn #(clojure.string/starts-with? % "notebooks")})
+  (clerk/serve! {:watch-paths ["notebooks" "src" "config"] :show-filter-fn #(clojure.string/starts-with? % "notebooks")})
 
   (clerk/show! "notebooks/onwards.md")
   (clerk/show! "notebooks/rule_30.clj")
