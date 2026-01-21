@@ -1,8 +1,10 @@
-{:deps
- {clj-http/clj-http {:mvn/version "3.12.3"}}
- :aliases  {:dev {:extra-paths ["development/src"]
+{:mvn/repos {"clojars" {:url "https://repo.clojars.org/"}}
+ :deps
+ {clj-http/clj-http {:mvn/version "3.13.1"}}
+ :aliases  {:dev {:extra-paths ["development/src" "config"]
 
-                  :extra-deps {org.clojure/clojure {:mvn/version "1.12.2"}}}
+                  :extra-deps {org.clojure/clojure {:mvn/version "1.12.4"}
+                               io.github.nextjournal/clerk {:mvn/version "0.18.1158"}}}
 
             :test {:extra-paths []}
 
