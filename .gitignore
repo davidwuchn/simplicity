@@ -41,3 +41,4 @@ projects/**/pom.xml
 
 # Portal (VS Code)
 .portal
+deps.local.edn
