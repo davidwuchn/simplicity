@@ -121,8 +121,10 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - **Middleware**: Be vigilant with `ring-defaults`. Form parameters are **keywordized** (e.g., use `:username` not `"username"`).
 - **Security**: All state-changing endpoints (`POST/PUT`) require **CSRF tokens**. Fetch calls must include the `x-csrf-token` header.
 - **Persistence**: Use `next.jdbc` with `rs/as-unqualified-lower-maps` for idiomatic data flow.
-- **Client-Side**: Browser audio requires user interaction (OODA Orient) before initializing `AudioContext`.
-- **Logic**: Use threshold-based triggers (e.g., `score >= limit`) instead of exact matches to handle discrete state jumps.
+- **Client-Side**: 
+  - Browser audio requires user interaction (OODA Orient) before initializing `AudioContext`.
+  - **Interaction**: Use `e.preventDefault()` for all critical application keys (e.g., Arrows, Space, R) to prevent browser-level interference like scrolling or character insertion.
+- **Logic**: Use threshold-based triggers (e.g., `score >= limit`) instead of exact matches (`score == limit`) to handle discrete state jumps safely.
 
 ### 3. Dependency Management (e Purpose)
 - **Top-level**: Shared dependencies go in the root `deps.edn`.

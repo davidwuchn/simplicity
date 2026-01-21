@@ -112,7 +112,8 @@
                           [:h3 {:class "font-bold text-white mb-2"} "Controls"]
                           [:ul {:class "list-disc list-inside"}
                            [:li "Arrows: Move ship"]
-                           [:li "Space: Fire lasers"]]]
+                           [:li "Space: Fire lasers"]
+                           [:li "R: Restart (on Game Over)"]]]
                          [:div
                           [:h3 {:class "font-bold text-white mb-2"} "Tips"]
                           [:ul {:class "list-disc list-inside"}
@@ -125,8 +126,20 @@
                         let score = 0; let gameOver = false; let powerUpActive = false; let powerUpTimer = 0;
                         const player = { x: canvas.width / 2, y: canvas.height - 50, size: 30, speed: 5, color: '#818cf8' };
                         const keys = {};
-                        window.addEventListener('keydown', e => keys[e.code] = true);
+                        
+                        window.addEventListener('keydown', e => {
+                            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'KeyR'].includes(e.code)) {
+                                e.preventDefault();
+                            }
+                            keys[e.code] = true;
+                            if (e.code === 'KeyR' && gameOver) { 
+                                score = 0; enemies = []; bullets = []; enemyBullets = []; powerUps = []; 
+                                gameOver = false; lastBossSpawnScore = 0; player.x = canvas.width / 2; player.y = canvas.height - 50; 
+                            }
+                            initAudio();
+                        });
                         window.addEventListener('keyup', e => keys[e.code] = false);
+
                         let bullets = []; let enemies = []; let powerUps = []; let particles = []; let enemyBullets = [];
                         let lastBossSpawnScore = 0;
                         let audioCtx;
@@ -160,7 +173,7 @@
                             if (isBoss) { x = canvas.width / 2; y = -100; vx = 0; vy = 1; }
                             enemies.push({ 
                                 x, y, vx, vy, size: isBoss ? 80 : 20 + Math.random() * 10, color: isBoss ? '#f59e0b' : '#f87171', 
-                                hp: isBoss ? 15 : 1, isBoss, lastShot: 0, lastTurn: Date.now(), turnRate: 1000 + Math.random() * 2000 
+                                hp: isBoss ? 15 : 1, isBoss, lastShot: 0, lastTurn: Date.now(), turnRate: 1000 + Math.random() * 2000, hitFlash: 0
                             });
                         }
                         function update() {
@@ -184,12 +197,15 @@
                                 return b.y < canvas.height && b.y > 0 && b.x > 0 && b.x < canvas.width;
                             });
                             enemies.forEach((e, ei) => {
+                                if (e.hitFlash > 0) e.hitFlash--;
                                 if (e.isBoss) {
+                                    const madnessFactor = 1 + (15 - e.hp) / 5;
                                     if (e.y < 100) e.y += e.vy;
-                                    else { e.x += Math.sin(Date.now()/500) * 2; }
-                                    if (Date.now() - e.lastShot > 1200) {
+                                    else { e.x += Math.sin(Date.now()/(500/madnessFactor)) * (2 * madnessFactor); }
+                                    const shootInterval = 1200 / madnessFactor;
+                                    if (Date.now() - e.lastShot > shootInterval) {
                                         const angle = Math.atan2(player.y - e.y, player.x - e.x);
-                                        enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(angle) * 4, vy: Math.sin(angle) * 4 });
+                                        enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(angle) * (4 * madnessFactor), vy: Math.sin(angle) * (4 * madnessFactor) });
                                         e.lastShot = Date.now(); playSound('boss-shoot');
                                     }
                                 } else {
@@ -201,7 +217,7 @@
                                 bullets.forEach((b, bi) => {
                                     const bdx = b.x - e.x, bdy = b.y - e.y;
                                     if (Math.sqrt(bdx*bdx + bdy*bdy) < e.size/2) {
-                                        bullets.splice(bi, 1); e.hp--;
+                                        bullets.splice(bi, 1); e.hp--; e.hitFlash = 5;
                                         if (e.hp <= 0) {
                                             playSound('explosion'); enemies.splice(ei, 1); score += e.isBoss ? 100 : 10;
                                             if (Math.random() < 0.1) powerUps.push({ x: e.x, y: e.y, vy: 2, size: 15 });
@@ -225,7 +241,9 @@
                             ctx.fillStyle = '#60a5fa'; bullets.forEach(b => ctx.fillRect(b.x-2, b.y, 4, 10));
                             ctx.fillStyle = '#f87171'; enemyBullets.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, Math.PI*2); ctx.fill(); });
                             enemies.forEach(e => {
-                                ctx.fillStyle = e.color; ctx.beginPath();
+                                ctx.fillStyle = e.hitFlash > 0 ? 'white' : e.color; 
+                                if (e.isBoss && e.hp < 5) ctx.fillStyle = (Math.floor(Date.now()/100) % 2 === 0) ? '#ef4444' : '#f59e0b';
+                                ctx.beginPath();
                                 if (e.isBoss) { ctx.rect(e.x - e.size/2, e.y - e.size/2, e.size, e.size); ctx.fill(); ctx.fillStyle='white'; ctx.font = 'bold 16px Arial'; ctx.fillText('BOSS HP: ' + e.hp, e.x - 40, e.y - 50); }
                                 else { ctx.arc(e.x, e.y, e.size/2, 0, Math.PI * 2); ctx.fill(); }
                             });
@@ -244,10 +262,6 @@
                             .then(r => r.json()).then(data => { highScoreEl.innerText = data.highScore; });
                         }
                         function loop() { update(); draw(); requestAnimationFrame(loop); }
-                        window.addEventListener('keydown', e => { 
-                            if (e.code === 'KeyR' && gameOver) { score = 0; enemies = []; bullets = []; enemyBullets = []; powerUps = []; gameOver = false; lastBossSpawnScore = 0; player.x = canvas.width / 2; player.y = canvas.height - 50; }
-                            initAudio();
-                        });
                         loop();
                      ")])}))))
       (res/redirect "/login")

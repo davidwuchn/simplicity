@@ -31,10 +31,9 @@
 
 projects/**/pom.xml
 
-# clojure-lsp
-.lsp/sqlite*.db
-.lsp/.cache
-.clj-kondo/.cache
+# clojure-lsp / clj-kondo
+.lsp/
+.clj-kondo/
 .calva/
 .portal/
 
