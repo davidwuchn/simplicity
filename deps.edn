@@ -3,11 +3,23 @@
  {clj-http/clj-http {:mvn/version "3.13.1"}}
  :aliases  {:dev {:extra-paths ["development/src" "config"]
 
-                  :extra-deps {org.clojure/clojure {:mvn/version "1.12.4"}
-                               io.github.nextjournal/clerk {:mvn/version "0.18.1158"}}}
+                   :extra-deps {org.clojure/clojure {:mvn/version "1.12.4"}
+                               io.github.nextjournal/clerk {:mvn/version "0.18.1158"}
+                               mvxcvi/multiformats {:mvn/version "0.2.1"}
+                               mvxcvi/alphabase {:mvn/version "2.1.0"}
+                               org.clojure/tools.build {:mvn/version "0.9.2"}
+                               babashka/fs {:mvn/version "0.5.30"}
+                               babashka/process {:mvn/version "0.6.25"}
+                               deps-deploy/deps-deploy {:mvn/version "0.0.12"}
+                               rewrite-clj/rewrite-clj {:mvn/version "1.2.51"}
+                               io.github.nextjournal/cas {:git/sha "5132b9b29418575cffd467288e9bda74eb2a10c9" :git/url "https://github.com/nextjournal/cas"}}}
 
             :test {:extra-paths []}
 
-            :poly {:main-opts ["-m" "polylith.clj.core.poly-cli.core"]
-                   :jvm-opts ["--enable-native-access=ALL-UNNAMED"]
-                   :extra-deps {polylith/clj-poly {:mvn/version "0.3.32"}}}}}
+             :poly {:main-opts ["-m" "polylith.clj.core.poly-cli.core"]
+                    :jvm-opts ["--enable-native-access=ALL-UNNAMED"]
+                    :extra-deps {polylith/clj-poly {:mvn/version "0.3.32"}}}
+
+            :nextjournal/clerk {:extra-deps {io.github.nextjournal/clerk {:mvn/version "0.18.1158"}}
+                                :exec-fn nextjournal.clerk/build!
+                                :exec-args {:paths ["notebooks"]}}}}
