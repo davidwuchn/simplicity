@@ -18,21 +18,39 @@
         [:meta {:charset "UTF-8"}]
         [:title title]
         [:script {:src "https://cdn.tailwindcss.com"}]
-        [:style "body { background-color: #0f172a; color: #f8fafc; } .bg-white { background-color: #1e293b; border-color: #334155; } .text-gray-600 { color: #94a3b8; } .text-indigo-600 { color: #818cf8; }"]]
+        [:link {:href "https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" :rel "stylesheet"}]
+        [:style "
+          body { background-color: #050505; color: #e2e8f0; font-family: 'Orbitron', sans-serif; background-image: linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent); background-size: 50px 50px; }
+          .font-cyber { font-family: 'Orbitron', sans-serif; }
+          .cyber-card { background-color: #000; border: 2px solid #fcee0a; box-shadow: 6px 6px 0px 0px #00f0ff; }
+          .cyber-input { background-color: #1a1a1a; border: 1px solid #00f0ff; color: #00f0ff; border-radius: 0; }
+          .cyber-input:focus { border-color: #fcee0a; outline: none; box-shadow: 0 0 10px #fcee0a; }
+          .cyber-btn { background-color: #fcee0a; color: #000; font-weight: 900; text-transform: uppercase; border: none; clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%); padding: 12px 24px; transition: all 0.2s; }
+          .cyber-btn:hover { background-color: #00f0ff; box-shadow: 4px 4px 0px #ff003c; transform: translate(-2px, -2px); }
+          .cyber-btn-secondary { background-color: #2a2a2a; color: #00f0ff; border: 2px solid #00f0ff; font-weight: 700; text-transform: uppercase; clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%); padding: 10px 22px; transition: all 0.2s; }
+          .cyber-btn-secondary:hover { background-color: #00f0ff; color: #000; box-shadow: 4px 4px 0px #fcee0a; }
+          .glitch-text { text-shadow: 2px 0 #ff003c, -2px 0 #00f0ff; animation: glitch 1s infinite alternate-reverse; }
+          @keyframes glitch { 0% { text-shadow: 2px 0 #ff003c, -2px 0 #00f0ff; } 25% { text-shadow: -2px 0 #ff003c, 2px 0 #00f0ff; } 50% { text-shadow: 2px 0 #00f0ff, -2px 0 #fcee0a; } 100% { text-shadow: -2px 0 #00f0ff, 2px 0 #ff003c; } }
+          .text-cyber-yellow { color: #fcee0a; }
+          .text-cyber-cyan { color: #00f0ff; }
+          .text-cyber-red { color: #ff003c; }
+          .border-cyber-yellow { border-color: #fcee0a; }
+          .border-cyber-cyan { border-color: #00f0ff; }
+        "]]
        [:body
-        [:nav {:class "bg-slate-900 border-b border-slate-800 p-4 mb-8"}
+        [:nav {:class "bg-black border-b-2 border-cyber-cyan p-4 mb-8"}
          [:div {:class "container mx-auto flex justify-between items-center"}
-          [:a {:href "/" :class "text-xl font-bold text-indigo-400"} "Mindward Simplicity"]
-          [:div {:class "flex items-center space-x-6"}
-           [:a {:href "/leaderboard" :class "text-gray-300 hover:text-indigo-400"} "Leaderboard"]
+          [:a {:href "/" :class "text-2xl font-black italic tracking-tighter text-cyber-yellow drop-shadow-[2px_2px_0px_#ff003c]"} "MINDWARD // SIMPLICITY"]
+          [:div {:class "flex items-center space-x-6 uppercase tracking-widest text-sm"}
+           [:a {:href "/leaderboard" :class "text-gray-400 hover:text-cyber-cyan transition-colors"} "Leaderboard"]
            (if username
              [:div {:class "flex items-center space-x-4"}
-              [:span {:class "text-gray-300"} "Welcome, " [:span {:class "font-bold text-white"} username]]
-              [:a {:href "/game" :class "text-indigo-400 hover:text-indigo-300"} "Play Game"]
-              [:a {:href "/logout" :class "text-red-400 hover:text-red-500"} "Logout"]]
+              [:span {:class "text-gray-500"} "PILOT: " [:span {:class "font-bold text-cyber-cyan"} username]]
+              [:a {:href "/game" :class "text-cyber-yellow hover:text-white hover:drop-shadow-[0_0_5px_#fcee0a]"} "JACK IN"]
+              [:a {:href "/logout" :class "text-cyber-red hover:text-white"} "ABORT"]]
              [:div {:class "space-x-4"}
-              [:a {:href "/login" :class "text-gray-300 hover:text-indigo-400"} "Login"]
-              [:a {:href "/signup" :class "bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"} "Sign Up"]])] ]]
+              [:a {:href "/login" :class "text-gray-400 hover:text-cyber-cyan"} "LOGIN"]
+              [:a {:href "/signup" :class "cyber-btn text-xs px-4 py-2"} "INITIATE"]])] ]]
         [:main {:class "container mx-auto px-4"}
          content]
         extra-footer]]))))
@@ -42,24 +60,29 @@
     {:status 200
      :headers {"Content-Type" "text/html"}
      :body (layout session "Global Leaderboard"
-                   [:div {:class "max-w-2xl mx-auto"}
-                    [:h1 {:class "text-4xl font-bold text-indigo-400 mb-8 text-center"} "Galactic Heroes"]
-                    [:div {:class "bg-slate-800 rounded-xl shadow-2xl overflow-hidden"}
-                     [:table {:class "w-full text-left"}
-                      [:thead {:class "bg-slate-700 text-gray-300 uppercase text-sm"}
+                   [:div {:class "max-w-4xl mx-auto"}
+                    [:h1 {:class "text-5xl font-black text-cyber-yellow mb-12 text-center uppercase tracking-widest glitch-text"} "Netrunner Legends"]
+                    [:div {:class "bg-black border border-cyber-cyan relative"}
+                     [:div {:class "absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-cyber-yellow"}]
+                     [:div {:class "absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-cyber-yellow"}]
+                     [:div {:class "absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-cyber-yellow"}]
+                     [:div {:class "absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-cyber-yellow"}]
+                     
+                     [:table {:class "w-full text-left border-collapse"}
+                      [:thead {:class "bg-zinc-900 text-cyber-cyan uppercase text-sm border-b-2 border-cyber-red"}
                        [:tr
-                        [:th {:class "px-6 py-4"} "Rank"]
-                        [:th {:class "px-6 py-4"} "Pilot"]
-                        [:th {:class "px-6 py-4 text-right"} "High Score"]]]
+                        [:th {:class "px-6 py-4 font-bold tracking-wider"} "Rank"]
+                        [:th {:class "px-6 py-4 font-bold tracking-wider"} "Netrunner"]
+                        [:th {:class "px-6 py-4 text-right font-bold tracking-wider"} "Score"]]]
                       [:tbody
                        (if (empty? leaderboard)
-                         [:tr [:td {:colspan 3 :class "px-6 py-10 text-center text-gray-500"} "No scores recorded yet. Be the first!"]]
+                         [:tr [:td {:colspan 3 :class "px-6 py-10 text-center text-gray-500 uppercase tracking-widest"} "No data in the net."]]
                          (map-indexed 
                           (fn [idx {:keys [username name high_score]}]
-                            [:tr {:class (str "border-b border-slate-700 hover:bg-slate-700/50 " (when (= idx 0) "text-yellow-400 font-bold"))}
-                             [:td {:class "px-6 py-4"} (inc idx)]
+                            [:tr {:class (str "border-b border-zinc-800 hover:bg-zinc-900 transition-colors " (when (= idx 0) "text-cyber-yellow font-bold"))}
+                             [:td {:class "px-6 py-4 font-mono"} (if (= idx 0) "KING" (format "%02d" (inc idx)))]
                              [:td {:class "px-6 py-4"} (or name username)]
-                             [:td {:class "px-6 py-4 text-right font-mono"} high_score]])
+                             [:td {:class "px-6 py-4 text-right font-mono text-lg"} high_score]])
                           leaderboard))]]]])}))
 
 (defn signup-page [request]
@@ -69,23 +92,23 @@
       {:status 200
        :headers {"Content-Type" "text/html"}
        :body (layout session "Join the Fleet"
-                     [:div {:class "max-w-md mx-auto bg-white p-8 rounded-xl shadow-md"}
-                      [:h2 {:class "text-2xl font-bold mb-6 text-center text-white"} "Create your Pilot Profile"]
+                     [:div {:class "max-w-md mx-auto cyber-card mt-12"}
+                      [:h2 {:class "text-3xl font-black mb-8 text-center text-cyber-yellow uppercase tracking-widest"} "Identity Reg"]
                       (when (:error params)
-                        [:div {:class "bg-red-900 border border-red-400 text-red-200 px-4 py-3 rounded mb-4"}
-                         "Username already taken or invalid data."])
+                        [:div {:class "bg-red-900/50 border-l-4 border-cyber-red text-red-200 px-4 py-3 mb-6 font-mono text-sm"}
+                         "ERROR: IDENTITY CONFLICT DETECTED."])
                       [:form {:method "POST" :action "/signup"}
                        [:input {:type "hidden" :name "__anti-forgery-token" :value anti-forgery-token}]
-                       [:div {:class "mb-4"}
-                        [:label {:class "block text-gray-300 text-sm font-bold mb-2"} "Pilot Name (Display)"]
-                        [:input {:type "text" :name "name" :class "w-full px-3 py-2 border border-slate-700 bg-slate-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" :required true}]]
-                       [:div {:class "mb-4"}
-                        [:label {:class "block text-gray-300 text-sm font-bold mb-2"} "Username (Login)"]
-                        [:input {:type "text" :name "username" :class "w-full px-3 py-2 border border-slate-700 bg-slate-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" :required true}]]
                        [:div {:class "mb-6"}
-                        [:label {:class "block text-gray-300 text-sm font-bold mb-2"} "Security Code (Password)"]
-                        [:input {:type "password" :name "password" :class "w-full px-3 py-2 border border-slate-700 bg-slate-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" :required true}]]
-                       [:button {:type "submit" :class "w-full bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700 transition duration-200"} "Enlist Now"]]])})))
+                        [:label {:class "block text-cyber-cyan text-xs font-bold mb-2 uppercase tracking-widest"} "Handle (Display)"]
+                        [:input {:type "text" :name "name" :class "w-full px-4 py-3 cyber-input" :placeholder "ENTER_HANDLE" :required true}]]
+                       [:div {:class "mb-6"}
+                        [:label {:class "block text-cyber-cyan text-xs font-bold mb-2 uppercase tracking-widest"} "Net ID (Login)"]
+                        [:input {:type "text" :name "username" :class "w-full px-4 py-3 cyber-input" :placeholder "ENTER_ID" :required true}]]
+                       [:div {:class "mb-8"}
+                        [:label {:class "block text-cyber-cyan text-xs font-bold mb-2 uppercase tracking-widest"} "Access Key (Password)"]
+                        [:input {:type "password" :name "password" :class "w-full px-4 py-3 cyber-input" :placeholder "********" :required true}]]
+                       [:button {:type "submit" :class "w-full cyber-btn"} "ESTABLISH LINK"]]])})))
 
 (defn handle-signup [{:keys [params session]}]
   (try
@@ -102,169 +125,28 @@
         {:status 200
          :headers {"Content-Type" "text/html"}
          :body (layout session "Space Shooter"
-                       [:div {:class "max-w-4xl mx-auto"}
+                       [:div {:class "max-w-5xl mx-auto"}
                         [:input {:type "hidden" :id "csrf-token" :value anti-forgery-token}]
-                        [:div {:class "flex justify-between items-center mb-4"}
-                         [:h1 {:class "text-3xl font-bold text-indigo-400"} "Space Shooter"]
-                         [:div {:class "text-xl"} "High Score: " [:span {:id "high-score"} high-score]]]
-                        [:canvas {:id "gameCanvas" :width "800" :height "600" :class "bg-black border-4 border-slate-700 rounded-lg shadow-2xl block mx-auto"}]
-                        [:div {:class "mt-6 grid grid-cols-2 gap-8 text-slate-400"}
-                         [:div
-                          [:h3 {:class "font-bold text-white mb-2"} "Controls"]
-                          [:ul {:class "list-disc list-inside"}
-                           [:li "Arrows: Move ship"]
-                           [:li "Space: Fire lasers"]
-                           [:li "R: Restart (on Game Over)"]]]
-                         [:div
-                          [:h3 {:class "font-bold text-white mb-2"} "Tips"]
-                          [:ul {:class "list-disc list-inside"}
-                           [:li "Enemies can come from above or the sides!"]
-                           [:li "Collect power-ups for faster firing!"]]]]]
-                       [:script (h/raw "
-                        const canvas = document.getElementById('gameCanvas');
-                        const ctx = canvas.getContext('2d');
-                        const highScoreEl = document.getElementById('high-score');
-                        let score = 0; let gameOver = false; let powerUpActive = false; let powerUpTimer = 0;
-                        const player = { x: canvas.width / 2, y: canvas.height - 50, size: 30, speed: 5, color: '#818cf8' };
-                        const keys = {};
+                        [:div {:class "flex justify-between items-end mb-6 border-b-2 border-cyber-red pb-2"}
+                         [:h1 {:class "text-4xl font-black text-cyber-yellow italic"} "NEON // SHOOTER"]
+                         [:div {:class "text-xl font-mono text-cyber-cyan"} "BEST_RUN: " [:span {:id "high-score" :class "text-white"} high-score]]]
                         
-                        window.addEventListener('keydown', e => {
-                            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'KeyR'].includes(e.code)) {
-                                e.preventDefault();
-                            }
-                            keys[e.code] = true;
-                            if (e.code === 'KeyR' && gameOver) { 
-                                score = 0; enemies = []; bullets = []; enemyBullets = []; powerUps = []; 
-                                gameOver = false; lastBossSpawnScore = 0; player.x = canvas.width / 2; player.y = canvas.height - 50; 
-                            }
-                            initAudio();
-                        });
-                        window.addEventListener('keyup', e => keys[e.code] = false);
-
-                        let bullets = []; let enemies = []; let powerUps = []; let particles = []; let enemyBullets = [];
-                        let lastBossSpawnScore = 0;
-                        let audioCtx;
-                        function initAudio() { if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); startBGM(); } }
-                        function playSound(type) {
-                            if (!audioCtx) return;
-                            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-                            if (type === 'shoot') { osc.type = 'square'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); }
-                            else if (type === 'explosion') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); }
-                            else if (type === 'boss-shoot') { osc.type = 'sine'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(220, audioCtx.currentTime + 0.2); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); }
-                            osc.connect(gain); gain.connect(audioCtx.destination);
-                            osc.start(); osc.stop(audioCtx.currentTime + (type === 'explosion' ? 0.5 : 0.1));
-                        }
-                        function startBGM() {
-                            const notes = [110, 123.47, 130.81, 146.83]; let noteIndex = 0;
-                            setInterval(() => {
-                                if (gameOver || !audioCtx) return;
-                                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-                                osc.type = 'triangle'; osc.frequency.setValueAtTime(notes[noteIndex], audioCtx.currentTime);
-                                gain.gain.setValueAtTime(0.03, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-                                osc.connect(gain); gain.connect(audioCtx.destination);
-                                osc.start(); osc.stop(audioCtx.currentTime + 0.4); noteIndex = (noteIndex + 1) % notes.length;
-                            }, 500);
-                        }
-                        function spawnEnemy(isBoss = false) {
-                            if (gameOver) return;
-                            const side = Math.random(); let x, y, vx, vy;
-                            if (side < 0.5) { x = Math.random() * canvas.width; y = -30; vx = (Math.random() - 0.5) * 2; vy = 2 + Math.random() * 2; }
-                            else if (side < 0.75) { x = -30; y = Math.random() * (canvas.height / 2); vx = 2 + Math.random() * 2; vy = (Math.random() - 0.5) * 2; }
-                            else { x = canvas.width + 30; y = Math.random() * (canvas.height / 2); vx = -(2 + Math.random() * 2); vy = (Math.random() - 0.5) * 2; }
-                            if (isBoss) { x = canvas.width / 2; y = -100; vx = 0; vy = 1; }
-                            enemies.push({ 
-                                x, y, vx, vy, size: isBoss ? 80 : 20 + Math.random() * 10, color: isBoss ? '#f59e0b' : '#f87171', 
-                                hp: isBoss ? 15 : 1, isBoss, lastShot: 0, lastTurn: Date.now(), turnRate: 1000 + Math.random() * 2000, hitFlash: 0
-                            });
-                        }
-                        function update() {
-                            if (gameOver) return;
-                            if (keys['ArrowUp'] && player.y > 0) player.y -= player.speed;
-                            if (keys['ArrowDown'] && player.y < canvas.height - player.size) player.y += player.speed;
-                            if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
-                            if (keys['ArrowRight'] && player.x < canvas.width - player.size) player.x += player.speed;
-                            if (keys['Space']) {
-                                initAudio(); const cooldown = powerUpActive ? 100 : 250;
-                                if (!player.lastShotTime || Date.now() - player.lastShotTime > cooldown) { 
-                                    bullets.push({ x: player.x + player.size/2, y: player.y, vy: -7 }); player.lastShotTime = Date.now(); playSound('shoot');
-                                }
-                            }
-                            if (powerUpActive && Date.now() > powerUpTimer) powerUpActive = false;
-                            bullets = bullets.filter(b => (b.y -= 7) > 0);
-                            enemyBullets = enemyBullets.filter(b => {
-                                b.x += b.vx; b.y += b.vy;
-                                const dx = b.x - (player.x + player.size/2), dy = b.y - (player.y + player.size/2);
-                                if (Math.sqrt(dx*dx + dy*dy) < 5 + player.size/2) { gameOver = true; saveScore(); }
-                                return b.y < canvas.height && b.y > 0 && b.x > 0 && b.x < canvas.width;
-                            });
-                            enemies.forEach((e, ei) => {
-                                if (e.hitFlash > 0) e.hitFlash--;
-                                if (e.isBoss) {
-                                    const madnessFactor = 1 + (15 - e.hp) / 5;
-                                    if (e.y < 100) e.y += e.vy;
-                                    else { e.x += Math.sin(Date.now()/(500/madnessFactor)) * (2 * madnessFactor); }
-                                    const shootInterval = 1200 / madnessFactor;
-                                    if (Date.now() - e.lastShot > shootInterval) {
-                                        const angle = Math.atan2(player.y - e.y, player.x - e.x);
-                                        enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(angle) * (4 * madnessFactor), vy: Math.sin(angle) * (4 * madnessFactor) });
-                                        e.lastShot = Date.now(); playSound('boss-shoot');
-                                    }
-                                } else {
-                                    if (Date.now() - e.lastTurn > e.turnRate) { e.vx += (Math.random() - 0.5) * 2; e.vy += (Math.random() - 0.5) * 1; e.lastTurn = Date.now(); }
-                                    e.x += e.vx; e.y += e.vy;
-                                }
-                                const dx = e.x - (player.x + player.size/2), dy = e.y - (player.y + player.size/2);
-                                if (Math.sqrt(dx*dx + dy*dy) < e.size/2 + player.size/2) { gameOver = true; saveScore(); }
-                                bullets.forEach((b, bi) => {
-                                    const bdx = b.x - e.x, bdy = b.y - e.y;
-                                    if (Math.sqrt(bdx*bdx + bdy*bdy) < e.size/2) {
-                                        bullets.splice(bi, 1); e.hp--; e.hitFlash = 5;
-                                        if (e.hp <= 0) {
-                                            playSound('explosion'); enemies.splice(ei, 1); score += e.isBoss ? 100 : 10;
-                                            if (Math.random() < 0.1) powerUps.push({ x: e.x, y: e.y, vy: 2, size: 15 });
-                                        }
-                                    }
-                                });
-                            });
-                            powerUps = powerUps.filter(p => {
-                                p.y += 2; const dx = p.x - (player.x + player.size/2), dy = p.y - (player.y + player.size/2);
-                                if (Math.sqrt(dx*dx + dy*dy) < p.size + player.size/2) { powerUpActive = true; powerUpTimer = Date.now() + 5000; score += 50; return false; }
-                                return p.y < canvas.height;
-                            });
-                            enemies = enemies.filter(e => e.y < canvas.height + 100 && e.x > -100 && e.x < canvas.width + 100);
-                            if (Math.random() < 0.02) spawnEnemy();
-                            if (score >= lastBossSpawnScore + 300 && !enemies.some(e => e.isBoss)) { spawnEnemy(true); lastBossSpawnScore = score; }
-                        }
-                        function draw() {
-                            ctx.fillStyle = 'black'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                            ctx.fillStyle = 'white'; for(let i=0; i<50; i++) ctx.fillRect((Math.sin(i*777) + 1) * canvas.width / 2, (Date.now() * 0.1 + i*100) % canvas.height, 1, 1);
-                            ctx.fillStyle = powerUpActive ? '#fbbf24' : player.color; ctx.beginPath(); ctx.moveTo(player.x + player.size/2, player.y); ctx.lineTo(player.x, player.y + player.size); ctx.lineTo(player.x + player.size, player.y + player.size); ctx.fill();
-                            ctx.fillStyle = '#60a5fa'; bullets.forEach(b => ctx.fillRect(b.x-2, b.y, 4, 10));
-                            ctx.fillStyle = '#f87171'; enemyBullets.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, Math.PI*2); ctx.fill(); });
-                            enemies.forEach(e => {
-                                ctx.fillStyle = e.hitFlash > 0 ? 'white' : e.color; 
-                                if (e.isBoss && e.hp < 5) ctx.fillStyle = (Math.floor(Date.now()/100) % 2 === 0) ? '#ef4444' : '#f59e0b';
-                                ctx.beginPath();
-                                if (e.isBoss) { ctx.rect(e.x - e.size/2, e.y - e.size/2, e.size, e.size); ctx.fill(); ctx.fillStyle='white'; ctx.font = 'bold 16px Arial'; ctx.fillText('BOSS HP: ' + e.hp, e.x - 40, e.y - 50); }
-                                else { ctx.arc(e.x, e.y, e.size/2, 0, Math.PI * 2); ctx.fill(); }
-                            });
-                            powerUps.forEach(p => { ctx.fillStyle = '#fbbf24'; ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size); });
-                            ctx.fillStyle = 'white'; ctx.font = '20px Arial'; ctx.fillText(`Score: ${score}`, 20, 30);
-                            if (powerUpActive) { ctx.fillStyle = '#fbbf24'; ctx.fillText('RAPID FIRE ACTIVE!', 20, 60); }
-                            if (gameOver) {
-                                ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                                ctx.fillStyle = 'white'; ctx.font = '50px Arial'; ctx.textAlign = 'center'; ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2);
-                                ctx.font = '25px Arial'; ctx.fillText(`Final Score: ${score}`, canvas.width/2, canvas.height/2 + 50); ctx.fillText('Press R to Restart', canvas.width/2, canvas.height/2 + 100);
-                            }
-                        }
-                        function saveScore() {
-                            const token = document.getElementById('csrf-token').value;
-                            fetch('/game/score', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'x-csrf-token': token }, body: `score=${score}` })
-                            .then(r => r.json()).then(data => { highScoreEl.innerText = data.highScore; });
-                        }
-                        function loop() { update(); draw(); requestAnimationFrame(loop); }
-                        loop();
-                     ")])})
+                        [:div {:class "relative p-1 bg-gradient-to-br from-cyber-yellow to-cyber-red"}
+                         [:canvas {:id "gameCanvas" :width "800" :height "600" :class "bg-black block mx-auto cursor-crosshair"}]]
+                        
+                        [:div {:class "mt-8 grid grid-cols-2 gap-12 text-gray-400"}
+                         [:div {:class "border-l-2 border-cyber-cyan pl-4"}
+                          [:h3 {:class "font-bold text-cyber-cyan mb-3 uppercase tracking-widest"} "System Controls"]
+                          [:ul {:class "space-y-2 font-mono text-sm"}
+                           [:li "ARROWS // MANEUVER"]
+                           [:li "SPACE  // DISCHARGE"]
+                           [:li "R_KEY  // SYSTEM_REBOOT"]]]
+                         [:div {:class "border-l-2 border-cyber-yellow pl-4"}
+                          [:h3 {:class "font-bold text-cyber-yellow mb-3 uppercase tracking-widest"} "Tactical Data"]
+                          [:ul {:class "space-y-2 font-mono text-sm"}
+                           [:li ">> THREATS FROM ALL VECTORS"]
+                           [:li ">> ACQUIRE OVERCLOCK MODULES"]]]]]
+                       [:script {:src "/js/game.js"}])})
       (res/redirect "/login")))
 
 (defn landing-page [{:keys [session]}]
@@ -273,12 +155,17 @@
     {:status 200
      :headers {"Content-Type" "text/html"}
      :body (layout session "Welcome"
-                   [:div {:class "text-center mt-16"}
-                    [:h1 {:class "text-5xl font-bold text-indigo-400 mb-6"} "Mindward Simplicity"]
-                    [:p {:class "text-xl text-gray-300 mb-8"} "Welcome to the Space Shooter Game"]
-                    [:div {:class "space-x-4"}
-                     [:a {:href "/login" :class "bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"} "Login"]
-                     [:a {:href "/signup" :class "bg-slate-600 text-white px-6 py-3 rounded-lg hover:bg-slate-700"} "Sign Up"]]])}))
+                   [:div {:class "min-h-[80vh] flex flex-col justify-center items-center text-center"}
+                    [:div {:class "relative mb-12"}
+                     [:h1 {:class "text-7xl font-black text-cyber-yellow mb-2 glitch-text uppercase tracking-tighter"} "MINDWARD"]
+                     [:div {:class "text-2xl font-bold text-cyber-cyan tracking-[1em] uppercase"} "Simplicity"]]
+                    
+                    [:p {:class "text-xl text-gray-400 mb-16 max-w-lg font-mono border-l-4 border-cyber-red pl-6 text-left"} 
+                     "Connect to the grid. Engage hostile protocols. Ascend the hierarchy."]
+                    
+                    [:div {:class "flex space-x-8"}
+                     [:a {:href "/login" :class "cyber-btn-secondary min-w-[150px]"} "Login"]
+                     [:a {:href "/signup" :class "cyber-btn min-w-[150px]"} "Initiate"]]])}))
 
 (defn login-page [{:keys [session params]}]
   (if (:username session)
@@ -286,26 +173,28 @@
     {:status 200
      :headers {"Content-Type" "text/html"}
      :body (layout session "Login"
-                   [:div {:class "max-w-md mx-auto"}
-                    [:h2 {:class "text-2xl font-bold mb-6 text-center text-white"} "Pilot Login"]
+                   [:div {:class "max-w-md mx-auto cyber-card mt-12"}
+                    [:h2 {:class "text-3xl font-black mb-8 text-center text-cyber-yellow uppercase tracking-widest"} "Net Access"]
                     (when (:error params)
-                      [:div {:class "bg-red-900 border border-red-400 text-red-200 px-4 py-3 rounded mb-4"}
-                       "Invalid credentials."])
+                      [:div {:class "bg-red-900/50 border-l-4 border-cyber-red text-red-200 px-4 py-3 mb-6 font-mono text-sm"}
+                       "ACCESS DENIED. INVALID CREDENTIALS."])
                     [:form {:method "POST" :action "/login"}
                      [:input {:type "hidden" :name "__anti-forgery-token" :value (:anti-forgery-token params)}]
-                     [:div {:class "mb-4"}
-                      [:label {:class "block text-gray-300 text-sm font-bold mb-2"} "Username"]
-                      [:input {:type "text" :name "username"
-                               :class "w-full px-3 py-2 border border-slate-700 bg-slate-800 text-white rounded-lg"
-                               :required true}]]
                      [:div {:class "mb-6"}
-                      [:label {:class "block text-gray-300 text-sm font-bold mb-2"} "Password"]
+                      [:label {:class "block text-cyber-cyan text-xs font-bold mb-2 uppercase tracking-widest"} "Net ID"]
+                      [:input {:type "text" :name "username"
+                               :class "w-full px-4 py-3 cyber-input"
+                               :placeholder "ID_REQUIRED"
+                               :required true}]]
+                     [:div {:class "mb-8"}
+                      [:label {:class "block text-cyber-cyan text-xs font-bold mb-2 uppercase tracking-widest"} "Access Key"]
                       [:input {:type "password" :name "password"
-                               :class "w-full px-3 py-2 border border-slate-700 bg-slate-800 text-white rounded-lg"
+                               :class "w-full px-4 py-3 cyber-input"
+                               :placeholder "KEY_REQUIRED"
                                :required true}]]
                      [:button {:type "submit"
-                               :class "w-full bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700"}
-                      "Login"]]])}))
+                               :class "w-full cyber-btn"}
+                      "JACK IN"]]])}))
 
 (defn handle-login [{:keys [params session]}]
   (let [auth-result (auth/authenticate (:username params) (:password params))]
@@ -345,5 +234,5 @@
 
 (defn -main [& _args]
   (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
-    (log/info "Starting Retro Game Server on port" port "...")
+    (log/info "Starting Cyberpunk Game Server on port" port "...")
     (jetty/run-jetty site-app {:port port :join? false}))))

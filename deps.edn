@@ -8,7 +8,7 @@
     org.xerial/sqlite-jdbc {:mvn/version "3.47.1.0"}
     ring/ring-defaults {:mvn/version "0.5.0"}
     org.clojure/tools.logging {:mvn/version "1.3.0"}}
-  :aliases  {:dev {:extra-paths ["development/src" "config" "components/auth/src" "components/user/src" "components/game/src" "bases/web-server/src" "components/auth/test" "components/user/test" "components/game/test" "bases/web-server/test"]
+  :aliases  {:dev {:extra-paths ["development/src" "config" "components/auth/src" "components/user/src" "components/game/src" "bases/web-server/src" "components/auth/test" "components/user/test" "components/game/test" "bases/web-server/test" "bases/web-server/resources"]
 
 
                    :extra-deps {org.clojure/clojure {:mvn/version "1.12.4"}
