@@ -38,9 +38,18 @@ We use the **Eight Keys** to guide our evolution:
 - **Native Access**: Ensure `:poly` alias is used for tasks requiring native access (e.g., `clojure -M:poly ...`).
 
 ### Building & Artifacts
-- **Build Jar**: `clojure -T:build jar`
-- **Clean target**: `rm -rf target`
-- **Deploy**: `clojure -T:build deploy`
+- **Build Uberjar**: `clojure -T:build uberjar` (45MB standalone JAR with AOT compilation)
+- **Build Docker Image**: `docker build -t simplicity:latest .`
+- **Interactive Build**: `./scripts/build-deployment.sh` (menu-driven: uberjar/Docker/both)
+- **Clean Target**: `rm -rf target`
+- **Jar Info**: `clojure -T:build jar-info`
+
+**Deployment Artifacts:**
+- **Uberjar**: `target/simplicity-standalone.jar` (standalone, requires Java 17+)
+- **Docker**: Multi-stage optimized image (builder + runtime)
+- **Docker Compose**: `docker-compose up -d` (with persistent volumes)
+
+See [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md) for production deployment.
 
 ## fractal Code Style Guidelines
 
@@ -122,20 +131,41 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 ### 3. Technical Constraints (τ Wisdom)
 - **Middleware**: Be vigilant with `ring-defaults`. Form parameters are **keywordized** (e.g., use `:username` not `"username"`).
 - **Security**: All state-changing endpoints (`POST/PUT`) require **CSRF tokens**. Fetch calls must include the `x-csrf-token` header.
+  - **Security Middleware Stack** (bases/web-server/src/cc/mindward/web_server/security.clj):
+    - Security headers (CSP, X-Frame-Options, X-Content-Type-Options, etc.)
+    - Rate limiting (token bucket algorithm for /login, /signup)
+    - Input validation (username, password, score)
+  - **Password Security**: bcrypt + sha512 with timing attack resistance
+  - **SQL Injection**: Parameterized queries + input validation (test coverage: 36 assertions)
+  - **XSS Prevention**: HTML escaping + CSP headers (test coverage: 65 assertions)
+  - See [docs/security.md](./docs/security.md) for complete security controls (501 security-tested assertions)
 - **Persistence**: Use `next.jdbc` with `rs/as-unqualified-lower-maps` for idiomatic data flow.
 - **Client-Side**: 
   - **Audio Policy**: Web Audio API requires a user gesture (`click`/`keydown`) to unlock. Always guard `new AudioContext()` with a `try-catch` and handle `suspended` state.
   - **Interaction**: Use `e.preventDefault()` for all critical application keys (e.g., Arrows, Space, R) to prevent browser-level interference like scrolling or character insertion.
 - **Logic**: Use threshold-based triggers (e.g., `score >= limit`) instead of exact matches (`score == limit`) to handle discrete state jumps safely.
 
-### 3. Dependency Management (e Purpose)
+### 4. Dependency Management (e Purpose)
 - **Top-level**: Shared dependencies go in the root `deps.edn`.
 - **Brick-level**: Specific dependencies for a component or base should be managed in the development project or the specific project `deps.edn` if building an artifact.
 - **Vigilance**: Avoid adding heavy dependencies unless strictly necessary for the domain model.
+- **Aliases**:
+  - `:dev` - Development dependencies (REPL, testing, Polylith)
+  - `:test` - Test dependencies (test paths)
+  - `:poly` - Polylith tooling
+  - `:prod` - Production dependencies (minimal)
+  - `:build` - Build tooling (tools.build for uberjar compilation)
 
-### 4. Self-Correction
+### 5. Self-Correction
 - If `poly check` fails, you have violated Polylith constraints (e.g., circular dependency or illegal import). Fix immediately.
 - Use `clj-kondo` to catch static analysis issues before committing.
+- **Test Coverage**: 501 passing assertions across 71 test cases (current)
+  - Auth: 2 tests, 14 assertions
+  - Game: 15 tests, 146 assertions
+  - UI: 42 tests, 149 assertions
+  - User: 12 tests, 49 assertions
+  - Web-server: 28 tests, 143 assertions (includes security tests)
+- Run `clojure -M:poly test :dev` before committing to verify all tests pass.
 
 ## Tools & Utilities
 - **brepl**: The mandatory tool for Clojure/EDN evaluation and structural integrity.
@@ -154,16 +184,65 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
   - Command: `clojure -X:dev nextjournal.clerk/serve!`
 - **Launchpad**: Standard entry script in `bin/launchpad`.
 - **Babashka**: Use `bb.edn` for scripting tasks.
+- **Deployment Scripts**:
+  - `scripts/build-deployment.sh` - Interactive build menu (uberjar/Docker/both)
+  - Validates Java version (requires 17+)
+  - Provides deployment instructions after build
 
 ## ∀ Vigilance: Anti-Patterns
 - **Complexity**: If a function exceeds 20 lines, reconsider the domain model.
 - **Dependency Hell**: Avoid circular dependencies between components. Use `poly check` to verify.
-- **Slop**: Do not leave commented-out code or `(println ...)` in production paths. Use a logging library.
+- **Slop**: Do not leave commented-out code or `(println ...)` in production paths. Use a logging library (logback configured).
 - **Abstraction Leak**: Never let implementation details (like DB connections or third-party client objects) escape the component interface. Use data maps or domain records.
 - **The God Base**: Bases are Controllers, not Views. Do not mix routing, logic, and HTML generation in one file.
 - **The Test Illusion**: `(is (= 1 1))` is not a test. Verify actual logic or data persistence.
-- **Hardcoded Secrets**: Never commit passwords or API keys. Use `System/getenv` or a config component.
+- **Hardcoded Secrets**: Never commit passwords or API keys. Use `System/getenv` or a config component. **Security validated**: 501 security-tested assertions.
 - **The Infinite Loop**: When using `requestAnimationFrame`, always wrap the loop body in a `try-catch` block to prevent a crash from freezing the entire tab/rendering thread.
+- **Security Bypass**: Never skip input validation or rate limiting. All user inputs must be validated at the boundary (see `bases/web-server/src/cc/mindward/web_server/security.clj`).
+- **Docker Anti-patterns**: 
+  - Never run containers as root (use non-root user)
+  - Always use multi-stage builds to minimize image size
+  - Never include secrets in Docker images (use environment variables)
+  - Always configure health checks for production deployments
+
+## Production Deployment (∃ Truth)
+
+### Environment Variables
+**Application:**
+- `PORT` - HTTP server port (default: 3000)
+- `DB_PATH` - SQLite database path (default: `./simplicity.db`)
+- `ENABLE_HSTS` - Enable HSTS header (default: false, **enable only with HTTPS**)
+
+**Logging:**
+- `LOG_LEVEL` - DEBUG|INFO|WARN|ERROR (default: INFO, use WARN in production)
+- `LOG_PATH` - Log directory (default: `./logs`)
+
+**Docker:**
+- `JAVA_OPTS` - JVM options (default: `-Xmx512m -Xms256m -XX:+UseG1GC`)
+
+### Health Monitoring
+- **Endpoint**: `GET /health`
+- **Response**: JSON with status, timestamp, database check, version
+- **Use for**: Load balancer health checks, Kubernetes probes, monitoring dashboards
+
+### Deployment Checklist
+**Before deploying to production:**
+1. ✅ Run `clojure -M:poly test :dev` (ensure 501 tests pass)
+2. ✅ Review [docs/security.md](./docs/security.md)
+3. ✅ Review [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md)
+4. ✅ Enable HTTPS and set `ENABLE_HSTS=true`
+5. ✅ Configure Cloudflare firewall rules
+6. ✅ Set `LOG_LEVEL=WARN`
+7. ✅ Configure persistent volumes (Docker: `/app/data`, `/app/logs`)
+8. ✅ Set up health check monitoring
+9. ✅ Configure Cloudflare Analytics
+
+**Deployment Options:**
+- **Option 1**: VPS + Docker + Cloudflare proxy (recommended, $5-12/month)
+- **Option 2**: Cloudflare Tunnel (Zero Trust)
+- **Option 3**: Standalone uberjar on VPS
+
+See comprehensive guide: [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md)
 
 ---
 *Created by opencode agent with nucleus-tutor and brepl.*
