@@ -1,16 +1,18 @@
 (ns cc.mindward.user.interface-test
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [cc.mindward.user.interface :as user]
-            [cc.mindward.user.impl :as impl]
-            [next.jdbc :as jdbc]))
+            [cc.mindward.user.impl :as impl]))
 
-(defn test-db-fixture [f]
+(defn test-db-fixture
+  "Fixture that creates a temporary SQLite database for each test.
+   Uses dynamic binding to inject the test datasource."
+  [f]
   (let [temp-file (java.io.File/createTempFile "test_simplicity_" ".db")
         db-path (.getAbsolutePath temp-file)
-        ds (jdbc/get-datasource {:dbtype "sqlite" :dbname db-path})]
+        test-ds (impl/make-datasource db-path)]
     (try
-      (with-redefs [impl/ds ds]
-        (impl/init-db!)
+      (binding [impl/*ds* test-ds]
+        (impl/init-db! test-ds)
         (f))
       (finally
         (.delete temp-file)))))
@@ -23,21 +25,33 @@
     (let [u (user/find-by-username "player1")]
       (is (= "player1" (:username u)))
       (is (= "Player One" (:name u)))
-      (is (= 0 (:high_score u))))))
+      (is (= 0 (:high_score u)))
+      (is (:password_hash u) "password should be hashed and stored"))))
+
+(deftest password-hashing-test
+  (testing "passwords are hashed, not stored plain"
+    (user/create-user! {:username "secure-user" :password "my-secret" :name "Secure"})
+    (let [u (user/find-by-username "secure-user")]
+      (is (not= "my-secret" (:password_hash u)) "password should not be stored plain")
+      (is (user/verify-password "my-secret" (:password_hash u)) "correct password verifies")
+      (is (not (user/verify-password "wrong-password" (:password_hash u))) "wrong password fails"))))
 
 (deftest update-high-score-test
-  (testing "update high score"
+  (testing "update high score only if higher"
     (user/create-user! {:username "player2" :password "pass" :name "Player Two"})
     (user/update-high-score! "player2" 100)
     (is (= 100 (user/get-high-score "player2")))
-    ;; Should verify it only updates if higher
+    
+    ;; Should NOT update if lower (SQL MAX behavior)
     (user/update-high-score! "player2" 50)
-    (is (= 100 (user/get-high-score "player2")))
+    (is (= 100 (user/get-high-score "player2")) "score should remain at 100")
+    
+    ;; Should update if higher
     (user/update-high-score! "player2" 150)
     (is (= 150 (user/get-high-score "player2")))))
 
 (deftest leaderboard-test
-  (testing "leaderboard"
+  (testing "leaderboard returns users ordered by high score descending"
     (user/create-user! {:username "a" :password "p" :name "A"})
     (user/create-user! {:username "b" :password "p" :name "B"})
     (user/create-user! {:username "c" :password "p" :name "C"})
@@ -47,13 +61,8 @@
     (user/update-high-score! "c" 50)
     
     (let [board (user/get-leaderboard)]
-      ;; Note: admin user is created by init-db!
-      (is (>= (count board) 3))
+      (is (= 3 (count board)))
       
-      ;; Verify ordering
-      (let [top-user (first board)
-            second-user (second board)]
-        (is (= "b" (:username top-user)))
-        (is (= 200 (:high_score top-user)))
-        (is (= "a" (:username second-user)))
-        (is (= 100 (:high_score second-user)))))))
+      ;; Verify ordering (highest first)
+      (is (= ["b" "a" "c"] (mapv :username board)))
+      (is (= [200 100 50] (mapv :high_score board))))))

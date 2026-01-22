@@ -82,5 +82,7 @@
 
 (defn -main [& _args]
   (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
+    (log/info "Initializing database...")
+    (user/init!)
     (log/info "Starting Cyberpunk Game Server on port" port "...")
     (jetty/run-jetty site-app {:port port :join? false})))
