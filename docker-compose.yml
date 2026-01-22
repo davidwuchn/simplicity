@@ -1,0 +1,57 @@
+services:
+  simplicity:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: simplicity:latest
+    container_name: simplicity-app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DB_PATH=/app/data/simplicity.db
+      - LOG_LEVEL=INFO
+      - LOG_PATH=/app/logs
+      # Uncomment for HSTS (only after HTTPS is configured)
+      # - ENABLE_HSTS=true
+    volumes:
+      # Persist database
+      - simplicity-data:/app/data
+      # Persist logs
+      - simplicity-logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+    networks:
+      - simplicity-network
+
+  # Optional: Nginx reverse proxy with SSL
+  # Uncomment this section if you want to add HTTPS
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: simplicity-nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - simplicity
+  #   networks:
+  #     - simplicity-network
+  #   restart: unless-stopped
+
+volumes:
+  simplicity-data:
+    driver: local
+  simplicity-logs:
+    driver: local
+
+networks:
+  simplicity-network:
+    driver: bridge

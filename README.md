@@ -169,26 +169,82 @@ See [docs/security.md](./docs/security.md) for complete security documentation.
 
 ## 🚢 Deployment
 
-### Building a JAR
+### Quick Deploy
 
+**Interactive build script:**
 ```bash
-# Build uberjar (if :build alias configured)
-clojure -T:build uber
-
-# Run JAR
-java -jar target/simplicity.jar
+./scripts/build-deployment.sh
 ```
+
+Choose from:
+1. **Uberjar** (45MB standalone JAR)
+2. **Docker image** (multi-stage, optimized)
+3. **Both**
+
+### Option 1: Uberjar Deployment
+
+Build standalone JAR:
+```bash
+clojure -T:build uberjar
+```
+
+Run locally:
+```bash
+java -jar target/simplicity-standalone.jar
+```
+
+Deploy to server:
+```bash
+scp target/simplicity-standalone.jar user@server:/opt/simplicity/
+ssh user@server 'java -jar /opt/simplicity/simplicity-standalone.jar'
+```
+
+### Option 2: Docker Deployment
+
+Build image:
+```bash
+docker build -t simplicity:latest .
+```
+
+Run with Docker:
+```bash
+docker run -d -p 3000:3000 \
+  -v simplicity-data:/app/data \
+  -v simplicity-logs:/app/logs \
+  --name simplicity \
+  simplicity:latest
+```
+
+Or use docker-compose:
+```bash
+docker-compose up -d
+```
+
+### Option 3: Cloudflare Deployment
+
+**Recommended**: VPS + Docker + Cloudflare as CDN/proxy
+
+See [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md) for complete guide:
+- VPS deployment steps (DigitalOcean, Linode, Vultr)
+- Cloudflare DNS & SSL configuration
+- Cloudflare Tunnel setup (Zero Trust)
+- Performance optimization
+- Monitoring & analytics
+- Cost breakdown ($5-12/month)
 
 ### Environment Variables
 
 **Application:**
 - `PORT` - HTTP server port (default: 3000)
 - `DB_PATH` - SQLite database path (default: `./simplicity.db`)
+- `ENABLE_HSTS` - Enable HSTS header (default: false, enable only with HTTPS)
 
 **Logging:**
 - `LOG_LEVEL` - Logging level: DEBUG, INFO, WARN, ERROR (default: INFO)
-- `LOG_FORMAT` - Log format: `json` for structured logging, unset for console (default: console)
 - `LOG_PATH` - Directory for log files (default: `./logs`)
+
+**Docker:**
+- `JAVA_OPTS` - JVM options (default: `-Xmx512m -Xms256m -XX:+UseG1GC`)
 
 ### Health Check
 
@@ -221,29 +277,30 @@ Response:
 
 **Security:**
 - [ ] Review [docs/security.md](./docs/security.md) for complete security guidelines
+- [ ] Review [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md) for deployment guide
 - [ ] Enable HTTPS and configure `ENABLE_HSTS=true`
-- [ ] Set strong database credentials (if using PostgreSQL)
-- [ ] Configure firewall rules (allow port 3000 or configured PORT)
+- [ ] Configure Cloudflare firewall rules
 - [ ] Set `LOG_LEVEL=WARN` to reduce verbosity
 
 **Configuration:**
 - [ ] Set `PORT` for your environment
 - [ ] Set `DB_PATH` to persistent storage location
-- [ ] Ensure Java 17+ on target system
-- [ ] Pre-create database or ensure write permissions
+- [ ] Ensure Java 17+ on target system (or use Docker)
+- [ ] Configure persistent volumes (Docker: `/app/data`, `/app/logs`)
 
 **Monitoring:**
-- [ ] Configure log aggregation (e.g., ELK, Splunk)
-- [ ] Set up health check monitoring (`/health` endpoint)
+- [ ] Configure health check monitoring (`/health` endpoint)
+- [ ] Set up Cloudflare Analytics
 - [ ] Monitor authentication failures (potential brute force)
 - [ ] Track rate limit violations (429 responses)
 
 ## 📚 Documentation
 
 - **[AGENTS.md](./AGENTS.md)** - AI agent operational guidelines & code style
+- **[docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md)** - Complete deployment guide for Cloudflare
+- **[docs/security.md](./docs/security.md)** - Security controls & hardening guide
 - **[docs/api.md](./docs/api.md)** - REST API reference
 - **[docs/architecture.md](./docs/architecture.md)** - System architecture & design
-- **[docs/security.md](./docs/security.md)** - Security controls & hardening guide
 - Component READMEs:
   - [components/game/README.md](./components/game/README.md) - Game engine internals
   - [components/user/README.md](./components/user/README.md) - User management & DB schema

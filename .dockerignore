@@ -1,0 +1,53 @@
+# Git
+.git
+.gitignore
+.github
+
+# Build artifacts
+target/
+.cpcache/
+.clj-kondo/
+.lsp/
+.calva/
+.nrepl-port
+.nrepl-history
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Notebooks and docs (not needed in runtime)
+notebooks/
+docs/
+examples/
+CONTRIBUTING.md
+
+# Test files
+**/test/
+
+# Development only
+development/
+config/build.clj
+
+# README (not needed in runtime)
+README.md

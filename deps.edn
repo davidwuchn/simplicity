@@ -33,6 +33,11 @@
                       io.github.nextjournal/cas {:git/sha "5132b9b29418575cffd467288e9bda74eb2a10c9"
                                                  :git/url "https://github.com/nextjournal/cas"}}}
    
+   :prod {:extra-deps {org.clojure/clojure {:mvn/version "1.12.4"}}}
+   
+   :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.5"}}
+           :ns-default build}
+   
    :test {:extra-paths ["components/auth/test"
                         "components/user/test"
                         "components/game/test"
