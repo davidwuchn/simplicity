@@ -166,43 +166,6 @@
   (testing "get-score with non-existent game"
     (is (nil? (game/get-score :non-existent-score)) "returns nil for missing game")))
 
-(deftest pattern-analysis-test
-  (testing "detect single block pattern"
-    (game/create-game! :block-analyze #{[0 0] [0 1] [1 0] [1 1]})
-    (let [analysis (game/get-pattern-analysis :block-analyze)]
-      (is (= 1 (get-in analysis [:block :count])) "detects one block")
-      (is (some #{[0 0]} (get-in analysis [:block :locations])) "finds block location")))
-  
-  (testing "detect multiple patterns"
-    (game/create-game! :multi-pattern #{[0 0] [0 1] [1 0] [1 1]  ; block
-                                                                   [5 5] [5 6] [5 7]})  ; vertical blinker
-    (let [analysis (game/get-pattern-analysis :multi-pattern)]
-      (is (= 1 (get-in analysis [:block :count])) "detects block")
-      (is (= 1 (get-in analysis [:blinker :count])) "detects blinker")))
-  
-  (testing "detect beehive pattern"
-    (game/create-game! :beehive-pattern #{[0 1] [0 2] [1 0] [1 3] [2 1] [2 2]})
-    (let [analysis (game/get-pattern-analysis :beehive-pattern)]
-      (is (= 1 (get-in analysis [:beehive :count])) "detects beehive patter")))
-  
-  (testing "detect glider pattern"
-    (game/create-game! :glider-pattern #{[0 1] [1 2] [2 0] [2 1] [2 2]})
-    (let [analysis (game/get-pattern-analysis :glider-pattern)]
-      (is (= 1 (get-in analysis [:glider :count])) "detects glider pattern")))
-  
-  (testing "pattern analysis with no patterns"
-    (game/create-game! :no-patterns #{[0 0] [5 5] [10 10]})  ; Isolated cells, not patterns
-    (let [analysis (game/get-pattern-analysis :no-patterns)
-          counts (mapv #(get-in analysis [% :count]) [:block :beehive :blinker :toad :glider])]
-      (is (every? zero? counts) "no patterns detected in isolated cells"))))
-
-(deftest pattern-analysis-block-simple-test
-  (testing "detect block pattern"
-    (game/create-game! :block-analyze #{[0 0] [0 1] [1 0] [1 1]})
-    (let [analysis (game/get-pattern-analysis :block-analyze)]
-      (is (= 1 (get-in analysis [:block :count])) "should detect one block")
-      (is (some #{[0 0]} (get-in analysis [:block :locations]))))))
-
 (deftest musical-triggers-test
   (testing "generate triggers based on board state"
     (game/create-game! :music-1 #{[0 0] [1 0] [2 0] [3 0] [4 0]})
@@ -328,8 +291,7 @@
     (is (nil? (game/add-cells! nil #{[0 0]})) "add-cells! nil game")
     (is (nil? (game/clear-cells! nil #{[0 0]})) "clear-cells! nil game")
     (is (nil? (game/save-game! nil "name")) "save-game! nil game")
-    (is (nil? (game/get-musical-triggers nil)) "get-musical-triggers nil")
-    (is (nil? (game/get-pattern-analysis nil)) "get-pattern-analysis nil"))
+    (is (nil? (game/get-musical-triggers nil)) "get-musical-triggers nil"))
   
   (testing "evolution stability - known patterns reasonable bounds"
     (let [patterns [#{[0 0] [0 1] [1 0] [1 1]}  ; block (stable - 4 cells)

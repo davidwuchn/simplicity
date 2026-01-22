@@ -99,13 +99,19 @@
   [game-id]
   (impl/generate-musical-triggers game-id))
 
-(defn get-pattern-analysis
-  "Analyze board for known patterns (still lifes, oscillators, spaceships).
-   Returns map of {:pattern-type :count :locations}."
-  [game-id]
-  (impl/analyze-patterns game-id))
-
 (defn initialize!
-  "Initialize the game engine. Must be called once at startup."
+  "Initialize the game engine. Must be called once at startup.
+   Starts background cleanup of stale game sessions."
   []
   (impl/initialize!))
+
+(defn cleanup-stale-games!
+  "Manually trigger cleanup of stale games.
+   Returns the number of games removed."
+  []
+  (impl/cleanup-stale-games!))
+
+(defn stop-cleanup-scheduler!
+  "Stop the background cleanup scheduler. Call on shutdown."
+  []
+  (impl/stop-cleanup-scheduler!))

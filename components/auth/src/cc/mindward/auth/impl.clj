@@ -5,9 +5,6 @@
    credential storage and password verification."
   (:require [cc.mindward.user.interface :as user]))
 
-(defn hello [name]
-  (str "Hello, " name ". Access granted to Mindward."))
-
 (defn authenticate
   "Authenticate a user by username and password.
    Returns the user map (without password_hash) on success, nil on failure.

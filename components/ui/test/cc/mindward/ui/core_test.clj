@@ -1,6 +1,6 @@
 (ns cc.mindward.ui.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [cc.mindward.ui.core :as ui]
+            [cc.mindward.ui.core-refactored :as ui]
             [clojure.string :as str]))
 
 ;; ============================================================================
@@ -44,7 +44,7 @@
 
 (deftest layout-basic-structure-test
   (testing "Layout generates valid HTML structure"
-    (let [html (ui/layout nil "Test Title" [:div "Content"])]
+    (let [html (ui/layout {:session nil :title "Test Title" :content [:div "Content"]})]
       (is (string? html))
       (is (contains-tag? html "html") "Missing html tag")
       (is (contains-tag? html "head") "Missing head tag")
@@ -54,19 +54,19 @@
 
 (deftest layout-meta-and-charset-test
   (testing "Layout includes proper meta tags and charset"
-    (let [html (ui/layout nil "Test" [:div "Content"])]
+    (let [html (ui/layout {:session nil :title "Test" :content [:div "Content"]})]
       (is (contains-str? html "charset=\"UTF-8\"") "Missing UTF-8 charset"))))
 
 (deftest layout-external-dependencies-test
   (testing "Layout includes external CSS and JS dependencies"
-    (let [html (ui/layout nil "Test" [:div "Content"])]
+    (let [html (ui/layout {:session nil :title "Test" :content [:div "Content"]})]
       (is (contains-str? html "cdn.tailwindcss.com") "Missing Tailwind CDN")
       (is (contains-str? html "fonts.googleapis.com") "Missing Google Fonts")
       (is (contains-str? html "Orbitron") "Missing Orbitron font family"))))
 
 (deftest layout-cyber-styling-test
   (testing "Layout includes cyberpunk CSS classes and animations"
-    (let [html (ui/layout nil "Test" [:div "Content"])]
+    (let [html (ui/layout {:session nil :title "Test" :content [:div "Content"]})]
       (is (contains-str? html ".cyber-card") "Missing cyber-card style")
       (is (contains-str? html ".cyber-input") "Missing cyber-input style")
       (is (contains-str? html ".cyber-btn") "Missing cyber-btn style")
@@ -78,7 +78,7 @@
 
 (deftest layout-navigation-unauthenticated-test
   (testing "Layout shows login/signup links when user not authenticated"
-    (let [html (ui/layout nil "Test" [:div "Content"])]
+    (let [html (ui/layout {:session nil :title "Test" :content [:div "Content"]})]
       (is (contains-str? html "LOGIN") "Missing LOGIN link")
       (is (contains-str? html "INITIATE") "Missing INITIATE (signup) link")
       (is (contains-str? html "href=\"/login\"") "Missing login href")
@@ -88,7 +88,7 @@
 
 (deftest layout-navigation-authenticated-test
   (testing "Layout shows user-specific navigation when authenticated"
-    (let [html (ui/layout {:username "testpilot"} "Test" [:div "Content"])]
+    (let [html (ui/layout {:session {:user {:username "testpilot"}} :title "Test" :content [:div "Content"]})]
       (is (contains-str? html "PILOT:") "Missing PILOT label")
       (is (contains-str? html "testpilot") "Missing username display")
       (is (contains-str? html "JACK IN") "Missing JACK IN link")
@@ -100,14 +100,14 @@
 
 (deftest layout-branding-test
   (testing "Layout includes MINDWARD branding"
-    (let [html (ui/layout nil "Test" [:div "Content"])]
+    (let [html (ui/layout {:session nil :title "Test" :content [:div "Content"]})]
       (is (contains-str? html "MINDWARD // SIMPLICITY") "Missing brand text")
       (is (contains-str? html "href=\"/\"") "Missing home link"))))
 
 (deftest layout-leaderboard-link-test
   (testing "Layout includes leaderboard link for all users"
-    (let [html-unauth (ui/layout nil "Test" [:div "Content"])
-          html-auth (ui/layout {:username "testpilot"} "Test" [:div "Content"])]
+    (let [html-unauth (ui/layout {:session nil :title "Test" :content [:div "Content"]})
+          html-auth (ui/layout {:session {:user {:username "testpilot"}} :title "Test" :content [:div "Content"]})]
       (is (contains-str? html-unauth "Leaderboard") "Missing leaderboard link (unauth)")
       (is (contains-str? html-auth "Leaderboard") "Missing leaderboard link (auth)")
       (is (contains-str? html-unauth "href=\"/leaderboard\"") "Missing leaderboard href (unauth)")
@@ -115,14 +115,14 @@
 
 (deftest layout-content-injection-test
   (testing "Layout properly injects content parameter"
-    (let [html (ui/layout nil "Test" [:div {:class "test-content"} "My Custom Content"])]
+    (let [html (ui/layout {:session nil :title "Test" :content [:div {:class "test-content"} "My Custom Content"]})]
       (is (contains-str? html "My Custom Content") "Content not injected")
       (is (contains-class? html "test-content") "Content class not preserved"))))
 
 (deftest layout-extra-footer-test
   (testing "Layout supports optional extra footer content"
-    (let [html-no-footer (ui/layout nil "Test" [:div "Content"])
-          html-with-footer (ui/layout nil "Test" [:div "Content"] [:footer "Extra Footer"])]
+    (let [html-no-footer (ui/layout {:session nil :title "Test" :content [:div "Content"]})
+          html-with-footer (ui/layout {:session nil :title "Test" :content [:div "Content"] :extra-footer [:footer "Extra Footer"]})]
       (is (not (contains-str? html-no-footer "Extra Footer")) "Footer should not appear without param")
       (is (contains-str? html-with-footer "Extra Footer") "Extra footer not injected")
       (is (contains-tag? html-with-footer "footer") "Footer tag not rendered"))))
@@ -133,7 +133,7 @@
 
 (deftest leaderboard-page-structure-test
   (testing "Leaderboard page returns proper response structure"
-    (let [response (ui/leaderboard-page nil [])]
+    (let [response (ui/leaderboard-page {:session nil :leaderboard []})]
       (is (map? response) "Response should be a map")
       (is (= 200 (:status response)) "Should return 200 status")
       (is (= "text/html" (get-in response [:headers "Content-Type"])) "Should have text/html content type")
@@ -142,18 +142,18 @@
 
 (deftest leaderboard-page-title-test
   (testing "Leaderboard page has correct title and heading"
-    (let [html (extract-html-body (ui/leaderboard-page nil []))]
+    (let [html (extract-html-body (ui/leaderboard-page {:session nil :leaderboard []}))]
       (is (contains-str? html "Global Leaderboard") "Missing page title")
       (is (contains-str? html "Netrunner Legends") "Missing page heading"))))
 
 (deftest leaderboard-page-empty-state-test
   (testing "Leaderboard shows empty state when no data"
-    (let [html (extract-html-body (ui/leaderboard-page nil []))]
+    (let [html (extract-html-body (ui/leaderboard-page {:session nil :leaderboard []}))]
       (is (contains-str? html "No data in the net") "Missing empty state message"))))
 
 (deftest leaderboard-page-table-structure-test
   (testing "Leaderboard has proper table structure"
-    (let [html (extract-html-body (ui/leaderboard-page nil []))]
+    (let [html (extract-html-body (ui/leaderboard-page {:session nil :leaderboard []}))]
       (is (contains-tag? html "table") "Missing table tag")
       (is (contains-tag? html "thead") "Missing thead tag")
       (is (contains-tag? html "tbody") "Missing tbody tag")
@@ -166,11 +166,11 @@
     (let [leaderboard [{:username "player1" :name "Alpha" :high_score 1000}
                        {:username "player2" :name "Beta" :high_score 500}
                        {:username "player3" :name nil :high_score 250}]
-          html (extract-html-body (ui/leaderboard-page nil leaderboard))]
+          html (extract-html-body (ui/leaderboard-page {:session nil :leaderboard leaderboard}))]
       (is (contains-str? html "Alpha") "Missing first player name")
       (is (contains-str? html "Beta") "Missing second player name")
       (is (contains-str? html "player3") "Missing third player username (fallback)")
-      (is (contains-str? html "1000") "Missing first player score")
+      (is (contains-str? html "1,000") "Missing first player score (formatted)")
       (is (contains-str? html "500") "Missing second player score")
       (is (contains-str? html "250") "Missing third player score")
       (is (contains-str? html "KING") "Missing KING rank for first place"))))
@@ -179,7 +179,7 @@
   (testing "Leaderboard formats ranks correctly"
     (let [leaderboard [{:username "p1" :name "First" :high_score 100}
                        {:username "p2" :name "Second" :high_score 50}]
-          html (extract-html-body (ui/leaderboard-page nil leaderboard))]
+          html (extract-html-body (ui/leaderboard-page {:session nil :leaderboard leaderboard}))]
       (is (contains-str? html "KING") "First place should be KING")
       (is (contains-str? html "02") "Second place should be formatted as 02"))))
 
@@ -189,7 +189,7 @@
 
 (deftest signup-page-structure-test
   (testing "Signup page returns proper response structure"
-    (let [response (ui/signup-page nil {} "test-token")]
+    (let [response (ui/signup-page {:session nil :params {} :anti-forgery-token "test-token"})]
       (is (map? response) "Response should be a map")
       (is (= 200 (:status response)) "Should return 200 status")
       (is (= "text/html" (get-in response [:headers "Content-Type"])) "Should have text/html content type")
@@ -197,7 +197,7 @@
 
 (deftest signup-page-form-structure-test
   (testing "Signup page has proper form with required fields"
-    (let [html (extract-html-body (ui/signup-page nil {} "test-token"))]
+    (let [html (extract-html-body (ui/signup-page {:session nil :params {} :anti-forgery-token "test-token"}))]
       (is (contains-tag? html "form") "Missing form tag")
       (is (contains-str? html "method=\"POST\"") "Form should use POST method")
       (is (contains-str? html "action=\"/signup\"") "Form should post to /signup")
@@ -207,27 +207,27 @@
 
 (deftest signup-page-csrf-token-test
   (testing "Signup page includes CSRF token"
-    (let [html (extract-html-body (ui/signup-page nil {} "my-csrf-token"))]
+    (let [html (extract-html-body (ui/signup-page {:session nil :params {} :anti-forgery-token "my-csrf-token"}))]
       (is (contains-csrf-token? html) "Missing CSRF token field")
       (is (contains-str? html "my-csrf-token") "CSRF token value not rendered"))))
 
 (deftest signup-page-error-display-test
   (testing "Signup page shows error message when present"
-    (let [html-no-error (extract-html-body (ui/signup-page nil {} "token"))
-          html-with-error (extract-html-body (ui/signup-page nil {:error true} "token"))]
+    (let [html-no-error (extract-html-body (ui/signup-page {:session nil :params {} :anti-forgery-token "token"}))
+          html-with-error (extract-html-body (ui/signup-page {:session nil :params {:error true} :anti-forgery-token "token"}))]
       (is (not (contains-str? html-no-error "ERROR: IDENTITY CONFLICT")) "Should not show error without param")
       (is (contains-str? html-with-error "ERROR: IDENTITY CONFLICT") "Missing error message"))))
 
 (deftest signup-page-field-labels-test
   (testing "Signup page has clear field labels"
-    (let [html (extract-html-body (ui/signup-page nil {} "token"))]
+    (let [html (extract-html-body (ui/signup-page {:session nil :params {} :anti-forgery-token "token"}))]
       (is (contains-str? html "Handle (Display)") "Missing handle label")
       (is (contains-str? html "Net ID (Login)") "Missing net ID label")
       (is (contains-str? html "Access Key (Password)") "Missing access key label"))))
 
 (deftest signup-page-submit-button-test
   (testing "Signup page has submit button"
-    (let [html (extract-html-body (ui/signup-page nil {} "token"))]
+    (let [html (extract-html-body (ui/signup-page {:session nil :params {} :anti-forgery-token "token"}))]
       (is (contains-tag? html "button") "Missing button tag")
       (is (contains-str? html "type=\"submit\"") "Button should be submit type")
       (is (contains-str? html "ESTABLISH LINK") "Missing submit button text"))))
@@ -238,7 +238,7 @@
 
 (deftest login-page-structure-test
   (testing "Login page returns proper response structure"
-    (let [response (ui/login-page nil {} "test-token")]
+    (let [response (ui/login-page {:session nil :params {} :anti-forgery-token "test-token"})]
       (is (map? response) "Response should be a map")
       (is (= 200 (:status response)) "Should return 200 status")
       (is (= "text/html" (get-in response [:headers "Content-Type"])) "Should have text/html content type")
@@ -246,7 +246,7 @@
 
 (deftest login-page-form-structure-test
   (testing "Login page has proper form with required fields"
-    (let [html (extract-html-body (ui/login-page nil {} "test-token"))]
+    (let [html (extract-html-body (ui/login-page {:session nil :params {} :anti-forgery-token "test-token"}))]
       (is (contains-tag? html "form") "Missing form tag")
       (is (contains-str? html "method=\"POST\"") "Form should use POST method")
       (is (contains-str? html "action=\"/login\"") "Form should post to /login")
@@ -255,21 +255,21 @@
 
 (deftest login-page-csrf-token-test
   (testing "Login page includes CSRF token"
-    (let [html (extract-html-body (ui/login-page nil {} "login-csrf-token"))]
+    (let [html (extract-html-body (ui/login-page {:session nil :params {} :anti-forgery-token "login-csrf-token"}))]
       (is (contains-csrf-token? html) "Missing CSRF token field")
       (is (contains-str? html "login-csrf-token") "CSRF token value not rendered"))))
 
 (deftest login-page-error-display-test
   (testing "Login page shows error message when present"
-    (let [html-no-error (extract-html-body (ui/login-page nil {} "token"))
-          html-with-error (extract-html-body (ui/login-page nil {:error true} "token"))]
+    (let [html-no-error (extract-html-body (ui/login-page {:session nil :params {} :anti-forgery-token "token"}))
+          html-with-error (extract-html-body (ui/login-page {:session nil :params {:error true} :anti-forgery-token "token"}))]
       (is (not (contains-str? html-no-error "ACCESS DENIED")) "Should not show error without param")
       (is (contains-str? html-with-error "ACCESS DENIED") "Missing error message")
       (is (contains-str? html-with-error "INVALID CREDENTIALS") "Missing credentials error"))))
 
 (deftest login-page-submit-button-test
   (testing "Login page has submit button"
-    (let [html (extract-html-body (ui/login-page nil {} "token"))]
+    (let [html (extract-html-body (ui/login-page {:session nil :params {} :anti-forgery-token "token"}))]
       (is (contains-tag? html "button") "Missing button tag")
       (is (contains-str? html "type=\"submit\"") "Button should be submit type")
       (is (contains-str? html "JACK IN") "Missing submit button text"))))
@@ -333,7 +333,7 @@
 
 (deftest landing-page-structure-test
   (testing "Landing page returns proper response structure"
-    (let [response (ui/landing-page nil)]
+    (let [response (ui/landing-page {:session nil})]
       (is (map? response) "Response should be a map")
       (is (= 200 (:status response)) "Should return 200 status")
       (is (= "text/html" (get-in response [:headers "Content-Type"])) "Should have text/html content type")
@@ -341,18 +341,18 @@
 
 (deftest landing-page-branding-test
   (testing "Landing page displays MINDWARD branding"
-    (let [html (extract-html-body (ui/landing-page nil))]
+    (let [html (extract-html-body (ui/landing-page {:session nil}))]
       (is (contains-str? html "MINDWARD") "Missing MINDWARD brand")
       (is (contains-str? html "Simplicity") "Missing Simplicity subtitle"))))
 
 (deftest landing-page-tagline-test
   (testing "Landing page includes tagline"
-    (let [html (extract-html-body (ui/landing-page nil))]
+    (let [html (extract-html-body (ui/landing-page {:session nil}))]
       (is (contains-str? html "Connect to the grid") "Missing tagline"))))
 
 (deftest landing-page-cta-buttons-test
   (testing "Landing page has call-to-action buttons"
-    (let [html (extract-html-body (ui/landing-page nil))]
+    (let [html (extract-html-body (ui/landing-page {:session nil}))]
       (is (contains-str? html "href=\"/login\"") "Missing login link")
       (is (contains-str? html "href=\"/signup\"") "Missing signup link")
       (is (contains-str? html "Login") "Missing Login button text")
@@ -360,7 +360,7 @@
 
 (deftest landing-page-background-canvas-test
   (testing "Landing page includes background Game of Life canvas"
-    (let [html (extract-html-body (ui/landing-page nil))]
+    (let [html (extract-html-body (ui/landing-page {:session nil}))]
       (is (contains-str? html "id=\"bgCanvas\"") "Missing background canvas")
       (is (contains-str? html "/js/life.js") "Missing life.js script"))))
 
@@ -370,10 +370,10 @@
 
 (deftest all-pages-are-responsive-test
   (testing "All pages include Tailwind for responsive design"
-    (let [pages [(ui/landing-page nil)
-                 (ui/login-page nil {} "t")
-                 (ui/signup-page nil {} "t")
-                 (ui/leaderboard-page nil [])
+    (let [pages [(ui/landing-page {:session nil})
+                 (ui/login-page {:session nil :params {} :anti-forgery-token "t"})
+                 (ui/signup-page {:session nil :params {} :anti-forgery-token "t"})
+                 (ui/leaderboard-page {:session nil :leaderboard []})
                  (ui/game-page nil "t" 0)]]
       (doseq [page pages]
         (is (contains-str? (:body page) "tailwindcss.com")
@@ -381,8 +381,8 @@
 
 (deftest all-forms-have-csrf-protection-test
   (testing "All forms include CSRF token"
-    (let [login-html (extract-html-body (ui/login-page nil {} "login-t"))
-          signup-html (extract-html-body (ui/signup-page nil {} "signup-t"))
+    (let [login-html (extract-html-body (ui/login-page {:session nil :params {} :anti-forgery-token "login-t"}))
+          signup-html (extract-html-body (ui/signup-page {:session nil :params {} :anti-forgery-token "signup-t"}))
           game-html (extract-html-body (ui/game-page nil "game-t" 0))]
       (is (contains-csrf-token? login-html) "Login form missing CSRF token")
       (is (contains-csrf-token? signup-html) "Signup form missing CSRF token")
@@ -390,10 +390,10 @@
 
 (deftest all-pages-use-cyber-theme-test
   (testing "All pages use cyberpunk theme classes"
-    (let [pages [(ui/landing-page nil)
-                 (ui/login-page nil {} "t")
-                 (ui/signup-page nil {} "t")
-                 (ui/leaderboard-page nil [])]]
+    (let [pages [(ui/landing-page {:session nil})
+                 (ui/login-page {:session nil :params {} :anti-forgery-token "t"})
+                 (ui/signup-page {:session nil :params {} :anti-forgery-token "t"})
+                 (ui/leaderboard-page {:session nil :leaderboard []})]]
       (doseq [page pages]
         (let [html (:body page)]
           (is (or (contains-str? html "cyber-")

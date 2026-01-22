@@ -15,8 +15,11 @@
 (def ^:private max-bounds 100)
 (def ^:private min-bounds -100)
 
+;; TTL for game sessions: 1 hour (in milliseconds)
+(def ^:private game-ttl-ms (* 60 60 1000))
+
 ;; Game state structure:
-;; {:board #{[x y] ...} :generation n :created-at timestamp}
+;; {:board #{[x y] ...} :generation n :created-at timestamp :last-accessed timestamp}
 
 ;; ------------------------------------------------------------
 ;; Conway's Game of Life Rules (∃ Truth - deterministic)
@@ -74,36 +77,58 @@
                  (nil? initial-board) #{}  ; Empty board if nil
                  (empty? initial-board) #{}  ; Empty board if empty set
                  :else initial-board)
-         bounded-board (into #{} (filter in-bounds?) board)]
+         bounded-board (into #{} (filter in-bounds?) board)
+         now (System/currentTimeMillis)]
      (swap! games assoc game-id
             {:board bounded-board
              :generation 0
-             :created-at (System/currentTimeMillis)})
+             :created-at now
+             :last-accessed now})
      bounded-board)))
 
 (defn evolve!
   [game-id]
-  (when-let [game (get @games game-id)]
-    (let [new-board (next-generation (:board game))
-          new-gen (inc (:generation game))]
-      (swap! games assoc-in [game-id :board] new-board)
-      (swap! games assoc-in [game-id :generation] new-gen)
-      new-board)))
+  (let [result (atom nil)
+        now (System/currentTimeMillis)]
+    (swap! games
+           (fn [games-map]
+             (if-let [game (get games-map game-id)]
+               (let [new-board (next-generation (:board game))
+                     new-gen (inc (:generation game))]
+                 (reset! result new-board)
+                 (assoc games-map game-id
+                        (assoc game 
+                               :board new-board 
+                               :generation new-gen
+                               :last-accessed now)))
+               games-map)))
+    @result))
 
 (defn clear-cells!
   [game-id cells]
-  (when-let [game (get @games game-id)]
-    (let [new-board (set/difference (:board game) (set cells))]
-      (swap! games assoc-in [game-id :board] new-board)
-      new-board)))
+  (let [cells-set (set cells)
+        result (atom nil)]
+    (swap! games
+           (fn [games-map]
+             (if-let [game (get games-map game-id)]
+               (let [new-board (set/difference (:board game) cells-set)]
+                 (reset! result new-board)
+                 (assoc-in games-map [game-id :board] new-board))
+               games-map)))
+    @result))
 
 (defn add-cells!
   [game-id cells]
-  (when-let [game (get @games game-id)]
-    (let [bounded-cells (into #{} (filter in-bounds?) cells)
-          new-board (set/union (:board game) bounded-cells)]
-      (swap! games assoc-in [game-id :board] new-board)
-      new-board)))
+  (let [bounded-cells (into #{} (filter in-bounds?) cells)
+        result (atom nil)]
+    (swap! games
+           (fn [games-map]
+             (if-let [game (get games-map game-id)]
+               (let [new-board (set/union (:board game) bounded-cells)]
+                 (reset! result new-board)
+                 (assoc-in games-map [game-id :board] new-board))
+               games-map)))
+    @result))
 
 (defn calculate-score
   [game-id]
@@ -119,39 +144,6 @@
       (+ complexity-score stability-bonus))))
 
 ;; ------------------------------------------------------------
-;; Pattern Analysis (∃ Truth - deterministic recognition)
-;; ------------------------------------------------------------
-
-(def ^:private pattern-defs
-  "Known Conway's Game of Life patterns.
-   Maps pattern name to set of relative coordinates."
-  {:block #{[0 0] [0 1] [1 0] [1 1]}
-   :beehive #{[0 1] [0 2] [1 0] [1 3] [2 1] [2 2]}
-   :blinker #{[0 0] [0 1] [0 2]}
-   :toad #{[0 1] [0 2] [0 3] [1 0] [1 1] [1 2]}
-   :glider #{[0 1] [1 2] [2 0] [2 1] [2 2]}})
-
-(defn- find-pattern-at
-  "Check if a pattern exists at offset [ox oy] on the board."
-  [board pattern offset]
-  (let [pattern-cells (map #(mapv + offset %) pattern)]
-    (when (every? board pattern-cells)
-      offset)))
-
-(defn analyze-patterns
-  [game-id]
-  (when-let [board (get-board game-id)]
-    (into {} (for [[pattern-name pattern] pattern-defs]
-               (let [locations (into []
-                                   (comp (filter #(find-pattern-at board pattern %))
-                                         (distinct))
-                                   (for [x (range min-bounds max-bounds)
-                                         y (range min-bounds max-bounds)]
-                                     [x y]))
-                     count (count locations)]
-                 [pattern-name {:count count :locations locations}])))))
-
-;; ------------------------------------------------------------
 ;; Musical Triggers (∃ Truth - deterministic mapping)
 ;; ------------------------------------------------------------
 
@@ -159,30 +151,6 @@
   [board]
   (let [cell-count (count board)]
     (min 1.0 (/ cell-count 100.0))))
-
-(defn- birth-events
-  [old-board new-board]
-  (set/difference new-board old-board))
-
-(defn- death-events
-  [old-board new-board]
-  (set/difference old-board new-board))
-
-(defn- classify-pattern
-  "Classify board state for musical mapping."
-  [old-board new-board]
-  (let [births (count (birth-events old-board new-board))
-        deaths (count (death-events old-board new-board))
-        density (board-density new-board)]
-    (cond
-      ;; High activity = chaotic/attack mode
-      (> (+ births deaths) 10) :chaos
-      ;; Stable patterns = sustained tones
-      (= old-board new-board) :stable
-      ;; Growing population = build-up
-      (> births deaths) :growth
-      ;; Shrinking = release/drone
-      :else :decay)))
 
 (defn generate-musical-triggers
   [game-id]
@@ -252,8 +220,54 @@
 ;; Lifecycle (τ Wisdom - explicit initialization)
 ;; ------------------------------------------------------------
 
+(defn cleanup-stale-games!
+  "Remove games that haven't been accessed within TTL.
+   Returns the number of games removed."
+  []
+  (let [now (System/currentTimeMillis)
+        cutoff (- now game-ttl-ms)
+        removed (atom 0)]
+    (swap! games
+           (fn [games-map]
+             (let [active-games (into {}
+                                      (filter (fn [[_ game]]
+                                                (> (:last-accessed game 0) cutoff)))
+                                      games-map)]
+               (reset! removed (- (count games-map) (count active-games)))
+               active-games)))
+    @removed))
+
+(defonce ^:private cleanup-executor (atom nil))
+
+(defn start-cleanup-scheduler!
+  "Start background cleanup of stale games every 10 minutes."
+  []
+  (when-not @cleanup-executor
+    (let [executor (java.util.concurrent.Executors/newSingleThreadScheduledExecutor)]
+      (.scheduleAtFixedRate executor
+                            (fn [] 
+                              (try
+                                (let [removed (cleanup-stale-games!)]
+                                  (when (pos? removed)
+                                    (println "Game cleanup: removed" removed "stale games")))
+                                (catch Exception e
+                                  (println "Game cleanup error:" (.getMessage e)))))
+                            10  ;; initial delay
+                            10  ;; period
+                            java.util.concurrent.TimeUnit/MINUTES)
+      (reset! cleanup-executor executor))))
+
+(defn stop-cleanup-scheduler!
+  "Stop the background cleanup scheduler."
+  []
+  (when-let [executor @cleanup-executor]
+    (.shutdown executor)
+    (reset! cleanup-executor nil)))
+
 (defn initialize!
   []
   ;; Reset state on initialization
   (reset! games {})
-  (reset! saved-games {}))
+  (reset! saved-games {})
+  ;; Start cleanup scheduler
+  (start-cleanup-scheduler!))

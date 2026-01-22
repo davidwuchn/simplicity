@@ -14,6 +14,11 @@
 
 ;; === Configuration ===
 
+(def ^:private app-version
+  "Application version for cache-busting static assets.
+   Update this on each release to invalidate browser caches."
+  "1.0.0")
+
 (def ^:private meta-config
   {:charset "UTF-8"
    :viewport "width=device-width, initial-scale=1.0"
@@ -610,4 +615,4 @@
               }
              "]
              
-             [:script {:type "module" :src (str "/js/game.js?v=" (System/currentTimeMillis))}]]]))})
+             [:script {:type "module" :src (str "/js/game.js?v=" app-version)}]]]))})

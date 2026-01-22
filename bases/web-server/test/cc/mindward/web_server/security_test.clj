@@ -250,13 +250,16 @@
 
 (deftest session-isolation-test
   (testing "Sessions are properly isolated between users"
-    ;; Create two test users
+    ;; Create two test users with DIFFERENT high scores
     (user-impl/create-user! {:username "user1"
                              :password "password1"
                              :name "User One"})
     (user-impl/create-user! {:username "user2"
                              :password "password2"
                              :name "User Two"})
+    ;; Set different high scores to verify session isolation
+    (user-impl/update-high-score! "user1" 100)
+    (user-impl/update-high-score! "user2" 500)
     
     ;; Simulate two different sessions
     (let [session1 {:username "user1"}
@@ -266,12 +269,19 @@
                                        :anti-forgery-token "dummy-token"})
           ;; Request game page with session2
           response2 (server/game-page {:session session2
-                                       :anti-forgery-token "dummy-token"})]
-      ;; Both should succeed but have different content
-      (is (some? response1) "User 1 should get game page")
-      (is (some? response2) "User 2 should get game page")
-      ;; Content should be different (different usernames)
-      (is (not= response1 response2)
+                                       :anti-forgery-token "dummy-token"})
+          body1 (:body response1)
+          body2 (:body response2)]
+      ;; Both should succeed
+      (is (= 200 (:status response1)) "User 1 should get game page")
+      (is (= 200 (:status response2)) "User 2 should get game page")
+      ;; Each session should see their OWN high score (session isolation)
+      (is (clojure.string/includes? body1 ">100<")
+          "User 1 should see their own high score (100)")
+      (is (clojure.string/includes? body2 ">500<")
+          "User 2 should see their own high score (500)")
+      ;; Content should be different (different high scores)
+      (is (not= body1 body2)
           "Different sessions should get different content"))))
 
 (deftest session-authentication-required-test
