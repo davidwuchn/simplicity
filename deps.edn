@@ -35,6 +35,7 @@
    :test {:extra-paths ["components/auth/test"
                         "components/user/test"
                         "components/game/test"
+                        "components/ui/test"
                         "bases/web-server/test"
                         "components/auth/src"
                         "components/user/src"
