@@ -22,30 +22,13 @@
     </encoder>
   </appender>
 
-  <!-- JSON appender for structured logging (production) -->
-  <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-      <includeMdcKeyName>request_id</includeMdcKeyName>
-      <includeMdcKeyName>user</includeMdcKeyName>
-      <includeMdcKeyName>session_id</includeMdcKeyName>
-    </encoder>
-  </appender>
-
   <!-- Root logger configuration -->
   <!-- Default to INFO level, use CONSOLE appender -->
   <!-- Set LOG_LEVEL env var to override (DEBUG, INFO, WARN, ERROR) -->
-  <!-- Set LOG_FORMAT env var to 'json' for structured logging -->
   <root level="${LOG_LEVEL:-INFO}">
-    <if condition='property("LOG_FORMAT").equals("json")'>
-      <then>
-        <appender-ref ref="JSON" />
-      </then>
-      <else>
-        <appender-ref ref="CONSOLE" />
-        <!-- Uncomment for file logging in production -->
-        <!-- <appender-ref ref="FILE" /> -->
-      </else>
-    </if>
+    <appender-ref ref="CONSOLE" />
+    <!-- Uncomment for file logging in production -->
+    <!-- <appender-ref ref="FILE" /> -->
   </root>
 
   <!-- Application-specific logger -->

@@ -130,7 +130,15 @@ simplicity/
 
 ## 🧪 Testing
 
-**Current test coverage**: 212 passing assertions across 34 test cases
+**Current test coverage**: 501 passing assertions across 71 test cases
+
+| Component | Tests | Assertions |
+| :--- | :---: | :---: |
+| Auth | 2 | 14 |
+| Game | 15 | 146 |
+| UI | 42 | 149 |
+| User | 12 | 49 |
+| Web-server | 28 | 143 |
 
 Run tests:
 ```bash
@@ -141,13 +149,23 @@ clojure -M:poly test :dev
 clojure -M:poly test brick:game
 clojure -M:poly test brick:user
 
-# Watch mode (if configured)
-clojure -M:test:watch
+# Security tests
+clojure -M:poly test brick:web-server
 ```
 
 Test files follow Polylith conventions:
 - `components/<name>/test/cc/mindward/<name>/<namespace>_test.clj`
 - Use fixtures for database isolation (see `user/interface_test.clj`)
+
+**Security Testing:**
+- SQL injection prevention
+- XSS escaping verification
+- CSRF protection
+- Session security
+- Rate limiting
+- Input validation
+
+See [docs/security.md](./docs/security.md) for complete security documentation.
 
 ## 🚢 Deployment
 
@@ -201,17 +219,31 @@ Response:
 
 ### Production Checklist
 
+**Security:**
+- [ ] Review [docs/security.md](./docs/security.md) for complete security guidelines
+- [ ] Enable HTTPS and configure `ENABLE_HSTS=true`
+- [ ] Set strong database credentials (if using PostgreSQL)
+- [ ] Configure firewall rules (allow port 3000 or configured PORT)
+- [ ] Set `LOG_LEVEL=WARN` to reduce verbosity
+
+**Configuration:**
 - [ ] Set `PORT` for your environment
+- [ ] Set `DB_PATH` to persistent storage location
 - [ ] Ensure Java 17+ on target system
 - [ ] Pre-create database or ensure write permissions
-- [ ] Configure logging (uses `clojure.tools.logging`)
-- [ ] Review CSRF token configuration in `ring-defaults`
+
+**Monitoring:**
+- [ ] Configure log aggregation (e.g., ELK, Splunk)
+- [ ] Set up health check monitoring (`/health` endpoint)
+- [ ] Monitor authentication failures (potential brute force)
+- [ ] Track rate limit violations (429 responses)
 
 ## 📚 Documentation
 
-- [AGENTS.md](./AGENTS.md) - AI agent operational guidelines & code style
-- [docs/api.md](./docs/api.md) - REST API reference
-- [docs/architecture.md](./docs/architecture.md) - System architecture & design
+- **[AGENTS.md](./AGENTS.md)** - AI agent operational guidelines & code style
+- **[docs/api.md](./docs/api.md)** - REST API reference
+- **[docs/architecture.md](./docs/architecture.md)** - System architecture & design
+- **[docs/security.md](./docs/security.md)** - Security controls & hardening guide
 - Component READMEs:
   - [components/game/README.md](./components/game/README.md) - Game engine internals
   - [components/user/README.md](./components/user/README.md) - User management & DB schema

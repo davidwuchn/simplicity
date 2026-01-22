@@ -62,9 +62,9 @@
   
   (testing "successful login creates session and redirects to /game"
     (let [username (str "logintest-" (System/currentTimeMillis))]
-      (user/create-user! {:username username :password "secret" :name "Login Test"})
+      (user/create-user! {:username username :password "secretpass" :name "Login Test"})
       (let [request (mock-request :post "/login" 
-                                 :params {:username username :password "secret"}
+                                 :params {:username username :password "secretpass"}
                                  :session {})
             response (web/handle-login request)]
         (is (= 302 (:status response)) "redirects after successful login")
@@ -73,11 +73,12 @@
   
   (testing "failed login redirects to /login with error"
     (let [request (mock-request :post "/login"
-                               :params {:username "nonexistent" :password "wrong"}
+                               :params {:username "nonexistent" :password "wrongpass"}
                                :session {})
           response (web/handle-login request)]
       (is (= 302 (:status response)))
-      (is (= "/login?error=true" (get-in response [:headers "Location"])) "redirects with error flag")
+      (is (clojure.string/includes? (get-in response [:headers "Location"]) "/login?error=")
+          "redirects with error flag")
       (is (nil? (get-in response [:session :username])) "no session created"))))
 
 (deftest signup-flow-test
@@ -96,7 +97,7 @@
   (testing "successful signup creates user and session"
     (let [username (str "newuser-" (System/currentTimeMillis))
           request (mock-request :post "/signup"
-                               :params {:username username :password "pass123" :name "New User"}
+                               :params {:username username :password "password123" :name "New User"}
                                :session {})
           response (web/handle-signup request)]
       (is (= 302 (:status response)))
@@ -106,13 +107,14 @@
   
   (testing "signup with existing username redirects with error"
     (let [username (str "duplicate-" (System/currentTimeMillis))]
-      (user/create-user! {:username username :password "pass" :name "Duplicate"})
+      (user/create-user! {:username username :password "password123" :name "Duplicate"})
       (let [request (mock-request :post "/signup"
-                                 :params {:username username :password "otherpass" :name "Other"}
+                                 :params {:username username :password "otherpass123" :name "Other"}
                                  :session {})
             response (web/handle-signup request)]
         (is (= 302 (:status response)))
-        (is (= "/signup?error=true" (get-in response [:headers "Location"])) "redirects with error")))))
+        (is (clojure.string/includes? (get-in response [:headers "Location"]) "/signup?error=")
+            "redirects with error")))))
 
 (deftest logout-test
   (testing "logout clears session and redirects to /login"
@@ -135,7 +137,7 @@
   
   (testing "authenticated user can access game page"
     (let [username (str "gamer-" (System/currentTimeMillis))]
-      (user/create-user! {:username username :password "pass" :name "Gamer"})
+      (user/create-user! {:username username :password "password123" :name "Gamer"})
       (let [request (mock-request :get "/game" :session {:username username})
             response (web/game-page request)]
         (is (= 200 (:status response)) "renders game page")
@@ -146,7 +148,7 @@
 (deftest leaderboard-page-test
   (testing "leaderboard page renders for all users"
     (let [username (str "player1-" (System/currentTimeMillis))]
-      (user/create-user! {:username username :password "pass" :name "Test Player One"})
+      (user/create-user! {:username username :password "password123" :name "Test Player One"})
       (user/update-high-score! username 9999) ; High score to ensure it appears in top 10
       (let [request (mock-request :get "/leaderboard" :session {})
             response (web/leaderboard-page request)]
@@ -158,7 +160,7 @@
 (deftest save-score-test
   (testing "save score updates user high score"
     (let [username (str "scorer-" (System/currentTimeMillis))]
-      (user/create-user! {:username username :password "pass" :name "Scorer"})
+      (user/create-user! {:username username :password "password123" :name "Scorer"})
       (let [request (mock-request :post "/game/score"
                                  :params {:score "150"}
                                  :session {:username username})

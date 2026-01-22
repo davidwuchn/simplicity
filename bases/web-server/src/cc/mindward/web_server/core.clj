@@ -1,6 +1,7 @@
 (ns cc.mindward.web-server.core
   (:require [cc.mindward.auth.interface :as auth]
             [cc.mindward.game.interface :as game]
+            [cc.mindward.web-server.security :as security]
             [clojure.data.json :as json]
             [clojure.tools.logging :as log]
             [reitit.ring :as ring]
@@ -22,15 +23,32 @@
       (ui/signup-page session params anti-forgery-token))))
 
 (defn handle-signup [{:keys [params session]}]
-  (try
-    (let [username (:username params)]
-      (user/create-user! params)
-      (log/info "User created successfully:" username)
-      (-> (res/redirect "/game")
-          (assoc :session (assoc session :username username))))
-    (catch Exception e
-      (log/warn e "User creation failed:" (:username params))
-      (res/redirect "/signup?error=true"))))
+  (let [username (:username params)
+        password (:password params)
+        name (:name params)
+        ;; Validate inputs (∀ Vigilance - validate at boundaries)
+        username-check (security/validate-username username)
+        password-check (security/validate-password password)]
+    (cond
+      (not (:valid? username-check))
+      (do
+        (log/warn "Invalid username on signup:" (:error username-check))
+        (res/redirect (str "/signup?error=" (java.net.URLEncoder/encode (:error username-check) "UTF-8"))))
+      
+      (not (:valid? password-check))
+      (do
+        (log/warn "Invalid password on signup:" (:error password-check))
+        (res/redirect (str "/signup?error=" (java.net.URLEncoder/encode (:error password-check) "UTF-8"))))
+      
+      :else
+      (try
+        (user/create-user! params)
+        (log/info "User created successfully:" username)
+        (-> (res/redirect "/game")
+            (assoc :session (assoc session :username username)))
+        (catch Exception e
+          (log/warn e "User creation failed:" username)
+          (res/redirect "/signup?error=Username%20already%20exists"))))))
 
 (defn game-page [request]
   (let [{:keys [session anti-forgery-token]} request]
@@ -51,23 +69,38 @@
 
 (defn handle-login [{:keys [params session]}]
   (let [username (:username params)
-        auth-result (auth/authenticate username (:password params))]
-    (if auth-result
+        password (:password params)
+        ;; Validate inputs (∀ Vigilance)
+        username-check (security/validate-username username)]
+    (if (not (:valid? username-check))
       (do
-        (log/info "User logged in successfully:" username)
-        (-> (res/redirect "/game")
-            (assoc :session (assoc session :username username))))
-      (do
-        (log/warn "Failed login attempt for user:" username)
-        (res/redirect "/login?error=true")))))
+        (log/warn "Invalid username on login:" (:error username-check))
+        (res/redirect "/login?error=Invalid%20credentials"))
+      (let [auth-result (auth/authenticate username password)]
+        (if auth-result
+          (do
+            (log/info "User logged in successfully:" username)
+            (-> (res/redirect "/game")
+                (assoc :session (assoc session :username username))))
+          (do
+            (log/warn "Failed login attempt for user:" username)
+            (res/redirect "/login?error=Invalid%20credentials")))))))
 
 (defn save-score [{:keys [params session]}]
   (when-let [username (:username session)]
-    (let [score (Integer/parseInt (:score params "0"))]
-      (user/update-high-score! username score)
-      {:status 200
-       :headers {"Content-Type" "application/json"}
-       :body (str "{\"highScore\": " (user/get-high-score username) "}")})))
+    (let [score-validation (security/validate-score (:score params "0"))
+          score (:value score-validation)]
+      (if (:valid? score-validation)
+        (do
+          (user/update-high-score! username score)
+          {:status 200
+           :headers {"Content-Type" "application/json"}
+           :body (str "{\"highScore\": " (user/get-high-score username) "}")})
+        (do
+          (log/warn "Invalid score submission:" (:error score-validation) "from user:" username)
+          {:status 400
+           :headers {"Content-Type" "application/json"}
+           :body (str "{\"error\": \"" (:error score-validation) "\"}")})))))
 
 (defn handle-logout [{:keys [_session]}]
   (-> (res/redirect "/login")
@@ -204,7 +237,13 @@
   (-> app
       wrap-error-logging
       wrap-request-logging
-      (wrap-defaults site-defaults)))
+      (wrap-defaults site-defaults)
+      ;; Rate limiting on auth endpoints (prevents brute force)
+      (security/wrap-rate-limit {:paths #{"/login" "/signup"}
+                                 :max-requests 10
+                                 :refill-rate 0.5})  ;; 1 request per 2 seconds
+      ;; Security headers (CSP, X-Frame-Options, etc.) - must be AFTER wrap-defaults
+      security/wrap-security-headers))
 
 (defn -main [& _args]
   (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
