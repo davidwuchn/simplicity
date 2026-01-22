@@ -1,0 +1,12 @@
+#kaocha/v1
+{:tests [{:id :unit
+          :type :kaocha.type/clojure.test
+          :ns-patterns [".*-test$"]
+          :test-paths ["components/auth/test"
+                       "components/user/test"]
+          :kaocha/source-paths ["components/auth/src"
+                                "components/user/src"
+                                "bases/web-server/src"]}]
+ :reporter [kaocha.report/documentation]
+ :kaocha.filter/skip-meta [:kaocha/skip]
+ :kaocha.plugin.randomize/seed 42}
