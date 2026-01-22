@@ -123,7 +123,7 @@
                     [:ul {:class "space-y-2 font-mono text-sm"}
                      [:li ">> THREATS FROM ALL VECTORS"]
                      [:li ">> ACQUIRE OVERCLOCK MODULES"]]]]]
-                 [:script {:src (str "/js/game.js?v=" (System/currentTimeMillis))}])})
+                 [:script {:type "module" :src (str "/js/game.js?v=" (System/currentTimeMillis))}])})
 
 (defn landing-page [session]
   {:status 200
