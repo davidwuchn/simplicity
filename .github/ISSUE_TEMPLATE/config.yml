@@ -1,0 +1,14 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://github.com/davidwuchn/simplicity/blob/master/README.md
+    about: Read the project documentation
+  - name: Architecture Guide
+    url: https://github.com/davidwuchn/simplicity/blob/master/docs/architecture.md
+    about: Learn about the Polylith architecture
+  - name: Contributing Guide
+    url: https://github.com/davidwuchn/simplicity/blob/master/CONTRIBUTING.md
+    about: Learn how to contribute to the project
+  - name: Security Policy
+    url: https://github.com/davidwuchn/simplicity/blob/master/docs/security.md
+    about: Report security vulnerabilities

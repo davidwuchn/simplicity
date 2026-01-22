@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  simplicity:
+    image: simplicity:latest
+    container_name: simplicity-app
+    restart: unless-stopped
+    
+    # Port mapping
+    ports:
+      - "3000:3000"
+    
+    # Environment variables
+    environment:
+      - PORT=3000
+      - DB_PATH=/app/data/simplicity.db
+      - LOG_PATH=/app/logs
+      - LOG_LEVEL=WARN
+      - ENABLE_HSTS=true
+      - JAVA_OPTS=-Xmx1g -Xms512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200
+      - ENVIRONMENT=production
+    
+    # Persistent volumes
+    volumes:
+      - simplicity-data:/app/data
+      - simplicity-logs:/app/logs
+    
+    # Security
+    user: "1000:1000"  # Run as non-root user
+    read_only: true
+    tmpfs:
+      - /tmp
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Network
+    networks:
+      - simplicity-network
+
+# Named volumes for data persistence
+volumes:
+  simplicity-data:
+    driver: local
+  simplicity-logs:
+    driver: local
+
+# Network
+networks:
+  simplicity-network:
+    driver: bridge
+
+# ============================================================================
+# Deployment Instructions:
+# ============================================================================
+# 1. Build the Docker image:
+#    docker build -t simplicity:latest .
+#
+# 2. Start the service:
+#    docker-compose -f docker-compose.production.yml up -d
+#
+# 3. Check logs:
+#    docker-compose -f docker-compose.production.yml logs -f
+#
+# 4. Check health:
+#    curl http://localhost:3000/health
+#
+# 5. Stop the service:
+#    docker-compose -f docker-compose.production.yml down
+#
+# 6. Update deployment:
+#    docker-compose -f docker-compose.production.yml pull
+#    docker-compose -f docker-compose.production.yml up -d
+#
+# ============================================================================
+# Notes:
+# ============================================================================
+# - Adjust user ID (1000:1000) to match your system
+# - Modify resource limits based on your server capacity
+# - Use secrets management for sensitive environment variables
+# - Enable HSTS only when using HTTPS (reverse proxy)
+# - Consider using Docker secrets for production credentials
+# - Backup volumes regularly: docker run --rm -v simplicity-data:/data -v $(pwd):/backup alpine tar czf /backup/simplicity-backup.tar.gz /data
