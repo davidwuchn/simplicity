@@ -1,0 +1,58 @@
+<configuration>
+  <!-- Console appender for development -->
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <!-- File appender for production -->
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${LOG_PATH:-logs}/simplicity.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <!-- Daily rollover -->
+      <fileNamePattern>${LOG_PATH:-logs}/simplicity.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <!-- Keep 30 days of history -->
+      <maxHistory>30</maxHistory>
+      <!-- Max total size of all archive files -->
+      <totalSizeCap>1GB</totalSizeCap>
+    </rollingPolicy>
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <!-- JSON appender for structured logging (production) -->
+  <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+      <includeMdcKeyName>request_id</includeMdcKeyName>
+      <includeMdcKeyName>user</includeMdcKeyName>
+      <includeMdcKeyName>session_id</includeMdcKeyName>
+    </encoder>
+  </appender>
+
+  <!-- Root logger configuration -->
+  <!-- Default to INFO level, use CONSOLE appender -->
+  <!-- Set LOG_LEVEL env var to override (DEBUG, INFO, WARN, ERROR) -->
+  <!-- Set LOG_FORMAT env var to 'json' for structured logging -->
+  <root level="${LOG_LEVEL:-INFO}">
+    <if condition='property("LOG_FORMAT").equals("json")'>
+      <then>
+        <appender-ref ref="JSON" />
+      </then>
+      <else>
+        <appender-ref ref="CONSOLE" />
+        <!-- Uncomment for file logging in production -->
+        <!-- <appender-ref ref="FILE" /> -->
+      </else>
+    </if>
+  </root>
+
+  <!-- Application-specific logger -->
+  <logger name="cc.mindward" level="${LOG_LEVEL:-INFO}" />
+
+  <!-- Reduce noise from libraries -->
+  <logger name="org.eclipse.jetty" level="WARN" />
+  <logger name="org.sqlite" level="WARN" />
+  <logger name="com.zaxxer.hikari" level="WARN" />
+</configuration>

@@ -273,3 +273,28 @@
       (is (= 2 (count body)) "returns 2 saved games")
       (is (every? #(contains? % "id") body) "each game has id")
       (is (every? #(contains? % "name") body) "each game has name"))))
+
+;; ------------------------------------------------------------
+;; Health Check Endpoint Tests
+;; ------------------------------------------------------------
+
+(deftest health-check-test
+  (testing "health check endpoint returns 200 when healthy"
+    (let [response (web/health-check {})
+          body (json/read-str (:body response) :key-fn keyword)]
+      (is (= 200 (:status response)))
+      (is (= "application/json" (get-in response [:headers "Content-Type"])))
+      (is (= "healthy" (:status body)))
+      (is (number? (:timestamp body)) "includes timestamp")
+      (is (= "up" (get-in body [:checks :database :status])) "database check passes")
+      (is (number? (get-in body [:checks :database :responseTimeMs])) "includes response time")
+      (is (= "1.0.0" (:version body)) "includes version")))
+  
+  (testing "health check includes all required fields"
+    (let [response (web/health-check {})
+          body (json/read-str (:body response) :key-fn keyword)]
+      (is (contains? body :status))
+      (is (contains? body :timestamp))
+      (is (contains? body :checks))
+      (is (contains? body :version))
+      (is (contains? (:checks body) :database)))))

@@ -7,7 +7,56 @@
 http://localhost:3000
 ```
 
-All API endpoints require an active session (cookie-based authentication).
+All API endpoints require an active session (cookie-based authentication), except `/health`.
+
+---
+
+## System Endpoints
+
+### GET /health
+Health check endpoint for monitoring and load balancers.
+
+**Request:**
+```bash
+curl http://localhost:3000/health
+```
+
+**Response (Healthy):**
+```json
+{
+  "status": "healthy",
+  "timestamp": 1769085000000,
+  "checks": {
+    "database": {
+      "status": "up",
+      "responseTimeMs": 5
+    }
+  },
+  "version": "1.0.0"
+}
+```
+
+**Response (Unhealthy):**
+```json
+{
+  "status": "unhealthy",
+  "checks": {
+    "database": {
+      "status": "down",
+      "responseTimeMs": 1000
+    }
+  }
+}
+```
+
+**Status Codes:**
+- `200 OK` - System is healthy
+- `503 Service Unavailable` - System is unhealthy (database down)
+
+**Use Cases:**
+- Load balancer health checks
+- Kubernetes liveness/readiness probes
+- Monitoring systems (Prometheus, Datadog, etc.)
 
 ---
 

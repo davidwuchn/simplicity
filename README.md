@@ -163,8 +163,41 @@ java -jar target/simplicity.jar
 
 ### Environment Variables
 
+**Application:**
 - `PORT` - HTTP server port (default: 3000)
-- `DATABASE_URL` - SQLite database path (default: `./simplicity.db`)
+- `DB_PATH` - SQLite database path (default: `./simplicity.db`)
+
+**Logging:**
+- `LOG_LEVEL` - Logging level: DEBUG, INFO, WARN, ERROR (default: INFO)
+- `LOG_FORMAT` - Log format: `json` for structured logging, unset for console (default: console)
+- `LOG_PATH` - Directory for log files (default: `./logs`)
+
+### Health Check
+
+Monitor application health:
+```bash
+curl http://localhost:3000/health
+```
+
+Response:
+```json
+{
+  "status": "healthy",
+  "timestamp": 1769085000000,
+  "checks": {
+    "database": {
+      "status": "up",
+      "responseTimeMs": 5
+    }
+  },
+  "version": "1.0.0"
+}
+```
+
+**Use for:**
+- Load balancer health checks
+- Kubernetes liveness/readiness probes
+- Monitoring dashboards
 
 ### Production Checklist
 
