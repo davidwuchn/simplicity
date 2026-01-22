@@ -1,5 +1,5 @@
 (ns cc.mindward.auth.interface-test
-  (:require [clojure.test :as test :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
             [cc.mindward.auth.interface :as auth]
             [cc.mindward.user.interface :as user]))
 

@@ -1,0 +1,9 @@
+NOTE: Picked up JDK_JAVA_OPTIONS: --enable-native-access=ALL-UNNAMED
+NOTE: Picked up JDK_JAVA_OPTIONS: --enable-native-access=ALL-UNNAMED
+nREPL server started on port 63362 on host localhost - nrepl://localhost:63362
+SLF4J: No SLF4J providers were found.
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See https://www.slf4j.org/codes.html#noProviders for further details.
+SLF4J: Class path contains SLF4J bindings targeting slf4j-api versions 1.7.x or earlier.
+SLF4J: Ignoring binding found at [jar:file:/Users/davidwu/.m2/repository/org/slf4j/slf4j-nop/1.7.36/slf4j-nop-1.7.36.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See https://www.slf4j.org/codes.html#ignoredBindings for an explanation.

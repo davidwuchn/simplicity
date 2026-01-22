@@ -30,6 +30,7 @@ We use the **Eight Keys** to guide our evolution:
 - **Run Specific Brick Tests**: `clojure -M:poly test brick:<brick-name>`
 - **Verify All**: `clojure -M:poly test :all`
 - **Interactive REPL (brepl)**: Use `brepl` for fast evaluation (see Tools).
+- **Stateful Testing**: Use `use-fixtures` with temporary SQLite files or `with-redefs` to isolate component logic. Never rely on shared global state.
 
 ### Linting & Formatting
 - **Lint**: `clj-kondo --lint src` (Ensure `clj-kondo` is configured in `.clj-kondo`).
@@ -90,6 +91,7 @@ We use the **Eight Keys** to guide our evolution:
 ### 2. Bases
 - **Role**: Entry points (REST APIs, CLI, Lambda).
 - **Delegation**: Bases must NOT contain business logic. They delegate to components.
+- **Rendering**: Bases must NOT generate UI (HTML/Hiccup). Delegate to a `ui` component.
 - **Naming**: `cc.mindward.base.<name>.core`.
 
 ### 3. Projects
@@ -158,6 +160,9 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - **Dependency Hell**: Avoid circular dependencies between components. Use `poly check` to verify.
 - **Slop**: Do not leave commented-out code or `(println ...)` in production paths. Use a logging library.
 - **Abstraction Leak**: Never let implementation details (like DB connections or third-party client objects) escape the component interface. Use data maps or domain records.
+- **The God Base**: Bases are Controllers, not Views. Do not mix routing, logic, and HTML generation in one file.
+- **The Test Illusion**: `(is (= 1 1))` is not a test. Verify actual logic or data persistence.
+- **Hardcoded Secrets**: Never commit passwords or API keys. Use `System/getenv` or a config component.
 
 ---
 *Created by opencode agent with nucleus-tutor and brepl.*

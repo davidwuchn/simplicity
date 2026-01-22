@@ -2,7 +2,8 @@
   (:require [next.jdbc :as jdbc]
             [next.jdbc.result-set :as rs]))
 
-(def db-spec {:dbtype "sqlite" :dbname "simplicity.db"})
+(def db-path (or (System/getenv "DB_PATH") "simplicity.db"))
+(def db-spec {:dbtype "sqlite" :dbname db-path})
 
 (def ds (jdbc/get-datasource db-spec))
 
@@ -15,13 +16,16 @@
       name TEXT NOT NULL,
       high_score INTEGER DEFAULT 0
     )"])
-  ;; Seed admin user if not exists
-  (let [admin (jdbc/execute-one! ds ["SELECT * FROM users WHERE username = 'admin'"])]
-    (when-not admin
-      (jdbc/execute! ds ["INSERT INTO users (username, password, name) VALUES (?, ?, ?)"
-                         "admin" "pass123" "System Admin"]))))
+  ;; Seed admin user if configured
+  (let [admin-user (System/getenv "ADMIN_USER")
+        admin-pass (System/getenv "ADMIN_PASS")]
+    (when (and admin-user admin-pass)
+      (let [existing (jdbc/execute-one! ds ["SELECT * FROM users WHERE username = ?" admin-user])]
+        (when-not existing
+          (jdbc/execute! ds ["INSERT INTO users (username, password, name) VALUES (?, ?, ?)"
+                             admin-user admin-pass "System Admin"]))))))
 
-;; Initialize on load
+;; Initialize on load (still not ideal, but better than hardcoded secrets)
 (init-db!)
 
 (defn find-by-username [username]
