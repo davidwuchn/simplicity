@@ -100,9 +100,9 @@ username=alice&password=secret123&name=Alice%20Wonder
 ```
 
 **Parameters:**
-- `username` (required): Unique username, 3-50 characters
-- `password` (required): Minimum 6 characters
-- `name` (required): Display name for leaderboard
+- `username` (required): Unique username, 3-50 characters, alphanumeric only
+- `password` (required): Minimum 8 characters
+- `name` (required): Display name for leaderboard, 1-100 characters
 
 **Response (Success):**
 ```http
@@ -488,7 +488,27 @@ curl -X POST http://localhost:3000/api/game \
 
 ## Rate Limiting
 
-Currently, no rate limiting is implemented.
+**Current Implementation**: Token bucket algorithm on `/login` and `/signup` endpoints.
+
+**Login Rate Limits**:
+- 5 attempts per minute per IP
+- Refills at 1 token per 12 seconds
+- Returns `429 Too Many Requests` when exhausted
+
+**Signup Rate Limits**:
+- 3 attempts per minute per IP
+- Refills at 1 token per 20 seconds
+- Returns `429 Too Many Requests` when exhausted
+
+**Headers**:
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 12
+
+Rate limit exceeded. Try again later.
+```
+
+**See**: [docs/security.md](./security.md) for complete security controls.
 
 ---
 
@@ -498,9 +518,18 @@ Sessions are cookie-based using Ring's session middleware.
 
 **Session Cookie:**
 - Name: `ring-session`
-- HttpOnly: Yes
-- Secure: No (development mode)
-- SameSite: Lax
+- HttpOnly: Yes (prevents XSS cookie theft)
+- Secure: Yes (production with HTTPS)
+- SameSite: Lax (CSRF protection)
+
+**Security Headers** (all responses):
+- `X-Frame-Options: DENY`
+- `X-Content-Type-Options: nosniff`
+- `Content-Security-Policy: default-src 'self'; ...`
+- `X-XSS-Protection: 1; mode=block`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy: geolocation=(), microphone=(), camera=()`
+- `Strict-Transport-Security: max-age=31536000` (HTTPS only, when ENABLE_HSTS=true)
 
 **Session Expiry:**
 - Default: Browser session (cookie deleted on browser close)
@@ -590,5 +619,7 @@ The game engine follows classic Conway's Game of Life rules:
 ## See Also
 
 - [Architecture Documentation](./architecture.md)
+- [Security Documentation](./security.md) - Complete security controls (501 tested assertions)
+- [Deployment Guide](./deployment-cloudflare.md) - Production deployment instructions
 - [Web Server README](../bases/web-server/README.md)
 - [Game Component Documentation](../components/game/README.md)

@@ -89,8 +89,11 @@ simplicity/
 - Returns full user map (excluding `:password_hash`)
 
 **Security**:
-- Uses bcrypt for password comparison (constant-time)
+- Password hashing with bcrypt + sha512 (timing attack resistant)
 - SQL injection prevented via parameterized queries in `user` component
+- Rate limiting on login attempts (5/minute via token bucket)
+- Input validation (username: alphanumeric, password: 8+ chars)
+- See [docs/security.md](./security.md) for complete controls (501 tested assertions)
 
 ---
 
@@ -123,10 +126,11 @@ simplicity/
   ```
 
 **Key Decisions**:
-- Passwords hashed with bcrypt (cost factor 11)
+- Passwords hashed with bcrypt + sha512 (cost factor 11, timing attack resistant)
 - High scores use MAX semantics (only update if higher)
 - Leaderboard limited to 50 entries
 - No soft deletes (accounts are permanent)
+- Input validation at boundary (username, password, score)
 
 **Performance**:
 - Single datasource atom (no connection pooling needed for SQLite)
@@ -256,8 +260,12 @@ See [bases/web-server/README.md](../bases/web-server/README.md) for full details
 - Route HTTP requests to component interfaces
 - Manage cookie-based sessions
 - Enforce CSRF protection
+- Apply security headers (CSP, X-Frame-Options, etc.)
+- Rate limiting (login, signup endpoints)
+- Input validation (at API boundary)
+- Request/response logging
+- Health check endpoint (`/health`)
 - Serve static assets
-- Transform component responses to Ring responses
 
 **Dependencies**: ALL components (auth, user, game, ui)
 
@@ -389,14 +397,24 @@ See [bases/web-server/README.md](../bases/web-server/README.md) for full details
 **Session Management**:
 - Cookie-based (Ring session middleware)
 - HttpOnly flag (prevents XSS cookie theft)
-- No SameSite flag (defaults to Lax in modern browsers)
-- No Secure flag (HTTP-only in development)
+- SameSite=Lax (CSRF protection)
+- Secure flag in production with HTTPS
+- HSTS header when ENABLE_HSTS=true
 
 **CSRF Protection**:
 - Anti-forgery tokens required for all POST requests
 - Tokens stored in session, validated by Ring middleware
 - Tokens injected into forms as hidden inputs
 - JavaScript must include `X-CSRF-Token` header
+
+**Security Headers** (all responses):
+- Content-Security-Policy (XSS prevention)
+- X-Frame-Options: DENY (clickjacking prevention)
+- X-Content-Type-Options: nosniff
+- X-XSS-Protection: 1; mode=block
+- Referrer-Policy: strict-origin-when-cross-origin
+- Permissions-Policy (disable geolocation, microphone, camera)
+- Strict-Transport-Security (HTTPS only, when enabled)
 
 ### Authorization
 
@@ -412,18 +430,22 @@ See [bases/web-server/README.md](../bases/web-server/README.md) for full details
 
 ### Attack Surface
 
-**Protected**:
-- ✅ SQL injection (parameterized queries)
-- ✅ Password leakage (bcrypt hashing)
-- ✅ CSRF (anti-forgery middleware)
-- ✅ XSS (Hiccup auto-escapes HTML)
+**Protected** (501 tested security assertions):
+- ✅ SQL injection (parameterized queries, 36 test assertions)
+- ✅ Password leakage (bcrypt + sha512, timing attack resistant)
+- ✅ CSRF (anti-forgery middleware, 65 test assertions)
+- ✅ XSS (Hiccup auto-escapes HTML + CSP headers)
+- ✅ Rate limiting (login/signup: token bucket algorithm)
+- ✅ Input validation (username, password, score at boundary)
+- ✅ Security headers (CSP, X-Frame-Options, HSTS, etc.)
+- ✅ Session security (HttpOnly, Secure, SameSite flags)
 
 **Not Protected**:
-- ❌ Rate limiting (no limits on API calls)
 - ❌ Account enumeration (signup error reveals existence)
 - ❌ Session fixation (no session regeneration on login)
-- ❌ Brute force (no login attempt limits)
 - ❌ Memory exhaustion (unlimited saved games)
+
+**See**: [docs/security.md](./security.md) for complete security documentation.
 
 ---
 
@@ -462,7 +484,7 @@ See [bases/web-server/README.md](../bases/web-server/README.md) for full details
 
 ## Deployment Architecture
 
-### Current (Development)
+### Development
 
 ```
 ┌─────────────────┐
@@ -478,7 +500,97 @@ See [bases/web-server/README.md](../bases/web-server/README.md) for full details
 └─────────────────┘
 ```
 
-### Future (Production)
+**Run**: `clojure -M -m cc.mindward.web-server.core`
+
+### Production (Single Server)
+
+**Option 1: Docker + Cloudflare (Recommended)**
+```
+┌─────────────────┐
+│   Cloudflare    │  (CDN, SSL, DDoS protection, WAF)
+│   (DNS + Proxy) │
+└─────────────────┘
+        │ HTTPS
+        ▼
+┌─────────────────┐
+│      VPS        │  (DigitalOcean, Linode, Vultr)
+│  Docker Host    │  ($5-12/month)
+└─────────────────┘
+        │
+        ▼
+┌─────────────────┐
+│ simplicity:latest│
+│ Docker Container│
+│  (non-root user)│
+│  Health check   │
+└─────────────────┘
+        │
+        ▼
+┌─────────────────┐  ┌─────────────────┐
+│  /app/data/     │  │  /app/logs/     │
+│  simplicity.db  │  │  (persistent)   │
+│  (volume)       │  │  (volume)       │
+└─────────────────┘  └─────────────────┘
+```
+
+**Build**:
+```bash
+# Uberjar (45MB)
+clojure -T:build uberjar
+
+# Docker
+docker build -t simplicity:latest .
+```
+
+**Deploy**:
+```bash
+# Docker
+docker run -d -p 3000:3000 \
+  -v simplicity-data:/app/data \
+  -v simplicity-logs:/app/logs \
+  -e ENABLE_HSTS=true \
+  -e LOG_LEVEL=WARN \
+  simplicity:latest
+
+# Or docker-compose
+docker-compose up -d
+```
+
+**Option 2: Cloudflare Tunnel (Zero Trust)**
+```
+┌─────────────────┐
+│   Cloudflare    │
+│   Tunnel (Zero  │
+│   Trust Access) │
+└─────────────────┘
+        │ Encrypted tunnel
+        ▼
+┌─────────────────┐
+│   cloudflared   │
+│   (daemon)      │
+└─────────────────┘
+        │ localhost
+        ▼
+┌─────────────────┐
+│ simplicity app  │
+│ (behind NAT/    │
+│  firewall)      │
+└─────────────────┘
+```
+
+**Option 3: Standalone Uberjar**
+```bash
+# On server
+java -jar simplicity-standalone.jar
+
+# With systemd (production)
+sudo systemctl start simplicity
+sudo systemctl enable simplicity
+```
+
+**See**: [docs/deployment-cloudflare.md](./deployment-cloudflare.md) for complete deployment guide.
+
+### Production (Multi-Server) - Future
 
 ```
 ┌───────────────┐
@@ -526,6 +638,16 @@ See [bases/web-server/README.md](../bases/web-server/README.md) for full details
 - Test full HTTP flows (signup → login → game API)
 - Test session management
 - Test CSRF protection
+- Test security headers
+- Test rate limiting
+- Test input validation
+
+**Current Coverage**: 501 assertions across 71 test cases
+- Auth: 2 tests, 14 assertions
+- Game: 15 tests, 146 assertions
+- UI: 42 tests, 149 assertions
+- User: 12 tests, 49 assertions (includes SQL injection tests)
+- Web-server: 28 tests, 143 assertions (includes security tests)
 
 **See**: `bases/web-server/test/cc/mindward/web_server/core_test.clj`
 
@@ -547,12 +669,14 @@ See [bases/web-server/README.md](../bases/web-server/README.md) for full details
 | Database | SQLite | 3.47.1.0 | Persistence |
 | DB Client | next.jdbc | 1.3.955 | JDBC wrapper |
 | Templating | Hiccup | 2.0.0-RC3 | HTML generation |
-| Hashing | Buddy | 2.0.167 | bcrypt passwords |
+| Hashing | Buddy | 2.0.167 | bcrypt + sha512 |
 | JSON | data.json | 2.5.0 | JSON encoding |
+| Logging | Logback | 1.5.16 | Structured logging |
 | Frontend | Vanilla JS | ES6 | Game loop |
 | Audio | Web Audio API | - | Synthesizer |
 | CSS | Tailwind CSS | 3.x (CDN) | Styling |
-| Build | tools.build | 0.9.2 | JAR builder |
+| Build | tools.build | 0.10.5 | Uberjar builder |
+| Container | Docker | - | Multi-stage build |
 | Testing | clojure.test | builtin | Unit tests |
 | Architecture | Polylith | 0.3.32 | Workspace |
 
@@ -622,8 +746,8 @@ See [bases/web-server/README.md](../bases/web-server/README.md) for full details
 1. **Persist Saved Games**: Move from atoms to database
 2. **Add Game Deletion UI**: Allow users to delete saved games
 3. **Fix Session Expiry**: Add server-side expiry (e.g., 30 days)
-4. **Add Rate Limiting**: Prevent abuse of API endpoints
-5. **Improve Error Messages**: Return structured errors from API
+4. **Improve Error Messages**: Return structured errors from API
+5. **Add Account Lockout**: Prevent persistent brute force attacks
 
 ### Medium-Term (Next Quarter)
 6. **PostgreSQL Migration**: Replace SQLite for production
@@ -645,6 +769,8 @@ See [bases/web-server/README.md](../bases/web-server/README.md) for full details
 
 - [README.md](../README.md) - Quick start guide
 - [API Documentation](./api.md) - REST API reference
+- [Security Documentation](./security.md) - Complete security controls (501 tested assertions)
+- [Deployment Guide](./deployment-cloudflare.md) - Production deployment instructions
 - [Web Server README](../bases/web-server/README.md) - HTTP server details
 - [Polylith Documentation](https://polylith.gitbook.io/) - Architecture guide
 - [AGENTS.md](../AGENTS.md) - AI agent operational guidelines
