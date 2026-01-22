@@ -129,17 +129,23 @@
   {:status 200
    :headers {"Content-Type" "text/html"}
    :body (layout session "Welcome"
-                 [:div {:class "min-h-[80vh] flex flex-col justify-center items-center text-center"}
-                  [:div {:class "relative mb-12"}
-                   [:h1 {:class "text-7xl font-black text-cyber-yellow mb-2 glitch-text uppercase tracking-tighter"} "MINDWARD"]
-                   [:div {:class "text-2xl font-bold text-cyber-cyan tracking-[1em] uppercase"} "Simplicity"]]
+                 [:div 
+                  ;; Background Canvas for Game of Life
+                  [:canvas {:id "bgCanvas" :class "fixed top-0 left-0 w-full h-full z-0 pointer-events-auto"}]
                   
-                  [:p {:class "text-xl text-gray-400 mb-16 max-w-lg font-mono border-l-4 border-cyber-red pl-6 text-left"} 
-                   "Connect to the grid. Engage hostile protocols. Ascend the hierarchy."]
-                  
-                  [:div {:class "flex space-x-8"}
-                   [:a {:href "/login" :class "cyber-btn-secondary min-w-[150px]"} "Login"]
-                   [:a {:href "/signup" :class "cyber-btn min-w-[150px]"} "Initiate"]]])})
+                  [:div {:class "relative z-10 min-h-[80vh] flex flex-col justify-center items-center text-center pointer-events-none"}
+                   [:div {:class "relative mb-12 pointer-events-auto"}
+                    [:h1 {:class "text-7xl font-black text-cyber-yellow mb-2 glitch-text uppercase tracking-tighter"} "MINDWARD"]
+                    [:div {:class "text-2xl font-bold text-cyber-cyan tracking-[1em] uppercase"} "Simplicity"]]
+                   
+                   [:p {:class "text-xl text-gray-400 mb-16 max-w-lg font-mono border-l-4 border-cyber-red pl-6 text-left bg-black/50 p-4 pointer-events-auto backdrop-blur-sm"} 
+                    "Connect to the grid. Engage hostile protocols. Ascend the hierarchy."]
+                   
+                   [:div {:class "flex space-x-8 pointer-events-auto"}
+                    [:a {:href "/login" :class "cyber-btn-secondary min-w-[150px]"} "Login"]
+                    [:a {:href "/signup" :class "cyber-btn min-w-[150px]"} "Initiate"]]]]
+                 
+                 [:script {:src "/js/life.js"}])})
 
 (defn login-page [session params anti-forgery-token]
   {:status 200

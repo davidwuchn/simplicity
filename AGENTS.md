@@ -124,7 +124,7 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - **Security**: All state-changing endpoints (`POST/PUT`) require **CSRF tokens**. Fetch calls must include the `x-csrf-token` header.
 - **Persistence**: Use `next.jdbc` with `rs/as-unqualified-lower-maps` for idiomatic data flow.
 - **Client-Side**: 
-  - Browser audio requires user interaction (OODA Orient) before initializing `AudioContext`.
+  - **Audio Policy**: Web Audio API requires a user gesture (`click`/`keydown`) to unlock. Always guard `new AudioContext()` with a `try-catch` and handle `suspended` state.
   - **Interaction**: Use `e.preventDefault()` for all critical application keys (e.g., Arrows, Space, R) to prevent browser-level interference like scrolling or character insertion.
 - **Logic**: Use threshold-based triggers (e.g., `score >= limit`) instead of exact matches (`score == limit`) to handle discrete state jumps safely.
 
@@ -163,6 +163,7 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - **The God Base**: Bases are Controllers, not Views. Do not mix routing, logic, and HTML generation in one file.
 - **The Test Illusion**: `(is (= 1 1))` is not a test. Verify actual logic or data persistence.
 - **Hardcoded Secrets**: Never commit passwords or API keys. Use `System/getenv` or a config component.
+- **The Infinite Loop**: When using `requestAnimationFrame`, always wrap the loop body in a `try-catch` block to prevent a crash from freezing the entire tab/rendering thread.
 
 ---
 *Created by opencode agent with nucleus-tutor and brepl.*
