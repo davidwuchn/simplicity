@@ -1,5 +1,7 @@
 (ns cc.mindward.web-server.core
   (:require [cc.mindward.auth.interface :as auth]
+            [cc.mindward.game.interface :as game]
+            [clojure.data.json :as json]
             [clojure.tools.logging :as log]
             [reitit.ring :as ring]
             [ring.adapter.jetty :as jetty]
@@ -63,6 +65,47 @@
   (-> (res/redirect "/login")
       (assoc :session nil)))
 
+(defn game-api [{:keys [session params headers]}]
+  (let [game-id (keyword (str "user-" (:username session "anonymous") "-game"))]
+    (case (:action params)
+      "create" (do
+                 (game/clear-cells! game-id (game/get-board game-id))
+                 (game/add-cells! game-id (into #{} (map (fn [[x y]] [(int x) (int y)])) 
+                                   (json/read-str (:cells params "[]"))))
+                 (res/response (json/write-str {:board (into [] (game/get-board game-id))
+                                                :generation (game/get-generation game-id)
+                                                :score (game/get-score game-id)})))
+      "evolve" (let [evolved (game/evolve! game-id)]
+                 (res/response (json/write-str {:board (into [] evolved)
+                                                :generation (game/get-generation game-id)
+                                                :score (game/get-score game-id)
+                                                :triggers (game/get-musical-triggers game-id)})))
+      "manipulate" (let [cells-to-add (into #{} (map (fn [[x y]] [(int x) (int y)]))
+                                         (json/read-str (:cells params "[]")))
+                         cells-to-remove (into #{} (map (fn [[x y]] [(int x) (int y)]))
+                                            (json/read-str (:remove params "[]")))
+                         new-board (-> game-id
+                                      (game/add-cells! cells-to-add)
+                                      (game/clear-cells! cells-to-remove))]
+                     (res/response (json/write-str {:board (into [] new-board)
+                                                    :generation (game/get-generation game-id)
+                                                    :score (game/get-score game-id)})))
+      "save" (when-let [game-name (:name params)]
+               (let [saved (game/save-game! game-id game-name)]
+                 (res/response (json/write-str {:id (:id saved) 
+                                                :name (:name saved)
+                                                :saved true}))))
+      "load" (when-let [saved-id (:savedId params)]
+               (let [loaded (game/load-game! saved-id game-id)]
+                 (res/response (json/write-str {:board (into [] loaded)
+                                                :generation (game/get-generation game-id)
+                                                :score (game/get-score game-id)
+                                                :loaded true}))))
+      (res/response (json/write-str {:error "Invalid action"})))))
+
+(defn list-saved-games-api [_]
+  (res/response (json/write-str (game/list-saved-games))))
+
 (def app
   (ring/ring-handler
    (ring/router
@@ -74,7 +117,9 @@
      ["/logout" {:get handle-logout}]
      ["/leaderboard" {:get leaderboard-page}]
      ["/game" {:get game-page}]
-     ["/game/score" {:post save-score}]])
+     ["/game/score" {:post save-score}]
+     ["/api/game" {:post game-api}]
+     ["/api/games" {:get list-saved-games-api}]])
    (ring/create-default-handler)))
 
 (def site-app
@@ -84,5 +129,7 @@
   (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
     (log/info "Initializing database...")
     (user/init!)
+    (log/info "Initializing game engine...")
+    (game/initialize!)
     (log/info "Starting Cyberpunk Game Server on port" port "...")
     (jetty/run-jetty site-app {:port port :join? false})))

@@ -1,7 +1,8 @@
 #!/usr/bin/env clojure
 (require '[clojure.test :as test]
          '[cc.mindward.user.interface-test]
-         '[cc.mindward.auth.interface-test])
+         '[cc.mindward.auth.interface-test]
+         '[cc.mindward.game.interface-test])
 
 (let [results (test/run-all-tests #".*-test$")]
   (println "\n=== All Tests Summary ===")

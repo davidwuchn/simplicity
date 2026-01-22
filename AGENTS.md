@@ -138,9 +138,9 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - Use `clj-kondo` to catch static analysis issues before committing.
 
 ## Tools & Utilities
-- **brepl**: The mandatory tool for Clojure evaluation and structural integrity.
+- **brepl**: The mandatory tool for Clojure/EDN evaluation and structural integrity.
   - **Evaluation Rule**: ALWAYS use the heredoc pattern (`<<'EOF'`) to avoid quoting hell.
-  - **Balancing Rule**: ALWAYS run `brepl balance <file>` after every `edit` or `write` to ensure structural integrity.
+  - **Balancing Rule**: ALWAYS run `brepl balance <file>` after every `edit` or `write` on `*.clj` or `*.edn` files to ensure structural integrity.
     - **Dry Run**: `brepl balance <file> --dry-run` (Preview fixes).
     - **Fix**: `brepl balance <file>` (Apply fixes in-place).
   - **Syntax**:
