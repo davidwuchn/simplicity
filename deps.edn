@@ -35,9 +35,11 @@
    :test {:extra-paths ["components/auth/test"
                         "components/user/test"
                         "components/game/test"
+                        "bases/web-server/test"
                         "components/auth/src"
                         "components/user/src"
                         "components/game/src"
+                        "components/ui/src"
                         "bases/web-server/src"
                         "development/src"]
            :extra-deps {org.clojure/clojure {:mvn/version "1.12.4"}

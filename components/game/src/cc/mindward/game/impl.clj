@@ -235,10 +235,17 @@
 (defn list-saved-games
   []
   (mapv (fn [[id game]]
-          {:id id
-           :name (:name game)
-           :generation (:generation game)
-           :score (calculate-score id)})
+          (let [board (:board game)
+                generation (:generation game)
+                living-cells (count board)
+                ;; Calculate score from saved game data directly
+                complexity-score (max 1 (* living-cells (min generation 100)))
+                stability-bonus (if (> generation 10) 100 0)
+                score (+ complexity-score stability-bonus)]
+            {:id id
+             :name (:name game)
+             :generation generation
+             :score score}))
         @saved-games))
 
 ;; ------------------------------------------------------------
