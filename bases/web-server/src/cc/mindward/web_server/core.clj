@@ -68,10 +68,9 @@
 (defn game-api [{:keys [session params headers]}]
   (let [game-id (keyword (str "user-" (:username session "anonymous") "-game"))]
     (case (:action params)
-      "create" (do
-                 (game/clear-cells! game-id (game/get-board game-id))
-                 (game/add-cells! game-id (into #{} (map (fn [[x y]] [(int x) (int y)])) 
-                                   (json/read-str (:cells params "[]"))))
+      "create" (let [cells (into #{} (map (fn [[x y]] [(int x) (int y)])) 
+                             (json/read-str (:cells params "[]")))]
+                 (game/create-game! game-id cells)
                  (res/response (json/write-str {:board (into [] (game/get-board game-id))
                                                 :generation (game/get-generation game-id)
                                                 :score (game/get-score game-id)})))
@@ -83,11 +82,10 @@
       "manipulate" (let [cells-to-add (into #{} (map (fn [[x y]] [(int x) (int y)]))
                                          (json/read-str (:cells params "[]")))
                          cells-to-remove (into #{} (map (fn [[x y]] [(int x) (int y)]))
-                                            (json/read-str (:remove params "[]")))
-                         new-board (-> game-id
-                                      (game/add-cells! cells-to-add)
-                                      (game/clear-cells! cells-to-remove))]
-                     (res/response (json/write-str {:board (into [] new-board)
+                                            (json/read-str (:remove params "[]")))]
+                     (game/add-cells! game-id cells-to-add)
+                     (game/clear-cells! game-id cells-to-remove)
+                     (res/response (json/write-str {:board (into [] (game/get-board game-id))
                                                     :generation (game/get-generation game-id)
                                                     :score (game/get-score game-id)})))
       "save" (when-let [game-name (:name params)]

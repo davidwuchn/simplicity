@@ -61,14 +61,15 @@
       (is (string? (:body response)))))
   
   (testing "successful login creates session and redirects to /game"
-    (user/create-user! {:username "logintest" :password "secret" :name "Login Test"})
-    (let [request (mock-request :post "/login" 
-                               :params {:username "logintest" :password "secret"}
-                               :session {})
-          response (web/handle-login request)]
-      (is (= 302 (:status response)) "redirects after successful login")
-      (is (= "/game" (get-in response [:headers "Location"])))
-      (is (= "logintest" (get-in response [:session :username])) "session contains username")))
+    (let [username (str "logintest-" (System/currentTimeMillis))]
+      (user/create-user! {:username username :password "secret" :name "Login Test"})
+      (let [request (mock-request :post "/login" 
+                                 :params {:username username :password "secret"}
+                                 :session {})
+            response (web/handle-login request)]
+        (is (= 302 (:status response)) "redirects after successful login")
+        (is (= "/game" (get-in response [:headers "Location"])))
+        (is (= username (get-in response [:session :username])) "session contains username"))))
   
   (testing "failed login redirects to /login with error"
     (let [request (mock-request :post "/login"
@@ -93,23 +94,25 @@
       (is (string? (:body response)))))
   
   (testing "successful signup creates user and session"
-    (let [request (mock-request :post "/signup"
-                               :params {:username "newuser" :password "pass123" :name "New User"}
+    (let [username (str "newuser-" (System/currentTimeMillis))
+          request (mock-request :post "/signup"
+                               :params {:username username :password "pass123" :name "New User"}
                                :session {})
           response (web/handle-signup request)]
       (is (= 302 (:status response)))
       (is (= "/game" (get-in response [:headers "Location"])))
-      (is (= "newuser" (get-in response [:session :username])) "session created")
-      (is (some? (user/find-by-username "newuser")) "user created in database")))
+      (is (= username (get-in response [:session :username])) "session created")
+      (is (some? (user/find-by-username username)) "user created in database")))
   
   (testing "signup with existing username redirects with error"
-    (user/create-user! {:username "duplicate" :password "pass" :name "Duplicate"})
-    (let [request (mock-request :post "/signup"
-                               :params {:username "duplicate" :password "otherpass" :name "Other"}
-                               :session {})
-          response (web/handle-signup request)]
-      (is (= 302 (:status response)))
-      (is (= "/signup?error=true" (get-in response [:headers "Location"])) "redirects with error"))))
+    (let [username (str "duplicate-" (System/currentTimeMillis))]
+      (user/create-user! {:username username :password "pass" :name "Duplicate"})
+      (let [request (mock-request :post "/signup"
+                                 :params {:username username :password "otherpass" :name "Other"}
+                                 :session {})
+            response (web/handle-signup request)]
+        (is (= 302 (:status response)))
+        (is (= "/signup?error=true" (get-in response [:headers "Location"])) "redirects with error")))))
 
 (deftest logout-test
   (testing "logout clears session and redirects to /login"
@@ -131,35 +134,40 @@
       (is (= "/login" (get-in response [:headers "Location"])) "redirects to /login")))
   
   (testing "authenticated user can access game page"
-    (user/create-user! {:username "gamer" :password "pass" :name "Gamer"})
-    (let [request (mock-request :get "/game" :session {:username "gamer"})
-          response (web/game-page request)]
-      (is (= 200 (:status response)) "renders game page")
-      (is (string? (:body response)) "returns HTML")
-      (is (re-find #"gamer" (:body response)) "displays username"))))
+    (let [username (str "gamer-" (System/currentTimeMillis))]
+      (user/create-user! {:username username :password "pass" :name "Gamer"})
+      (let [request (mock-request :get "/game" :session {:username username})
+            response (web/game-page request)]
+        (is (= 200 (:status response)) "renders game page")
+        (is (string? (:body response)) "returns HTML")
+        (is (re-find #"gameCanvas" (:body response)) "contains game canvas")
+        (is (re-find #"BEST:" (:body response)) "shows high score label")))))
 
 (deftest leaderboard-page-test
   (testing "leaderboard page renders for all users"
-    (user/create-user! {:username "player1" :password "pass" :name "Player One"})
-    (user/update-high-score! "player1" 100)
-    (let [request (mock-request :get "/leaderboard" :session {})
-          response (web/leaderboard-page request)]
-      (is (= 200 (:status response)))
-      (is (string? (:body response)))
-      (is (re-find #"player1" (:body response)) "displays leaderboard entries"))))
+    (let [username (str "player1-" (System/currentTimeMillis))]
+      (user/create-user! {:username username :password "pass" :name "Test Player One"})
+      (user/update-high-score! username 9999) ; High score to ensure it appears in top 10
+      (let [request (mock-request :get "/leaderboard" :session {})
+            response (web/leaderboard-page request)]
+        (is (= 200 (:status response)))
+        (is (string? (:body response)))
+        (is (re-find #"Netrunner Legends" (:body response)) "displays leaderboard title")
+        (is (re-find #"Test Player One" (:body response)) "displays test user in leaderboard")))))
 
 (deftest save-score-test
   (testing "save score updates user high score"
-    (user/create-user! {:username "scorer" :password "pass" :name "Scorer"})
-    (let [request (mock-request :post "/game/score"
-                               :params {:score "150"}
-                               :session {:username "scorer"})
-          response (web/save-score request)]
-      (is (= 200 (:status response)))
-      (is (= "application/json" (get-in response [:headers "Content-Type"])))
-      (let [body (json/read-str (:body response) :key-fn keyword)]
-        (is (= 150 (:highScore body)) "returns updated high score"))
-      (is (= 150 (user/get-high-score "scorer")) "persists score to database")))
+    (let [username (str "scorer-" (System/currentTimeMillis))]
+      (user/create-user! {:username username :password "pass" :name "Scorer"})
+      (let [request (mock-request :post "/game/score"
+                                 :params {:score "150"}
+                                 :session {:username username})
+            response (web/save-score request)]
+        (is (= 200 (:status response)))
+        (is (= "application/json" (get-in response [:headers "Content-Type"])))
+        (let [body (json/read-str (:body response) :key-fn keyword)]
+          (is (= 150 (:highScore body)) "returns updated high score"))
+        (is (= 150 (user/get-high-score username)) "persists score to database"))))
   
   (testing "save score with invalid session returns nil"
     (let [request (mock-request :post "/game/score"
