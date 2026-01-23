@@ -50,13 +50,14 @@ bb dev              # Start development REPL (ALWAYS USE THIS)
 ```
 
 **In REPL:**
-- **Start Server**: `(start)`
+- **Help/Banner**: `(banner)` - Show all available REPL commands
+- **Start Server**: `(start)` - Start web server on port 3000
 - **Hot Reload**: `(restart)` ← **Main workflow after code changes**
-- **Stop Server**: `(stop)`
-- **Reload Code Only**: `(reset)` (no server restart)
-- **Check Status**: `(status)`
+- **Stop Server**: `(stop)` - Clean shutdown with resource cleanup
+- **Reload Code Only**: `(reset)` - Reload code without server restart
+- **Check Status**: `(status)` - Show system health and database stats
 
-**Workflow**: `bb dev` → Edit code → `(restart)` → Test (1-2 second feedback loop)
+**Workflow**: `bb dev` → `(start)` → Edit code → `(restart)` → Test (0.5s hot reload)
 
 **Alternative (direct Clojure CLI)**: `clojure -M:nrepl`
 

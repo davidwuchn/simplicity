@@ -192,9 +192,16 @@
   "Stop server, reload all changed namespaces, and restart server.
    This is the main hot reload function - use it after making code changes."
   []
-  (log/info "Restarting with hot reload...")
-  (stop)
-  (tools-ns/refresh :after 'user/start))
+  (if @system
+    (do
+      (log/info "Restarting with hot reload...")
+      (stop)
+      (tools-ns/refresh :after 'user/start))
+    (do
+      (println)
+      (println "❌ Cannot restart - system not running!")
+      (println "   Run (start) first to start the system.")
+      (println))))
 
 (defn reset
   "Reload all changed namespaces without restarting the server.
@@ -236,6 +243,40 @@
 ;; ------------------------------------------------------------
 ;; Development Helpers
 ;; ------------------------------------------------------------
+
+(defn banner
+  "Display welcome banner with quick reference commands.
+   (μ Directness): Show developers exactly what they need."
+  []
+  (println)
+  (println "═══════════════════════════════════════════════════════════")
+  (println "  易简则天下之理得")
+  (println "  Simplicity - Development REPL")
+  (println "═══════════════════════════════════════════════════════════")
+  (println)
+  (println "📋 QUICK START:")
+  (println "   (start)      - Start web server (http://localhost:3000)")
+  (println "   (stop)       - Stop server and cleanup")
+  (println "   (restart)    - Hot reload: stop → refresh → start")
+  (println "   (status)     - Show system health and database stats")
+  (println)
+  (println "🔧 UTILITIES:")
+  (println "   (reset)      - Reload code without server restart")
+  (println "   (watch-on)   - Auto-reload on file changes (2s)")
+  (println "   (watch-off)  - Disable auto-reload")
+  (println)
+  (println "🧪 TESTING:")
+  (println "   Shell: bb test        - Run all 618 tests")
+  (println "   Shell: bb test:watch  - Watch mode")
+  (println "   Shell: bb lint        - Lint all sources")
+  (println)
+  (println "📚 HELP:")
+  (println "   Shell: bb help        - Show all bb tasks")
+  (println "   (banner)              - Show this message again")
+  (println "═══════════════════════════════════════════════════════════")
+  (println)
+  (println "💡 TIP: Run (start) to begin development")
+  (println))
 
 (defn status
   "Check if server is running and display comprehensive system status with health checks."
@@ -279,65 +320,12 @@
       (println "═══════════════════════════════════════════════════════════\n"))
     (println "❌ System is stopped")))
 
-(defn help
-  "Display development environment help."
-  []
-  (println "
-═══════════════════════════════════════════════════════════
-  Simplicity Development Environment - Hot Reload Enabled
-═══════════════════════════════════════════════════════════
-
-Basic Commands:
-  (start)     Start the web server (port 3000)
-  (stop)      Stop the web server
-  (restart)   Hot reload: stop, reload code, restart
-  (reset)     Reload changed namespaces (no restart)
-  (status)    Check system status with health checks
-  (help)      Display this help
-
-File Watcher (Auto-Reload):
-  (watch-on)  Enable automatic file watching (checks every 2s)
-  (watch-off) Disable automatic file watching
-
-Workflow (Manual Reload):
-  1. Start REPL: clojure -M:nrepl
-  2. In REPL:   (start)
-  3. Edit code in components/bases
-  4. In REPL:   (restart)  ; ← Hot reload!
-  5. Test changes at http://localhost:3000
-
-Workflow (Auto-Reload):
-  1. Start REPL: clojure -M:nrepl
-  2. In REPL:   (start)
-  3. In REPL:   (watch-on)   ; ← Enable auto-reload
-  4. Edit code in components/bases
-  5. Wait 2 seconds - changes reload automatically!
-  6. Test changes at http://localhost:3000
-
-Tips:
-  - (status) shows health checks for all components
-  - (restart) reloads ALL changed namespaces automatically
-  - (watch-on) enables hands-free development
-  - Server runs in background, REPL stays interactive
-  - Use (reset) for lightweight changes (no server restart)
-  - Check logs for errors during reload
-
-Component Namespaces:
-  cc.mindward.game.interface    - Game of Life engine
-  cc.mindward.auth.interface    - User authentication
-  cc.mindward.user.interface    - User management
-  cc.mindward.ui.interface      - HTML rendering
-
-Philosophy: 易简则天下之理得
-  (Simplicity allows obtaining the logic of the world)
-"))
-
 ;; ------------------------------------------------------------
-;; Auto-print help on REPL startup
+;; Auto-display banner on REPL startup
+;; (φ Vitality): Welcome developers with helpful context
 ;; ------------------------------------------------------------
 
-(println "\n✅ Development environment loaded.")
-(println "   Type (help) for commands, (start) to begin.\n")
+(banner)
 
 (comment
   ;; Development workflow examples
@@ -359,3 +347,10 @@ Philosophy: 易简则天下之理得
   ;; Check status
   (status)
   )
+
+;; ------------------------------------------------------------
+;; Auto-display banner on REPL startup
+;; (φ Vitality): Welcome developers with helpful context
+;; ------------------------------------------------------------
+
+(banner)
