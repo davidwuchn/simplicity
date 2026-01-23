@@ -24,6 +24,14 @@ let invincibilityEnd = 0;
 let invincibilityCooldown = 0;
 const INVINCIBILITY_DURATION = 3000; // 3 seconds
 const INVINCIBILITY_COOLDOWN = 10000; // 10 seconds cooldown
+let screenShake = 0; // Screen shake intensity
+let shakeX = 0;
+let shakeY = 0;
+let combo = 0; // Current combo count
+let lastKillTime = 0; // Time of last kill
+const COMBO_WINDOW = 2000; // 2 seconds to maintain combo
+let comboDisplay = 0; // For fade animation
+let topScores = []; // Top 10 scores from leaderboard
 
 // === Piano Particles ===
 let pianoParticles = [];
@@ -836,6 +844,7 @@ window.addEventListener('keydown', e => {
         player.x = canvas.width / 2; player.y = canvas.height - 60;
         weaponLevel = 1; powerUpActive = false; player.missileCooldown = 0;
         invincible = false; invincibilityEnd = 0; invincibilityCooldown = 0;
+        combo = 0; lastKillTime = 0; comboDisplay = 0;
     }
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
@@ -873,19 +882,81 @@ function spawnEnemy(isBoss = false) {
 function killEnemy(e) {
     e.dead = true;
     playSound('explosion');
-    score += e.isBoss ? 500 : (e.hp >= 5 ? 50 : (e.hp >= 3 ? 30 : 10));
     
-    // Limited particles
-    const count = e.isBoss ? 20 : Math.min(Math.floor(e.size / 5), 6);
+    // Combo system
+    const now = Date.now();
+    if (now - lastKillTime < COMBO_WINDOW) {
+        combo++;
+    } else {
+        combo = 1; // Reset combo
+    }
+    lastKillTime = now;
+    comboDisplay = combo; // For fade animation
+    
+    // Base score with combo multiplier
+    let baseScore = e.isBoss ? 500 : (e.hp >= 5 ? 50 : (e.hp >= 3 ? 30 : 10));
+    let comboBonus = 0;
+    
+    if (combo >= 3) {
+        // 2x at 3 combo, 3x at 5 combo, 4x at 10 combo, etc.
+        const multiplier = Math.min(1 + Math.floor(combo / 2), 10);
+        comboBonus = baseScore * (multiplier - 1);
+    }
+    
+    score += baseScore + comboBonus;
+    
+    // Enhanced explosion particles with multiple types
+    const count = e.isBoss ? 30 : Math.min(Math.floor(e.size / 3), 15);
     for (let i = 0; i < count && particles.length < MAX_PARTICLES; i++) {
-        particles.push({
-            x: e.x + (Math.random() - 0.5) * e.size,
-            y: e.y + (Math.random() - 0.5) * e.size,
-            vx: (Math.random() - 0.5) * 4,
-            vy: (Math.random() - 0.5) * 4,
-            life: 40 + Math.random() * 20,
-            color: '#00f0ff'
-        });
+        const angle = (Math.PI * 2 * i) / count;
+        const speed = 2 + Math.random() * 3;
+        const particleType = Math.random();
+        
+        let particleConfig;
+        if (particleType < 0.4) {
+            // Fire particles (orange/yellow)
+            particleConfig = {
+                x: e.x,
+                y: e.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 30 + Math.random() * 30,
+                maxLife: 60,
+                size: 3 + Math.random() * 4,
+                color: Math.random() < 0.5 ? '#ff6600' : '#ffaa00',
+                type: 'fire'
+            };
+        } else if (particleType < 0.7) {
+            // Debris particles (faction colored)
+            particleConfig = {
+                x: e.x,
+                y: e.y,
+                vx: Math.cos(angle) * speed * 1.5,
+                vy: Math.sin(angle) * speed * 1.5,
+                life: 40 + Math.random() * 40,
+                maxLife: 80,
+                size: 2 + Math.random() * 3,
+                color: e.color,
+                type: 'debris',
+                rotation: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.3
+            };
+        } else {
+            // Smoke particles (gray/white)
+            particleConfig = {
+                x: e.x,
+                y: e.y,
+                vx: Math.cos(angle) * speed * 0.5,
+                vy: Math.sin(angle) * speed * 0.5 - 1,
+                life: 50 + Math.random() * 50,
+                maxLife: 100,
+                size: 4 + Math.random() * 6,
+                color: '#888888',
+                type: 'smoke'
+            };
+        }
+        
+        particles.push(particleConfig);
     }
     
     // PowerUp drop
@@ -902,6 +973,17 @@ function update() {
     // Check invincibility timer
     if (invincible && now >= invincibilityEnd) {
         invincible = false;
+    }
+    
+    // Check combo timeout
+    if (combo > 0 && now - lastKillTime > COMBO_WINDOW) {
+        combo = 0;
+        comboDisplay = 0;
+    }
+    
+    // Fade combo display
+    if (comboDisplay > 0 && combo === 0) {
+        comboDisplay = Math.max(0, comboDisplay - 0.05);
     }
     
     // Background
@@ -1048,8 +1130,27 @@ function update() {
         return m.y > -50 && m.y < canvas.height + 50 && m.x > -50 && m.x < canvas.width + 50;
     });
     
-    // Update particles
-    particles = particles.filter(p => { p.x += p.vx; p.y += p.vy; p.life--; return p.life > 0; });
+    // Update particles with type-specific physics
+    particles = particles.filter(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        
+        // Type-specific behavior
+        if (p.type === 'fire') {
+            p.vy -= 0.15; // Fire rises
+            p.vx *= 0.98; // Friction
+        } else if (p.type === 'debris') {
+            p.vy += 0.2; // Gravity
+            if (p.rotation !== undefined) p.rotation += p.rotSpeed;
+        } else if (p.type === 'smoke') {
+            p.vy -= 0.05; // Slight upward drift
+            p.vx *= 0.95; // More friction
+            p.size += 0.1; // Expand over time
+        }
+        
+        return p.life > 0;
+    });
     
     // Update enemy bullets
     enemyBullets = enemyBullets.filter(b => {
@@ -1176,6 +1277,10 @@ function update() {
                 e.hp -= b.damage || 1;
                 e.hitFlash = 5;
                 playSound('hit');
+                // Screen shake on boss hit
+                if (e.isBoss) {
+                    screenShake = Math.min(screenShake + 3, 12);
+                }
                 if (e.hp <= 0) killEnemy(e);
                 break;
             }
@@ -1192,6 +1297,10 @@ function update() {
                 m.dead = true;
                 e.hp -= m.damage;
                 e.hitFlash = 10;
+                // Screen shake on boss hit (missiles shake more)
+                if (e.isBoss) {
+                    screenShake = Math.min(screenShake + 5, 15);
+                }
                 if (e.hp <= 0) killEnemy(e);
                 break;
             }
@@ -1216,6 +1325,17 @@ function update() {
     beatKick *= 0.9;
     beatSnare *= 0.88;
     beatHat *= 0.85;
+    
+    // Screen shake decay
+    if (screenShake > 0) {
+        shakeX = (Math.random() - 0.5) * screenShake;
+        shakeY = (Math.random() - 0.5) * screenShake;
+        screenShake *= 0.85; // Decay
+        if (screenShake < 0.1) screenShake = 0;
+    } else {
+        shakeX = 0;
+        shakeY = 0;
+    }
     
     // Cap melody queue
     if (melodyQueue.length > 8) melodyQueue.length = 8;
@@ -1608,12 +1728,13 @@ function draw() {
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Beat-reactive camera
+    // Beat-reactive camera + screen shake
     ctx.save();
     const scale = 1.0 + beatKick * 0.018;
-    const shakeX = (Math.random() - 0.5) * beatSnare * 6;
-    const shakeY = (Math.random() - 0.5) * beatSnare * 6;
-    ctx.translate(canvas.width / 2 + shakeX, canvas.height / 2 + shakeY);
+    const beatShakeX = (Math.random() - 0.5) * beatSnare * 6;
+    const beatShakeY = (Math.random() - 0.5) * beatSnare * 6;
+    // Combine beat shake with damage shake
+    ctx.translate(canvas.width / 2 + beatShakeX + shakeX, canvas.height / 2 + beatShakeY + shakeY);
     ctx.scale(scale, scale);
     ctx.translate(-canvas.width / 2, -canvas.height / 2);
     
@@ -1676,11 +1797,41 @@ function draw() {
         ctx.fill();
     }
     
-    // Particles
+    // Particles with enhanced rendering
     for (let p of particles) {
-        ctx.fillStyle = p.color;
-        ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+        const lifeRatio = p.maxLife ? p.life / p.maxLife : 1;
+        ctx.globalAlpha = lifeRatio;
+        
+        if (p.type === 'fire') {
+            // Fire particles with glow
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = p.color;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        } else if (p.type === 'debris') {
+            // Rotating debris
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            if (p.rotation) ctx.rotate(p.rotation);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+            ctx.restore();
+        } else if (p.type === 'smoke') {
+            // Smoke with fade
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            // Default simple particle
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+        }
     }
+    ctx.globalAlpha = 1.0;
     
     // Player (F-35 Lightning II)
     ctx.save();
@@ -1970,6 +2121,29 @@ function draw() {
     ctx.fillText('Weapon: LVL ' + weaponLevel, 20, 55);
     ctx.fillText('Style: ' + style.name + ' [' + style.vibe.toUpperCase() + ']', 20, 80);
     
+    // Combo display (right side, large and flashy)
+    if (combo >= 2 || comboDisplay >= 2) {
+        const displayCombo = Math.max(combo, Math.floor(comboDisplay));
+        const multiplier = Math.min(1 + Math.floor(displayCombo / 2), 10);
+        const comboAlpha = combo > 0 ? 1.0 : Math.max(0, comboDisplay / 2);
+        
+        ctx.save();
+        ctx.globalAlpha = comboAlpha;
+        ctx.textAlign = 'right';
+        ctx.font = 'bold 48px Arial';
+        ctx.fillStyle = displayCombo >= 10 ? '#ff00ff' : (displayCombo >= 5 ? '#ff6600' : '#fcee0a');
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.fillText(displayCombo + 'x COMBO!', canvas.width - 20, 60);
+        
+        ctx.font = '20px Arial';
+        ctx.fillStyle = '#00f0ff';
+        ctx.shadowBlur = 10;
+        ctx.fillText('×' + multiplier + ' MULTIPLIER', canvas.width - 20, 90);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+    }
+    
     if (!gameStarted) {
         ctx.fillStyle = '#fcee0a';
         ctx.font = '40px Arial';
@@ -2016,16 +2190,54 @@ function draw() {
     
     // Game Over
     if (gameOver) {
-        ctx.fillStyle = 'rgba(0,0,0,0.85)';
+        ctx.fillStyle = 'rgba(0,0,0,0.9)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = '#fcee0a';
         ctx.font = '50px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+        ctx.fillText('GAME OVER', canvas.width / 2, 80);
         ctx.font = '25px Arial';
         ctx.fillStyle = '#00f0ff';
-        ctx.fillText('Score: ' + score, canvas.width / 2, canvas.height / 2 + 50);
-        ctx.fillText('Press R to Restart', canvas.width / 2, canvas.height / 2 + 90);
+        ctx.fillText('Score: ' + score, canvas.width / 2, 130);
+        
+        // Display top 10 leaderboard
+        if (topScores && topScores.length > 0) {
+            ctx.fillStyle = '#fcee0a';
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText('TOP 10 NETRUNNERS', canvas.width / 2, 180);
+            
+            ctx.textAlign = 'left';
+            ctx.font = '16px monospace';
+            const startY = 215;
+            const lineHeight = 25;
+            
+            for (let i = 0; i < Math.min(10, topScores.length); i++) {
+                const entry = topScores[i];
+                const rank = i + 1;
+                const isCurrentUser = entry.username === '<?= username ?>';
+                
+                // Highlight top 3 with different colors
+                if (rank === 1) ctx.fillStyle = '#ffd700'; // Gold
+                else if (rank === 2) ctx.fillStyle = '#c0c0c0'; // Silver
+                else if (rank === 3) ctx.fillStyle = '#cd7f32'; // Bronze
+                else if (isCurrentUser) ctx.fillStyle = '#00f0ff'; // Current user
+                else ctx.fillStyle = '#94a3b8'; // Regular
+                
+                const rankStr = (rank + '.').padEnd(4, ' ');
+                const nameStr = (entry.name || entry.username).substring(0, 20).padEnd(22, ' ');
+                const scoreStr = String(entry.high_score).padStart(8, ' ');
+                
+                const x = canvas.width / 2 - 200;
+                const y = startY + i * lineHeight;
+                
+                ctx.fillText(rankStr + nameStr + scoreStr, x, y);
+            }
+        }
+        
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#00f0ff';
+        ctx.font = '20px Arial';
+        ctx.fillText('Press R to Restart', canvas.width / 2, canvas.height - 40);
     }
 }
 
@@ -2060,11 +2272,28 @@ function saveScore() {
             if (highScoreEl && data.highScore) {
                 highScoreEl.innerText = data.highScore;
             }
+            // Fetch updated leaderboard
+            fetchLeaderboard();
         })
         .catch(error => {
             console.error('Failed to save score:', error);
         });
+    } else {
+        // Still fetch leaderboard even if not a new high score
+        fetchLeaderboard();
     }
+}
+
+function fetchLeaderboard() {
+    fetch('/api/leaderboard')
+        .then(response => response.json())
+        .then(data => {
+            topScores = data.slice(0, 10); // Top 10
+        })
+        .catch(error => {
+            console.error('Failed to fetch leaderboard:', error);
+            topScores = [];
+        });
 }
 
 function loop() {

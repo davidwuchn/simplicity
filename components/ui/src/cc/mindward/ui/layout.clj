@@ -12,7 +12,7 @@
 (def ^:private app-version
   "Application version for cache-busting static assets.
    Update this on each release to invalidate browser caches."
-  "1.0.9")
+  "1.1.0")
 
 (def ^:private meta-config
   {:charset "UTF-8"

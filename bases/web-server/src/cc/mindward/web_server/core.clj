@@ -227,12 +227,15 @@
                 :post handle-login}]
      ["/signup" {:get signup-page
                  :post handle-signup}]
-     ["/logout" {:get handle-logout}]
-     ["/leaderboard" {:get leaderboard-page}]
-     ["/game" {:get game-page}]
-     ["/game/score" {:post save-score}]
-     ["/api/game" {:post game-api}]
-     ["/api/games" {:get list-saved-games-api}]])
+      ["/logout" {:get handle-logout}]
+      ["/leaderboard" {:get leaderboard-page}]
+      ["/game" {:get game-page}]
+      ["/game/score" {:post save-score}]
+      ["/api/game" {:post game-api}]
+      ["/api/games" {:get list-saved-games-api}]
+      ["/api/leaderboard" {:get (fn [_] {:status 200
+                                         :headers {"Content-Type" "application/json"}
+                                         :body (json/write-str (user/get-leaderboard))})}]])
    (ring/create-default-handler)))
 
 (def site-app
