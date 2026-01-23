@@ -95,6 +95,27 @@
   [params field-name]
   (get params (keyword (str (name field-name) "-error"))))
 
+;; === Security Helpers (∀ Vigilance) ===
+
+(defn escape-html
+  "Escape HTML special characters to prevent XSS attacks.
+   
+   Escapes: < > \" ' & 
+   
+   Examples:
+   (escape-html \"<script>\") => \"&lt;script&gt;\"
+   (escape-html \"Hello & World\") => \"Hello &amp; World\"
+   
+   Security (∀ Vigilance): Always escape user-generated content before rendering."
+  [s]
+  (when s
+    (-> s
+        (str/replace "&" "&amp;")
+        (str/replace "<" "&lt;")
+        (str/replace ">" "&gt;")
+        (str/replace "\"" "&quot;")
+        (str/replace "'" "&#39;"))))
+
 ;; === Text Helpers ===
 
 (defn truncate

@@ -1,5 +1,8 @@
 (ns cc.mindward.ui.pages.leaderboard
-  "Leaderboard page - displays global high scores."
+  "Leaderboard page - displays global high scores.
+   
+   Security (∀ Vigilance): All user-generated content is escaped
+   using helpers/escape-html to prevent XSS attacks."
   (:require [cc.mindward.ui.layout :as layout]
             [cc.mindward.ui.components :as c]
             [cc.mindward.ui.helpers :as helpers]))
@@ -30,7 +33,8 @@
                                   (= idx 1) "🥈 02"
                                   (= idx 2) "🥉 03"
                                   :else (format "%02d" (inc idx)))
-                                (or name username)
+                                ;; Security: Escape user-generated content (∀ Vigilance)
+                                (helpers/escape-html (or name username))
                                 (helpers/format-number high_score)]
                         :options {:highlight? (zero? idx)}})
                      leaderboard)

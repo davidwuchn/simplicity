@@ -7,15 +7,24 @@
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [cc.mindward.web-server.core :as web]
             [cc.mindward.user.interface :as user]
+            [cc.mindward.user.impl :as user-impl]
             [cc.mindward.game.interface :as game]
+            [cc.mindward.game.impl :as game-impl]
             [clojure.data.json :as json]
             [clojure.string :as str]))
 
+;; Use temporary databases for tests to avoid polluting production data
+;; τ Wisdom: Each test gets a fresh database to prevent test pollution
 (use-fixtures :each
   (fn [test-fn]
-    (user/init!)
-    (game/initialize!)
-    (test-fn)))
+    (let [temp-user-db (java.io.File/createTempFile "test_user_" ".db")
+          user-ds (user-impl/make-datasource (.getAbsolutePath temp-user-db))]
+      (.deleteOnExit temp-user-db)
+      (binding [user-impl/*ds* user-ds]
+        (user-impl/init-db! user-ds)  ; Use impl directly to pass datasource
+        (game/initialize!)
+        (test-fn))
+      (.delete temp-user-db))))
 
 ;; ------------------------------------------------------------
 ;; Test Helpers
@@ -40,7 +49,7 @@
           response (web/landing-page request)]
       (is (= 302 (:status response)) "redirects authenticated users")
       (is (= "/game" (get-in response [:headers "Location"])) "redirects to /game")))
-  
+
   (testing "landing page renders for unauthenticated users"
     (let [request (mock-request :get "/" :session {})
           response (web/landing-page request)]
@@ -53,28 +62,28 @@
           response (web/login-page request)]
       (is (= 302 (:status response)))
       (is (= "/game" (get-in response [:headers "Location"])))))
-  
+
   (testing "login page renders for unauthenticated users"
     (let [request (mock-request :get "/login" :session {})
           response (web/login-page request)]
       (is (= 200 (:status response)))
       (is (string? (:body response)))))
-  
+
   (testing "successful login creates session and redirects to /game"
     (let [username (str "logintest-" (System/currentTimeMillis))]
       (user/create-user! {:username username :password "secretpass" :name "Login Test"})
-      (let [request (mock-request :post "/login" 
-                                 :params {:username username :password "secretpass"}
-                                 :session {})
+      (let [request (mock-request :post "/login"
+                                  :params {:username username :password "secretpass"}
+                                  :session {})
             response (web/handle-login request)]
         (is (= 302 (:status response)) "redirects after successful login")
         (is (= "/game" (get-in response [:headers "Location"])))
         (is (= username (get-in response [:session :username])) "session contains username"))))
-  
+
   (testing "failed login redirects to /login with error"
     (let [request (mock-request :post "/login"
-                               :params {:username "nonexistent" :password "wrongpass"}
-                               :session {})
+                                :params {:username "nonexistent" :password "wrongpass"}
+                                :session {})
           response (web/handle-login request)]
       (is (= 302 (:status response)))
       (is (str/includes? (get-in response [:headers "Location"]) "/login?error=")
@@ -87,30 +96,30 @@
           response (web/signup-page request)]
       (is (= 302 (:status response)))
       (is (= "/game" (get-in response [:headers "Location"])))))
-  
+
   (testing "signup page renders for unauthenticated users"
     (let [request (mock-request :get "/signup" :session {})
           response (web/signup-page request)]
       (is (= 200 (:status response)))
       (is (string? (:body response)))))
-  
+
   (testing "successful signup creates user and session"
     (let [username (str "newuser-" (System/currentTimeMillis))
           request (mock-request :post "/signup"
-                               :params {:username username :password "password123" :name "New User"}
-                               :session {})
+                                :params {:username username :password "password123" :name "New User"}
+                                :session {})
           response (web/handle-signup request)]
       (is (= 302 (:status response)))
       (is (= "/game" (get-in response [:headers "Location"])))
       (is (= username (get-in response [:session :username])) "session created")
       (is (some? (user/find-by-username username)) "user created in database")))
-  
+
   (testing "signup with existing username redirects with error"
     (let [username (str "duplicate-" (System/currentTimeMillis))]
       (user/create-user! {:username username :password "password123" :name "Duplicate"})
       (let [request (mock-request :post "/signup"
-                                 :params {:username username :password "otherpass123" :name "Other"}
-                                 :session {})
+                                  :params {:username username :password "otherpass123" :name "Other"}
+                                  :session {})
             response (web/handle-signup request)]
         (is (= 302 (:status response)))
         (is (clojure.string/includes? (get-in response [:headers "Location"]) "/signup?error=")
@@ -134,7 +143,7 @@
           response (web/game-page request)]
       (is (= 302 (:status response)) "redirects unauthenticated users")
       (is (= "/login" (get-in response [:headers "Location"])) "redirects to /login")))
-  
+
   (testing "authenticated user can access game page"
     (let [username (str "gamer-" (System/currentTimeMillis))]
       (user/create-user! {:username username :password "password123" :name "Gamer"})
@@ -162,19 +171,19 @@
     (let [username (str "scorer-" (System/currentTimeMillis))]
       (user/create-user! {:username username :password "password123" :name "Scorer"})
       (let [request (mock-request :post "/game/score"
-                                 :params {:score "150"}
-                                 :session {:username username})
+                                  :params {:score "150"}
+                                  :session {:username username})
             response (web/save-score request)]
         (is (= 200 (:status response)))
         (is (= "application/json" (get-in response [:headers "Content-Type"])))
         (let [body (json/read-str (:body response) :key-fn keyword)]
           (is (= 150 (:highScore body)) "returns updated high score"))
         (is (= 150 (user/get-high-score username)) "persists score to database"))))
-  
+
   (testing "save score with invalid session returns nil"
     (let [request (mock-request :post "/game/score"
-                               :params {:score "200"}
-                               :session {})
+                                :params {:score "200"}
+                                :session {})
           response (web/save-score request)]
       (is (nil? response) "returns nil for unauthenticated request"))))
 
@@ -186,9 +195,9 @@
   (testing "create action initializes game board"
     (game/initialize!) ; Ensure clean state
     (let [request (mock-request :post "/api/game"
-                               :params {:action "create" 
-                                       :cells (json/write-str [[0 0] [1 1] [2 2]])}
-                               :session {:username "creator"})
+                                :params {:action "create"
+                                         :cells (json/write-str [[0 0] [1 1] [2 2]])}
+                                :session {:username "creator"})
           response (web/game-api request)
           body (json/read-str (:body response) :key-fn keyword)]
       (is (= 200 (:status response)))
@@ -203,8 +212,8 @@
   (testing "evolve action advances generation"
     (game/create-game! :user-evolver-game #{[0 0] [0 1] [1 0] [1 1]})  ; Stable block
     (let [request (mock-request :post "/api/game"
-                               :params {:action "evolve"}
-                               :session {:username "evolver"})
+                                :params {:action "evolve"}
+                                :session {:username "evolver"})
           response (web/game-api request)
           body (json/read-str (:body response) :key-fn keyword)]
       (is (= 200 (:status response)))
@@ -215,10 +224,10 @@
   (testing "manipulate action adds and removes cells"
     (game/create-game! :user-manipulator-game #{[0 0] [1 1]})
     (let [request (mock-request :post "/api/game"
-                               :params {:action "manipulate"
-                                       :cells (json/write-str [[5 5]])
-                                       :remove (json/write-str [[0 0]])}
-                               :session {:username "manipulator"})
+                                :params {:action "manipulate"
+                                         :cells (json/write-str [[5 5]])
+                                         :remove (json/write-str [[0 0]])}
+                                :session {:username "manipulator"})
           response (web/game-api request)
           body (json/read-str (:body response) :key-fn keyword)
           board-set (set (:board body))]
@@ -231,21 +240,21 @@
   (testing "save action persists game state"
     (game/create-game! :user-saver-game #{[1 1] [2 2]})
     (let [request (mock-request :post "/api/game"
-                               :params {:action "save" :name "test-save"}
-                               :session {:username "saver"})
+                                :params {:action "save" :name "test-save"}
+                                :session {:username "saver"})
           response (web/game-api request)
           body (json/read-str (:body response) :key-fn keyword)]
       (is (= 200 (:status response)))
       (is (true? (:saved body)))
       (is (string? (:id body)) "returns saved game UUID")
       (is (= "test-save" (:name body)))))
-  
+
   (testing "load action restores game state"
     (game/create-game! :user-loader-game #{[3 3]})
     (let [saved (game/save-game! :user-loader-game "load-test")
           request (mock-request :post "/api/game"
-                               :params {:action "load" :savedId (:id saved)}
-                               :session {:username "loader"})
+                                :params {:action "load" :savedId (:id saved)}
+                                :session {:username "loader"})
           response (web/game-api request)
           body (json/read-str (:body response) :key-fn keyword)]
       (is (= 200 (:status response)))
@@ -255,8 +264,8 @@
 (deftest game-api-invalid-action-test
   (testing "invalid action returns error"
     (let [request (mock-request :post "/api/game"
-                               :params {:action "invalid"}
-                               :session {:username "user"})
+                                :params {:action "invalid"}
+                                :session {:username "user"})
           response (web/game-api request)
           body (json/read-str (:body response) :key-fn keyword)]
       (is (= 200 (:status response)))
@@ -291,7 +300,7 @@
       (is (= "up" (get-in body [:checks :database :status])) "database check passes")
       (is (number? (get-in body [:checks :database :responseTimeMs])) "includes response time")
       (is (= "1.0.0" (:version body)) "includes version")))
-  
+
   (testing "health check includes all required fields"
     (let [response (web/health-check {})
           body (json/read-str (:body response) :key-fn keyword)]

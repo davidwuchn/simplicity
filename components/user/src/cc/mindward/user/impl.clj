@@ -89,17 +89,33 @@
 
 ;; ------------------------------------------------------------
 ;; Password Hashing (∃ Truth - security is non-negotiable)
-;; Algorithm: bcrypt+sha512 (buddy-hashers default)
+;; Algorithm: bcrypt+sha512 with increased work factor
 ;; ------------------------------------------------------------
 
+(def ^:private bcrypt-work-factor
+  "Bcrypt work factor (cost parameter).
+   
+   Security (τ Wisdom): Cost 12 provides ~4x stronger hashing than default cost 10.
+   Recommended minimum: 12 (as of 2024). Higher is stronger but slower.
+   
+   Computation time at cost 12: ~200-400ms per hash (acceptable for login)."
+  12)
+
 (defn hash-password
-  "Hash a plain-text password. Returns the hash string."
+  "Hash a plain-text password with bcrypt+sha512.
+   
+   Security (∀ Vigilance): Uses elevated work factor to resist GPU cracking attacks.
+   Returns the hash string with embedded algorithm and cost parameters."
   [password]
-  (hashers/derive password))
+  (hashers/derive password {:alg :bcrypt+sha512
+                            :work-factor bcrypt-work-factor}))
 
 (defn verify-password
   "Verify a plain-text password against a stored hash.
-   Returns true if the password matches, false otherwise."
+   Returns true if the password matches, false otherwise.
+   
+   Security: buddy-hashers/check automatically handles variable work factors
+   and will correctly verify hashes regardless of their embedded cost."
   [password hash]
   (hashers/check password hash))
 

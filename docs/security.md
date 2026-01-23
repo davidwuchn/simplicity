@@ -10,8 +10,10 @@ This document outlines the security controls implemented in the Simplicity appli
 
 #### Password Security
 - **Hashing Algorithm**: bcrypt+sha512 (buddy-hashers)
-- **Work Factor**: Default bcrypt cost (2^12 iterations)
-- **Timing Attack Prevention**: Constant-time password verification
+- **Work Factor**: Elevated bcrypt cost (2^12 = 4096 iterations)
+  - **Why 12?**: Provides ~4x stronger resistance to GPU cracking than default cost 10
+  - Computation time: ~200-400ms per hash (acceptable for login)
+- **Timing Attack Prevention**: Constant-time password verification via buddy-hashers
 - **No Plain Text Storage**: Passwords are hashed before database storage
 
 #### Session Management
@@ -43,12 +45,16 @@ This document outlines the security controls implemented in the Simplicity appli
 - **Algorithm**: Token Bucket
 - **Storage**: In-memory (per-process)
 - **Granularity**: Per-IP address
-- **Protected Endpoints**: `/login`, `/signup`
+- **Protected Endpoints**:
+  - `/login`, `/signup`: Auth endpoints (10 burst, 0.5 refill)
+  - `/api/game`, `/game/score`: Game endpoints (30 burst, 2.0 refill)
 
 #### Configuration
-- **Max Burst**: 10 requests
-- **Refill Rate**: 0.5 tokens/second (1 request per 2 seconds)
-- **Cost Per Request**: 1 token
+| Endpoint | Max Burst | Refill Rate | Purpose |
+|----------|-----------|-------------|---------|
+| `/login`, `/signup` | 10 | 0.5/s (1 per 2s) | Prevent brute force |
+| `/api/game`, `/game/score` | 30 | 2.0/s (15 per s) | Prevent API spam/DoS |
+
 - **Response**: 429 Too Many Requests (with Retry-After header)
 
 #### Production Considerations
@@ -146,6 +152,13 @@ Comprehensive SQL injection tests in `user/security-test`:
 #### Output Encoding
 - **Hiccup Templates**: Automatic HTML entity escaping
 - **User-Generated Content**: All dynamic content is escaped by default
+- **Explicit Escaping**: `helpers/escape-html` function for defense-in-depth
+  - Escapes: `<`, `>`, `"`, `'`, `&`
+  - Used for: display names, game names, any user-controlled data
+
+#### Defense-in-Depth
+- **Leaderboard**: Display names explicitly escaped via `helpers/escape-html`
+- **Game Names**: Validated and escaped in API responses
 - **JSON Responses**: Proper Content-Type headers
 
 #### Test Coverage
@@ -277,17 +290,26 @@ export ENABLE_HSTS=true
 ## Known Limitations & Future Improvements
 
 ### Current Limitations
-1. **Rate Limiting**: In-memory (per-process), not suitable for multi-server
-2. **CSP**: Uses `unsafe-inline` for scripts (convenience over security)
+1. **Rate Limiting**: In-memory (per-process), not suitable for multi-server (requires Redis)
+2. **CSP**: Uses `unsafe-inline` for scripts (convenience over security, needs nonces)
 3. **Session Storage**: Cookie-based (limited scalability)
 4. **Database**: SQLite (not suitable for high-concurrency production)
+5. **Session Invalidation**: Logout clears session cookie but doesn't invalidate server-side
+
+### Security Improvements Implemented (2024)
+- ✅ **Elevated bcrypt work factor**: Increased from cost 10 to cost 12
+- ✅ **Game API authorization**: Added authentication check and game ownership validation
+- ✅ **Rate limiting on game endpoints**: Added 30 burst / 2.0s refill for `/api/game` and `/game/score`
+- ✅ **Coordinate validation**: Added bounds checking and array size limits
+- ✅ **XSS prevention**: Added explicit `escape-html` helper for defense-in-depth
 
 ### Planned Improvements
 1. **Redis Rate Limiting**: Distributed rate limiting for multi-server deployments
 2. **CSP Nonces**: Remove `unsafe-inline` by using nonce-based CSP
 3. **Database Migration**: PostgreSQL with connection pooling
-4. **Security Scanning**: Automated dependency vulnerability scanning
-5. **Penetration Testing**: Third-party security audit
+4. **Session Invalidation**: Proper server-side session invalidation on logout
+5. **Security Scanning**: Automated dependency vulnerability scanning
+6. **Penetration Testing**: Third-party security audit
 
 ## Incident Response
 
@@ -316,5 +338,10 @@ For security issues, please report to the repository maintainers via GitHub Issu
 
 ---
 
-*Last Updated: 2026-01-22*
-*Version: 1.0.0*
+*Last Updated: 2024-01-15*
+*Version: 1.1.0* - Security hardening updates:
+- Elevated bcrypt work factor to cost 12
+- Added game API authorization checks
+- Added rate limiting to game endpoints
+- Added coordinate validation with bounds checking
+- Added explicit HTML escaping helper

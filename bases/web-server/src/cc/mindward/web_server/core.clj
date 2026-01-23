@@ -1,6 +1,7 @@
 (ns cc.mindward.web-server.core
   (:require [cc.mindward.auth.interface :as auth]
             [cc.mindward.game.interface :as game]
+            [cc.mindward.game.config :as game-config]
             [cc.mindward.web-server.security :as security]
             [clojure.data.json :as json]
             [clojure.string :as str]
@@ -23,15 +24,76 @@
   [path error-msg]
   (res/redirect (str path "?error=" (java.net.URLEncoder/encode error-msg "UTF-8"))))
 
+;; ------------------------------------------------------------
+;; Input Validation (∀ Vigilance)
+;; ------------------------------------------------------------
+
+(def ^:private max-coordinate-array-size
+  "Maximum number of coordinates allowed in a single request.
+   Prevents memory exhaustion attacks."
+  1000)
+
 (defn- parse-coordinates
-  "Parse coordinate JSON into a set of [x y] vectors.
-   Ensures coordinates are integers."
+  "Parse coordinate JSON into a set of [x y] vectors with bounds validation.
+   
+   Security (∀ Vigilance):
+   - Validates coordinates are within game board bounds
+   - Limits array size to prevent memory exhaustion
+   - Ensures coordinates are integers
+   
+   Returns: Set of [x y] vectors, empty set on error."
   [json-str]
   (try
-    (let [coords (json/read-str (or json-str "[]"))]
-      (into #{} (map (fn [[x y]] [(int x) (int y)])) coords))
-    (catch Exception _
+    (let [coords (json/read-str (or json-str "[]"))
+          ;; Validate it's a vector
+          _ (when-not (vector? coords) (throw (Exception. "Not a vector")))
+          ;; Limit array size to prevent memory exhaustion
+          _ (when (> (count coords) max-coordinate-array-size)
+              (throw (Exception. "Too many coordinates")))
+          ;; Parse and validate each coordinate
+          validated (into []
+                         (comp (map (fn [c]
+                                     (when (and (vector? c) (= 2 (count c)))
+                                       (let [x (int (first c))
+                                             y (int (second c))]
+                                         ;; Bounds check using game config
+                                         (when (and (<= game-config/board-min-x x game-config/board-max-x)
+                                                    (<= game-config/board-min-y y game-config/board-max-y))
+                                           [x y])))))
+                               (filter some?))
+                         coords)]
+      (set validated))
+    (catch Exception e
+      (log/warn "Coordinate parsing failed:" (.getMessage e))
       #{})))
+
+(defn- validate-game-name
+  "Validate game name for save/load operations.
+   
+   Rules:
+   - Length: 3-100 characters
+   - Safe characters only (no HTML/script injection)
+   
+   Returns: {:valid? boolean :error string}"
+  [game-name]
+  (cond
+    (nil? game-name)
+    {:valid? false :error "Game name is required"}
+    
+    (not (string? game-name))
+    {:valid? false :error "Game name must be a string"}
+    
+    (< (count game-name) 3)
+    {:valid? false :error "Game name must be at least 3 characters"}
+    
+    (> (count game-name) 100)
+    {:valid? false :error "Game name must be at most 100 characters"}
+    
+    (not (re-matches #"^[a-zA-Z0-9_\-\s]+$" game-name))
+    {:valid? false :error "Game name contains invalid characters"}
+    
+    :else
+    {:valid? true}))
 
 (defn leaderboard-page [{:keys [session]}]
   (let [leaderboard (user/get-leaderboard)]
@@ -133,51 +195,70 @@
   (-> (res/redirect "/login")
       (assoc :session nil)))
 
+(defn- require-authentication
+  "Require user to be authenticated. Returns 401 if not logged in.
+   
+   Security (∀ Vigilance): Authorization check at API boundary."
+  [session]
+  (if-let [username (:username session)]
+    username
+    (do
+      (log/warn "Unauthorized API access attempt")
+      {:status 401
+       :headers {"Content-Type" "application/json"}
+       :body (json/write-str {:error "Authentication required"})})))
+
 (defn game-api [{:keys [session params]}]
-  (let [game-id (keyword (str "user-" (:username session "anonymous") "-game"))
-        action (:action params)]
-    (case action
-      "create" 
-      (let [cells (parse-coordinates (:cells params))]
-        (game/create-game! game-id cells)
-        (res/response (json/write-str {:board (into [] (game/get-board game-id))
-                                       :generation (game/get-generation game-id)
-                                       :score (game/get-score game-id)})))
-      
-      "evolve" 
-      (let [evolved (game/evolve! game-id)]
-        (res/response (json/write-str {:board (into [] evolved)
-                                       :generation (game/get-generation game-id)
-                                       :score (game/get-score game-id)
-                                       :triggers (game/get-musical-triggers game-id)})))
-      
-      "manipulate" 
-      (let [cells-to-add (parse-coordinates (:cells params))
-            cells-to-remove (parse-coordinates (:remove params))]
-        (game/add-cells! game-id cells-to-add)
-        (game/clear-cells! game-id cells-to-remove)
-        (res/response (json/write-str {:board (into [] (game/get-board game-id))
-                                       :generation (game/get-generation game-id)
-                                       :score (game/get-score game-id)})))
-      
-      "save" 
-      (if-let [game-name (:name params)]
-        (let [saved (game/save-game! game-id game-name)]
-          (res/response (json/write-str {:id (:id saved) 
-                                         :name (:name saved)
-                                         :saved true})))
-        (res/bad-request (json/write-str {:error "Game name required"})))
-      
-      "load" 
-      (if-let [saved-id (:savedId params)]
-        (let [loaded (game/load-game! saved-id game-id)]
-          (res/response (json/write-str {:board (into [] loaded)
-                                         :generation (game/get-generation game-id)
-                                         :score (game/get-score game-id)
-                                         :loaded true})))
-        (res/bad-request (json/write-str {:error "Saved ID required"})))
-      
-      (res/response (json/write-str {:error "Invalid action"})))))
+  ;; First, ensure user is authenticated
+  (let [username (require-authentication session)]
+    (if (string? username)  ;; Check if we got a username or an error response
+      (let [game-id (keyword (str "user-" username "-game"))
+            action (:action params)]
+        (case action
+          "create"
+          (let [cells (parse-coordinates (:cells params))]
+            (game/create-game! game-id cells)
+            (res/response (json/write-str {:board (into [] (game/get-board game-id))
+                                           :generation (game/get-generation game-id)
+                                           :score (game/get-score game-id)})))
+          
+          "evolve"
+          (let [evolved (game/evolve! game-id)]
+            (res/response (json/write-str {:board (into [] evolved)
+                                           :generation (game/get-generation game-id)
+                                           :score (game/get-score game-id)
+                                           :triggers (game/get-musical-triggers game-id)})))
+          
+          "manipulate"
+          (let [cells-to-add (parse-coordinates (:cells params))
+                cells-to-remove (parse-coordinates (:remove params))]
+            (game/add-cells! game-id cells-to-add)
+            (game/clear-cells! game-id cells-to-remove)
+            (res/response (json/write-str {:board (into [] (game/get-board game-id))
+                                           :generation (game/get-generation game-id)
+                                           :score (game/get-score game-id)})))
+          
+          "save"
+          (let [game-name (:name params)
+                name-validation (validate-game-name game-name)]
+            (if (:valid? name-validation)
+              (let [saved (game/save-game! game-id game-name)]
+                (res/response (json/write-str {:id (:id saved)
+                                               :name (:name saved)
+                                               :saved true})))
+              (res/bad-request (json/write-str {:error (:error name-validation)}))))
+          
+          "load"
+          (if-let [saved-id (:savedId params)]
+            (let [loaded (game/load-game! saved-id game-id)]
+              (res/response (json/write-str {:board (into [] loaded)
+                                             :generation (game/get-generation game-id)
+                                             :score (game/get-score game-id)
+                                             :loaded true})))
+            (res/bad-request (json/write-str {:error "Saved ID required"})))
+          
+          (res/bad-request (json/write-str {:error "Invalid action"}))))
+      username)))  ;; Return 401 response
 
 (defn list-saved-games-api [_]
   (res/response (json/write-str (game/list-saved-games))))
@@ -283,6 +364,10 @@
       (security/wrap-rate-limit {:paths #{"/login" "/signup"}
                                  :max-requests 10
                                  :refill-rate 0.5})  ;; 1 request per 2 seconds
+      ;; Rate limiting on game API (prevents spam/DoS)
+      (security/wrap-rate-limit {:paths #{"/api/game" "/game/score"}
+                                 :max-requests 30
+                                 :refill-rate 2.0})  ;; 15 requests per second
       ;; Security headers (CSP, X-Frame-Options, etc.) - must be AFTER wrap-defaults
       security/wrap-security-headers))
 
