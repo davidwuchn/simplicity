@@ -35,11 +35,14 @@
 ;; ------------------------------------------------------------
 
 (defn temp-db-fixture 
-  "Create a temporary SQLite database for testing."
+  "Create a temporary SQLite database for testing.
+   
+   Note: Uses non-pooled datasource for faster test execution."
   [f]
   (let [temp-file (java.io.File/createTempFile "test-db-" ".db")
         temp-path (.getAbsolutePath temp-file)
-        ds (user-impl/make-datasource temp-path)]
+        ;; Use non-pooled datasource for tests (faster)
+        ds (user-impl/make-datasource temp-path {:pool? false})]
     (.deleteOnExit temp-file)
     (binding [user-impl/*ds* ds]
       (user-impl/init-db! ds)

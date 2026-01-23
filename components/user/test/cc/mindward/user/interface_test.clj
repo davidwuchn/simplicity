@@ -5,11 +5,14 @@
 
 (defn test-db-fixture
   "Fixture that creates a temporary SQLite database for each test.
-   Uses dynamic binding to inject the test datasource."
+   Uses dynamic binding to inject the test datasource.
+   
+   Note: Uses non-pooled datasource for faster test execution."
   [f]
   (let [temp-file (java.io.File/createTempFile "test_simplicity_" ".db")
         db-path (.getAbsolutePath temp-file)
-        test-ds (impl/make-datasource db-path)]
+        ;; Use non-pooled datasource for tests (faster, no connection overhead)
+        test-ds (impl/make-datasource db-path {:pool? false})]
     (try
       (binding [impl/*ds* test-ds]
         (impl/init-db! test-ds)

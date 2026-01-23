@@ -3,20 +3,46 @@
    
    Design Pattern: Repository Pattern with injectable datasource.
    The datasource is initialized lazily via `ensure-db!` and can be
-   rebound for testing via `with-redefs` on the `*ds*` dynamic var."
+   rebound for testing via `with-redefs` on the `*ds*` dynamic var.
+   
+   Performance (τ Wisdom): Uses HikariCP connection pooling for production."
   (:require [next.jdbc :as jdbc]
             [next.jdbc.result-set :as rs]
-            [buddy.hashers :as hashers]))
+            [buddy.hashers :as hashers])
+  (:import [com.zaxxer.hikari HikariConfig HikariDataSource]))
 
 ;; ------------------------------------------------------------
-;; Database Configuration (τ Wisdom - lazy initialization)
+;; Database Configuration (τ Wisdom - connection pooling)
 ;; ------------------------------------------------------------
 
 (defn make-datasource
-  "Create a datasource from configuration.
-   Extracted for testability - tests can call this with temp files."
-  [db-path]
-  (jdbc/get-datasource {:dbtype "sqlite" :dbname db-path}))
+  "Create a pooled datasource using HikariCP.
+   
+   Configuration:
+   - Maximum pool size: 10 connections
+   - Minimum idle connections: 2
+   - Connection timeout: 30 seconds
+   - Idle timeout: 10 minutes
+   - Max lifetime: 30 minutes
+   
+   For testing, pass :pool? false to use simple datasource.
+   
+   (τ Wisdom): Connection pooling reduces overhead and improves throughput."
+  ([db-path] (make-datasource db-path {:pool? true}))
+  ([db-path {:keys [pool?] :or {pool? true}}]
+   (if pool?
+     ;; Production: Use HikariCP connection pool
+     (let [config (doto (HikariConfig.)
+                    (.setJdbcUrl (str "jdbc:sqlite:" db-path))
+                    (.setMaximumPoolSize 10)
+                    (.setMinimumIdle 2)
+                    (.setConnectionTimeout 30000)  ; 30 seconds
+                    (.setIdleTimeout 600000)       ; 10 minutes
+                    (.setMaxLifetime 1800000)      ; 30 minutes
+                    (.setPoolName "simplicity-pool"))]
+       (HikariDataSource. config))
+     ;; Testing: Simple datasource (no pooling overhead)
+     (jdbc/get-datasource {:dbtype "sqlite" :dbname db-path}))))
 
 (defonce ^:private db-state (atom nil))
 
@@ -104,7 +130,9 @@
 
 (defn health-check
   "Check user database health status.
-   Returns health information for monitoring."
+   Returns health information for monitoring.
+   
+   Includes connection pool statistics when using HikariCP."
   []
   (try
     (let [datasource @db-state
@@ -112,12 +140,21 @@
           user-count (-> (jdbc/execute! (ds) ["SELECT COUNT(*) as count FROM users"]
                                        {:builder-fn rs/as-unqualified-lower-maps})
                         first
-                        :count)]
+                        :count)
+          ;; Get HikariCP pool stats if available
+          pool-stats (when (instance? HikariDataSource datasource)
+                       (let [pool-mxbean (.getHikariPoolMXBean ^HikariDataSource datasource)]
+                         {:active-connections (.getActiveConnections pool-mxbean)
+                          :idle-connections (.getIdleConnections pool-mxbean)
+                          :total-connections (.getTotalConnections pool-mxbean)
+                          :threads-awaiting-connection (.getThreadsAwaitingConnection pool-mxbean)}))]
       {:healthy? true
-       :details {:database-connected true
-                 :datasource-initialized (some? datasource)
-                 :user-count user-count
-                 :timestamp (System/currentTimeMillis)}})
+       :details (merge {:database-connected true
+                        :datasource-initialized (some? datasource)
+                        :user-count user-count
+                        :timestamp (System/currentTimeMillis)}
+                       (when pool-stats
+                         {:connection-pool pool-stats}))})
     (catch Exception e
       {:healthy? false
        :details {:database-connected false

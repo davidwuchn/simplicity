@@ -8,11 +8,14 @@
 ;; (∃ Truth): Test against actual DB instead of mocks to verify real behavior
 (defn test-db-fixture
   "Fixture that creates a temporary SQLite database for each test.
-   Uses dynamic binding to inject the test datasource."
+   Uses dynamic binding to inject the test datasource.
+   
+   Note: Uses non-pooled datasource for faster test execution."
   [f]
   (let [temp-file (java.io.File/createTempFile "test_auth_" ".db")
         db-path (.getAbsolutePath temp-file)
-        test-ds (user-impl/make-datasource db-path)]
+        ;; Use non-pooled datasource for tests (faster)
+        test-ds (user-impl/make-datasource db-path {:pool? false})]
     (try
       (binding [user-impl/*ds* test-ds]
         (user-impl/init-db! test-ds)
