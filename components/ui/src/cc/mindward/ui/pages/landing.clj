@@ -26,33 +26,32 @@
               [:input {:type "hidden" :id "csrf-token" :value (:csrf-token session "")}]
 
               (if game-life-mode
-                ;; Game of Life Controls
-                [:div {:class "relative z-10 pointer-events-none"}
-                 ;; HUD
-                 [:div {:class "absolute top-4 left-4 pointer-events-auto"}
-                  [:div {:class "hud-element text-cyan-400"}
-                   "GEN: " [:span {:id "generation"} "0"]]
-                  [:div {:class "hud-element text-cyan-400 mt-2"}
-                   "POP: " [:span {:id "population"} "0"]]]
-
-                 ;; Controls
-                 [:div {:class "absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto flex gap-2"}
-                  [:button {:class "cyber-btn"
-                            :onclick "toggleLifePlay()"
-                            :id "life-play-btn"}
-                   "PLAY"]
-                  [:button {:class "cyber-btn-secondary"
-                            :onclick "lifeStep()"}
-                   "STEP"]
-                  [:button {:class "cyber-btn-secondary"
-                            :onclick "lifeClear()"}
-                   "CLEAR"]
-                  [:button {:class "cyber-btn-secondary"
-                            :onclick "lifeRandom()"}
-                   "RAND"]
-                  [:a {:href "/select-game"
-                       :class "cyber-btn-secondary"}
-                   "BACK"]]]
+                ;; Game of Life HUD + Controls (merged)
+                [:div {:class "absolute bottom-4 right-4 z-10 pointer-events-auto"}
+                 [:div {:class "bg-black/90 border border-cyber-cyan p-3"}
+                  ;; HUD
+                  [:div {:class "text-cyan-400 font-mono text-sm mb-3"}
+                   "GEN: " [:span {:id "generation"} "0"]
+                   [:br]
+                   "POP: " [:span {:id "population"} "0"]]
+                  ;; Buttons
+                  [:div {:class "flex flex-col gap-2"}
+                   [:button {:class "cyber-btn text-sm py-2"
+                             :onclick "toggleLifePlay()"
+                             :id "life-play-btn"}
+                    "PLAY"]
+                   [:button {:class "cyber-btn-secondary text-sm py-2"
+                             :onclick "lifeStep()"}
+                    "STEP"]
+                   [:button {:class "cyber-btn-secondary text-sm py-2"
+                             :onclick "lifeClear()"}
+                    "CLEAR"]
+                   [:button {:class "cyber-btn-secondary text-sm py-2"
+                             :onclick "lifeRandom()"}
+                    "RAND"]
+                   [:a {:href "/select-game"
+                        :class "cyber-btn-secondary text-sm py-2 text-center"}
+                    "BACK"]]]]
 
                 ;; Normal Landing Page
                 [:div {:class "relative z-10 min-h-[80vh] flex flex-col justify-center items-center text-center pointer-events-none px-4"}

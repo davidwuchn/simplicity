@@ -130,13 +130,9 @@
          
          ;; Guest menu
          [:div {:class "space-x-2 md:space-x-4"}
-          (c/nav-link {:href "/login"
+          (c/nav-link {:href "/login?force=true"
                        :text "LOGIN"
-                       :aria-label "Login"})
-          (c/link-button {:href "/signup"
-                          :text "INITIATE"
-                          :class "text-xs px-3 md:px-4 py-2"
-                          :aria-label "Sign up"})])]]]))
+                       :aria-label "Login"})])]]]))
 
 ;; === Layout Component ===
 

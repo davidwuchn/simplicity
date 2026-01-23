@@ -164,7 +164,7 @@
     (ui/landing-page session)))
 
 (defn login-page [{:keys [session params anti-forgery-token]}]
-  (if (:username session)
+  (if (and (:username session) (not= (:force params) "true"))
     (res/redirect "/select-game")
     (ui/login-page session params anti-forgery-token)))
 

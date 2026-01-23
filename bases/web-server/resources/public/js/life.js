@@ -48,12 +48,16 @@ const state = {
     height: 0,
     cols: 0,
     rows: 0,
-    
+
     // Game - using Set of "x,y" strings for O(1) lookup
     board: new Set(),
     generation: 0,
     lastUpdate: 0,
-    
+
+    // Control state
+    isPlaying: false,
+    playInterval: null,
+
     // Audio
     audioCtx: null,
     audioInitialized: false,
@@ -84,6 +88,8 @@ function init() {
     resize();
     initializeRandomBoard();
     setupEventListeners();
+    draw();
+    updateHud();
     startGameLoop();
 }
 
@@ -484,6 +490,86 @@ function processActivitySound(births, deaths) {
         const freq = CONFIG.audio.baseFreq * (1 + Math.random() * 2);
         playNote(freq, 0.05, 0.2);
     }
+}
+
+// =============================================================================
+// PUBLIC CONTROL API
+// =============================================================================
+
+/**
+ * Toggle play/pause state.
+ * Updates button text and starts/stops the game loop.
+ */
+function toggleLifePlay() {
+    state.isPlaying = !state.isPlaying;
+
+    const btn = document.getElementById('life-play-btn');
+    if (btn) {
+        btn.textContent = state.isPlaying ? 'PAUSE' : 'PLAY';
+    }
+
+    if (state.isPlaying) {
+        // Start continuous evolution
+        state.playInterval = setInterval(() => {
+            evolve();
+            draw();
+            updateHud();
+        }, CONFIG.tickMs);
+    } else {
+        // Stop evolution
+        if (state.playInterval) {
+            clearInterval(state.playInterval);
+            state.playInterval = null;
+        }
+    }
+}
+
+/**
+ * Advance the game by exactly one generation.
+ * Used by the STEP button.
+ */
+function lifeStep() {
+    evolve();
+    draw();
+    updateHud();
+
+    // Play a small sound to indicate step
+    initAudio();
+    if (state.audioInitialized) {
+        playNote(CONFIG.audio.baseFreq * 2, 0.05, 0.1);
+    }
+}
+
+/**
+ * Clear all cells from the board.
+ * Used by the CLEAR button.
+ */
+function lifeClear() {
+    state.board.clear();
+    state.generation = 0;
+    draw();
+    updateHud();
+}
+
+/**
+ * Randomize the board with initial density.
+ * Used by the RAND button.
+ */
+function lifeRandom() {
+    initializeRandomBoard();
+    draw();
+    updateHud();
+}
+
+/**
+ * Update the HUD elements with current game state.
+ */
+function updateHud() {
+    const genEl = document.getElementById('generation');
+    const popEl = document.getElementById('population');
+
+    if (genEl) genEl.textContent = state.generation;
+    if (popEl) popEl.textContent = state.board.size;
 }
 
 // =============================================================================
