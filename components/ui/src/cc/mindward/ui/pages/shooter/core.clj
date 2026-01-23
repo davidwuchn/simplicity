@@ -99,32 +99,6 @@
              [:body
               [:input {:type "hidden" :id "csrf-token" :value anti-forgery-token}]
 
-               ;; Tutorial Overlay
-              [:div {:id "tutorial-overlay" :role "dialog" :aria-labelledby "tutorial-title" :style "display: none;"}
-               [:div {:class "tutorial-card text-center"}
-                [:h2 {:id "tutorial-title" :class "text-3xl font-black text-cyber-yellow mb-6 uppercase"} "Mission Briefing"]
-                [:div {:class "text-left space-y-4 text-gray-300 mb-6"}
-                 [:div {:class "flex items-center gap-3"}
-                  [:span {:class "text-cyber-cyan text-xl"} "⬆⬇⬅➡"]
-                  [:span "Arrow Keys - Navigate your ship"]]
-                 [:div {:class "flex items-center gap-3"}
-                  [:span {:class "text-cyber-yellow text-xl"} "SPACE"]
-                  [:span "Switch weapon systems"]]
-                 [:div {:class "flex items-center gap-3"}
-                  [:span {:class "text-cyber-red text-xl"} "R"]
-                  [:span "Emergency reboot (restart)"]]
-                 [:div {:class "flex items-center gap-3"}
-                  [:span {:class "text-green-400 text-xl"} "🎯"]
-                  [:span "Destroy enemies to level up"]]]
-                [:button {:id "start-game-btn"
-                          :class "cyber-btn w-full mt-4"
-                          :onclick "startGame()"}
-                 "Launch Mission"]
-                [:button {:id "skip-tutorial-btn"
-                          :class "cyber-btn-secondary w-full mt-2"
-                          :onclick "skipTutorial()"}
-                 "Skip Briefing"]]]
-
                ;; Canvas (Full Screen)
               [:canvas {:id "gameCanvas" :class "cursor-none" :aria-label "Game canvas"}]
 
@@ -159,43 +133,8 @@
                 [:button {:class "cyber-btn w-full mb-2" :onclick "location.reload()"} "Retry Mission"]
                 [:a {:href "/leaderboard" :class "cyber-btn-secondary w-full inline-block text-center"} "View Rankings"]]]
 
-               ;; Tutorial and Game initialization script
+               ;; Game initialization script
               [:script (h/raw "
-              let tutorialShown = localStorage.getItem('tutorial-shown') === 'true';
-
-              function startGame() {
-                const overlay = document.getElementById('tutorial-overlay');
-                if (overlay) {
-                  overlay.style.display = 'none';
-                  localStorage.setItem('tutorial-shown', 'true');
-                  initializeGame();
-                }
-              }
-
-              function skipTutorial() {
-                startGame();
-              }
-
-              function initializeGame() {
-                // Game will be initialized by game.js
-                console.log('Game initialized');
-              }
-
-              // Wait for DOM to be ready
-              document.addEventListener('DOMContentLoaded', function() {
-                const overlay = document.getElementById('tutorial-overlay');
-                if (!overlay) return;
-
-                // Show tutorial only on first visit
-                if (!tutorialShown) {
-                  overlay.style.display = 'flex';
-                } else {
-                  overlay.style.display = 'none';
-                  setTimeout(initializeGame, 100);
-                }
-              });
-
-              // Show game over
               function showGameOver(score) {
                 document.getElementById('final-score').textContent = score;
                 const gameOverOverlay = document.getElementById('game-over-overlay');
