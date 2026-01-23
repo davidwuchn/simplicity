@@ -97,11 +97,12 @@ Different Game of Life patterns trigger different sounds:
 | **Run Component Tests** | `clojure -M:poly test brick:game` |
 | **Lint Code** | `clj-kondo --lint components/*/src bases/*/src` |
 | **Launch REPL** | `./bin/launchpad` (requires Java 17) |
+| **Start nREPL** | `clojure -M:nrepl` (for clojure-mcp integration) |
 | **Format Code** | `cljfmt fix` (if configured) |
 
 ### Development Workflow
 
-The workspace supports **REPL-driven development**:
+The workspace supports **REPL-driven development** and **AI-assisted coding**:
 
 1. Start REPL: `./bin/launchpad`
 2. Connect your editor (nREPL port in `.nrepl-port`)
@@ -297,6 +298,9 @@ Response:
 ## 📚 Documentation
 
 - **[AGENTS.md](./AGENTS.md)** - AI agent operational guidelines & code style
+- **[PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md)** - Project summary for AI assistants (clojure-mcp)
+- **[LLM_CODE_STYLE.md](./LLM_CODE_STYLE.md)** - Code style guide for AI-assisted development
+- **[docs/clojure-mcp-integration.md](./docs/clojure-mcp-integration.md)** - Guide for using clojure-mcp with this project
 - **[docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md)** - Complete deployment guide for Cloudflare
 - **[docs/security.md](./docs/security.md)** - Security controls & hardening guide
 - **[docs/api.md](./docs/api.md)** - REST API reference

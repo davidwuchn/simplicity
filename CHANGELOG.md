@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Clojure-MCP Integration**
+  - nREPL server configuration (`:nrepl` alias on port 7888)
+  - `.clojure-mcp/config.edn` with security boundaries and tool settings
+  - `PROJECT_SUMMARY.md` - LLM-optimized project overview for AI context
+  - `LLM_CODE_STYLE.md` - Coding standards and Polylith constraints for AI assistants
+  - `docs/clojure-mcp-integration.md` - Complete integration guide for Claude Desktop, Claude Code, and other MCP clients
+  - `.clojure-mcp/README.md` - Quick reference for clojure-mcp usage
+  - Support for AI-assisted development with REPL access and structure-aware editing
 - CONTRIBUTING.md with comprehensive contribution guidelines
 - LICENSE file (MIT License)
 - GitHub Actions CI/CD workflow

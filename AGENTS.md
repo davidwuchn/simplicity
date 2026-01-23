@@ -180,6 +180,11 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
     (example/do-something {:data "val"})
     EOF
     ```
+- **clojure-mcp**: AI-assisted development via Model Context Protocol.
+  - **Start nREPL**: `clojure -M:nrepl` (port 7888)
+  - **Configuration**: See `.clojure-mcp/config.edn` and `docs/clojure-mcp-integration.md`
+  - **Context Files**: `PROJECT_SUMMARY.md`, `LLM_CODE_STYLE.md`, this file
+  - **Integration**: Compatible with Claude Desktop, Claude Code, and other MCP clients
 - **Clerk**: Use `notebooks/` for interactive documentation and data visualization.
   - Command: `clojure -X:dev nextjournal.clerk/serve!`
 - **Launchpad**: Standard entry script in `bin/launchpad`.
