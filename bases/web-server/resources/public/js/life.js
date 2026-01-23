@@ -340,10 +340,9 @@ function handleKeydown(e) {
         return;
     }
 
-    // Space - add random cells
+    // Space - toggle play/pause
     if (e.code === 'Space') {
-        addRandomCells(50);
-        draw();
+        toggleLifePlay();
         return;
     }
 
