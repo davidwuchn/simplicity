@@ -3,7 +3,21 @@
    
    φ (Vitality): Game state evolves organically following cellular automata rules.
    ∃ (Truth): Musical triggers are deterministic based on pattern emergence."
-  (:require [cc.mindward.game.impl :as impl]))
+  (:require [cc.mindward.game.impl :as impl]
+            [clojure.spec.alpha :as s]))
+
+;; ------------------------------------------------------------
+;; Domain Specs (π Synthesis)
+;; ------------------------------------------------------------
+
+(s/def :game/id keyword?)
+(s/def :game/coordinate (s/tuple int? int?))
+(s/def :game/board (s/coll-of :game/coordinate :kind set?))
+(s/def :game/generation (s/and int? #(>= % 0)))
+(s/def :game/score (s/and int? #(>= % 0)))
+
+(s/def :game/musical-trigger
+  (s/keys :req-un [:game/trigger :game/params]))
 
 ;; ------------------------------------------------------------
 ;; Domain Model (π Synthesis)

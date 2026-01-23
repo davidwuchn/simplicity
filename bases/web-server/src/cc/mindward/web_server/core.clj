@@ -23,6 +23,16 @@
   [path error-msg]
   (res/redirect (str path "?error=" (java.net.URLEncoder/encode error-msg "UTF-8"))))
 
+(defn- parse-coordinates
+  "Parse coordinate JSON into a set of [x y] vectors.
+   Ensures coordinates are integers."
+  [json-str]
+  (try
+    (let [coords (json/read-str (or json-str "[]"))]
+      (into #{} (map (fn [[x y]] [(int x) (int y)])) coords))
+    (catch Exception _
+      #{})))
+
 (defn leaderboard-page [{:keys [session]}]
   (let [leaderboard (user/get-leaderboard)]
     (ui/leaderboard-page session leaderboard)))
@@ -124,39 +134,49 @@
       (assoc :session nil)))
 
 (defn game-api [{:keys [session params]}]
-  (let [game-id (keyword (str "user-" (:username session "anonymous") "-game"))]
-    (case (:action params)
-      "create" (let [cells (into #{} (map (fn [[x y]] [(int x) (int y)])) 
-                             (json/read-str (:cells params "[]")))]
-                 (game/create-game! game-id cells)
-                 (res/response (json/write-str {:board (into [] (game/get-board game-id))
-                                                :generation (game/get-generation game-id)
-                                                :score (game/get-score game-id)})))
-      "evolve" (let [evolved (game/evolve! game-id)]
-                 (res/response (json/write-str {:board (into [] evolved)
-                                                :generation (game/get-generation game-id)
-                                                :score (game/get-score game-id)
-                                                :triggers (game/get-musical-triggers game-id)})))
-      "manipulate" (let [cells-to-add (into #{} (map (fn [[x y]] [(int x) (int y)]))
-                                         (json/read-str (:cells params "[]")))
-                         cells-to-remove (into #{} (map (fn [[x y]] [(int x) (int y)]))
-                                            (json/read-str (:remove params "[]")))]
-                     (game/add-cells! game-id cells-to-add)
-                     (game/clear-cells! game-id cells-to-remove)
-                     (res/response (json/write-str {:board (into [] (game/get-board game-id))
-                                                    :generation (game/get-generation game-id)
-                                                    :score (game/get-score game-id)})))
-      "save" (when-let [game-name (:name params)]
-               (let [saved (game/save-game! game-id game-name)]
-                 (res/response (json/write-str {:id (:id saved) 
-                                                :name (:name saved)
-                                                :saved true}))))
-      "load" (when-let [saved-id (:savedId params)]
-               (let [loaded (game/load-game! saved-id game-id)]
-                 (res/response (json/write-str {:board (into [] loaded)
-                                                :generation (game/get-generation game-id)
-                                                :score (game/get-score game-id)
-                                                :loaded true}))))
+  (let [game-id (keyword (str "user-" (:username session "anonymous") "-game"))
+        action (:action params)]
+    (case action
+      "create" 
+      (let [cells (parse-coordinates (:cells params))]
+        (game/create-game! game-id cells)
+        (res/response (json/write-str {:board (into [] (game/get-board game-id))
+                                       :generation (game/get-generation game-id)
+                                       :score (game/get-score game-id)})))
+      
+      "evolve" 
+      (let [evolved (game/evolve! game-id)]
+        (res/response (json/write-str {:board (into [] evolved)
+                                       :generation (game/get-generation game-id)
+                                       :score (game/get-score game-id)
+                                       :triggers (game/get-musical-triggers game-id)})))
+      
+      "manipulate" 
+      (let [cells-to-add (parse-coordinates (:cells params))
+            cells-to-remove (parse-coordinates (:remove params))]
+        (game/add-cells! game-id cells-to-add)
+        (game/clear-cells! game-id cells-to-remove)
+        (res/response (json/write-str {:board (into [] (game/get-board game-id))
+                                       :generation (game/get-generation game-id)
+                                       :score (game/get-score game-id)})))
+      
+      "save" 
+      (if-let [game-name (:name params)]
+        (let [saved (game/save-game! game-id game-name)]
+          (res/response (json/write-str {:id (:id saved) 
+                                         :name (:name saved)
+                                         :saved true})))
+        (res/bad-request (json/write-str {:error "Game name required"})))
+      
+      "load" 
+      (if-let [saved-id (:savedId params)]
+        (let [loaded (game/load-game! saved-id game-id)]
+          (res/response (json/write-str {:board (into [] loaded)
+                                         :generation (game/get-generation game-id)
+                                         :score (game/get-score game-id)
+                                         :loaded true})))
+        (res/bad-request (json/write-str {:error "Saved ID required"})))
+      
       (res/response (json/write-str {:error "Invalid action"})))))
 
 (defn list-saved-games-api [_]

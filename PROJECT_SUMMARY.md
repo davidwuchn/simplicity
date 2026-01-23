@@ -32,12 +32,14 @@ Located in `components/`:
    - User management (CRUD operations)
    - High scores and leaderboard
    - SQLite persistence with next.jdbc
+   - **Clojure Spec**: Domain constraints for usernames, passwords, and scores
    - Entry point: `interface` namespace
    
 3. **`game`** (`cc.mindward.component.game.*`)
    - Conway's Game of Life engine
    - Pattern recognition (gliders, oscillators, still lifes)
    - Musical event mapping
+   - **Clojure Spec**: Domain constraints for game state and musical triggers
    - Entry point: `interface` namespace
    
 4. **`ui`** (`cc.mindward.component.ui.*`)

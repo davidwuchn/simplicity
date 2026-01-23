@@ -4,7 +4,36 @@
    All user-related operations flow through this namespace.
    Implementation details (storage, hashing) are encapsulated."
   (:require [cc.mindward.user.impl :as impl]
-            [cc.mindward.user.validation :as validation]))
+            [cc.mindward.user.validation :as validation]
+            [clojure.spec.alpha :as s]))
+
+;; ------------------------------------------------------------
+;; Domain Specs (∃ Truth)
+;; ------------------------------------------------------------
+
+(s/def :user/username
+       (s/and string?
+              #(>= (count %) validation/username-min-length)
+              #(<= (count %) validation/username-max-length)
+              #(re-matches validation/username-pattern %)))
+
+(s/def :user/password
+       (s/and string? #(>= (count %) validation/password-min-length)))
+
+(s/def :user/name
+       (s/and string?
+              #(>= (count %) validation/name-min-length)
+              #(<= (count %) validation/name-max-length)))
+
+(s/def :user/score
+       (s/and int? #(>= % 0) #(<= % validation/score-max-value)))
+
+(s/def :user/user-map
+       (s/keys :req-un [:user/username :user/password :user/name]))
+
+(s/def :user/leaderboard-entry
+       (s/keys :req-un [:user/username :user/name]
+               :req [:user/high_score]))
 
 ;; ------------------------------------------------------------
 ;; Lifecycle
