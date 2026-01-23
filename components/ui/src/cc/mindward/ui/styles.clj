@@ -11,9 +11,12 @@
   {:cyber-yellow "#fcee0a"
    :cyber-cyan   "#00f0ff"
    :cyber-red    "#ff003c"
+   :success-green "#00ff00"
    :background   "#050505"
    :foreground   "#e2e8f0"
    :black        "#000"
+   :gray-dark    "#1a1a1a"
+   :gray-medium  "#2a2a2a"
    :gray-100     "#f5f5f5"
    :gray-200     "#e0e0e0"
    :gray-400     "#9ca3af"
@@ -32,70 +35,81 @@
    :xl "1280px"})
 
 ;; ------------------------------------------------------------
+;; Helper Functions (μ Directness - DRY principle)
+;; ------------------------------------------------------------
+
+(defn c
+  "Get color from palette by keyword.
+   (∃ Truth): Single source of truth for colors."
+  [color-key]
+  (or (get colors color-key)
+      (throw (ex-info "Unknown color key" {:key color-key :available (keys colors)}))))
+
+;; ------------------------------------------------------------
 ;; CSS Section Functions (π Synthesis - compose from parts)
 ;; ------------------------------------------------------------
 
 (defn base-styles
   "Base styles for body and universal selectors."
   []
-  "
+  (str "
   /* === Base Styles === */
   * { box-sizing: border-box; }
   body { 
-    background-color: #050505; 
-    color: #e2e8f0; 
+    background-color: " (c :background) "; 
+    color: " (c :foreground) "; 
     font-family: 'Orbitron', sans-serif; 
     background-image: linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent); 
     background-size: 50px 50px;
     min-height: 100vh;
   }
-  ")
+  "))
 
 (defn cyber-components
   "Cyber-themed UI components (cards, inputs, buttons)."
   []
-  "
+  (str "
   /* === Cyber Components === */
   .font-cyber { font-family: 'Orbitron', sans-serif; }
   .cyber-card { 
-    background-color: #000; 
-    border: 2px solid #fcee0a; 
-    box-shadow: 6px 6px 0px 0px #00f0ff; 
+    background-color: " (c :black) "; 
+    border: 2px solid " (c :cyber-yellow) "; 
+    box-shadow: 6px 6px 0px 0px " (c :cyber-cyan) "; 
     padding: 2rem;
     transition: all 0.3s ease;
   }
   .cyber-card:hover {
-    box-shadow: 8px 8px 0px 0px #00f0ff, 0 0 20px rgba(0, 240, 255, 0.3);
+    box-shadow: 8px 8px 0px 0px " (c :cyber-cyan) ", 0 0 20px rgba(0, 240, 255, 0.3);
     transform: translate(-2px, -2px);
   }
   
   .cyber-input { 
-    background-color: #1a1a1a; 
-    border: 1px solid #00f0ff; 
-    color: #00f0ff; 
+    background-color: " (c :gray-dark) "; 
+    border: 1px solid " (c :cyber-cyan) "; 
+    color: " (c :cyber-cyan) "; 
     border-radius: 0;
     transition: all 0.2s ease;
   }
   .cyber-input:focus { 
-    border-color: #fcee0a; 
+    border-color: " (c :cyber-yellow) "; 
     outline: none; 
-    box-shadow: 0 0 10px #fcee0a, inset 0 0 5px rgba(252, 238, 10, 0.1);
+    box-shadow: 0 0 10px " (c :cyber-yellow) ", inset 0 0 5px rgba(252, 238, 10, 0.1);
     transform: scale(1.01);
   }
   .cyber-input:invalid:not(:placeholder-shown) {
-    border-color: #ff003c;
+    border-color: " (c :cyber-red) ";
     box-shadow: 0 0 10px rgba(255, 0, 60, 0.5);
   }
-  ")
+  "))
 
 (defn cyber-buttons
   "Primary and secondary cyber-themed buttons."
   []
-  "
+  (str "
   /* === Cyber Buttons === */
   .cyber-btn { 
-    background-color: #fcee0a; 
-    color: #000; 
+    background-color: " (c :cyber-yellow) "; 
+    color: " (c :black) "; 
     font-weight: 900; 
     text-transform: uppercase; 
     border: none; 
@@ -123,13 +137,13 @@
     height: 300px;
   }
   .cyber-btn:hover { 
-    background-color: #00f0ff; 
-    box-shadow: 4px 4px 0px #ff003c; 
+    background-color: " (c :cyber-cyan) "; 
+    box-shadow: 4px 4px 0px " (c :cyber-red) "; 
     transform: translate(-2px, -2px); 
   }
   .cyber-btn:active {
     transform: translate(0, 0);
-    box-shadow: 2px 2px 0px #ff003c;
+    box-shadow: 2px 2px 0px " (c :cyber-red) ";
   }
   .cyber-btn:disabled {
     opacity: 0.5;
@@ -138,9 +152,9 @@
   }
   
   .cyber-btn-secondary { 
-    background-color: #2a2a2a; 
-    color: #00f0ff; 
-    border: 2px solid #00f0ff; 
+    background-color: " (c :gray-medium) "; 
+    color: " (c :cyber-cyan) "; 
+    border: 2px solid " (c :cyber-cyan) "; 
     font-weight: 700; 
     text-transform: uppercase; 
     clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%); 
@@ -149,27 +163,27 @@
     cursor: pointer;
   }
   .cyber-btn-secondary:hover { 
-    background-color: #00f0ff; 
-    color: #000; 
-    box-shadow: 4px 4px 0px #fcee0a;
+    background-color: " (c :cyber-cyan) "; 
+    color: " (c :black) "; 
+    box-shadow: 4px 4px 0px " (c :cyber-yellow) ";
     transform: translate(-2px, -2px);
   }
-  ")
+  "))
 
 (defn animations
   "Keyframe animations and animation utilities."
   []
-  "
+  (str "
   /* === Animations === */
   .glitch-text { 
-    text-shadow: 2px 0 #ff003c, -2px 0 #00f0ff; 
+    text-shadow: 2px 0 " (c :cyber-red) ", -2px 0 " (c :cyber-cyan) "; 
     animation: glitch 1s infinite alternate-reverse; 
   }
   @keyframes glitch { 
-    0% { text-shadow: 2px 0 #ff003c, -2px 0 #00f0ff; } 
-    25% { text-shadow: -2px 0 #ff003c, 2px 0 #00f0ff; } 
-    50% { text-shadow: 2px 0 #00f0ff, -2px 0 #fcee0a; } 
-    100% { text-shadow: -2px 0 #00f0ff, 2px 0 #ff003c; } 
+    0% { text-shadow: 2px 0 " (c :cyber-red) ", -2px 0 " (c :cyber-cyan) "; } 
+    25% { text-shadow: -2px 0 " (c :cyber-red) ", 2px 0 " (c :cyber-cyan) "; } 
+    50% { text-shadow: 2px 0 " (c :cyber-cyan) ", -2px 0 " (c :cyber-yellow) "; } 
+    100% { text-shadow: -2px 0 " (c :cyber-cyan) ", 2px 0 " (c :cyber-red) "; } 
   }
   
   @keyframes fadeIn {
@@ -191,30 +205,29 @@
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
-  ")
+  "))
 
 (defn color-utilities
   "Text and border color utility classes."
   []
-  "
+  (str "
   /* === Color Utilities === */
-  .text-cyber-yellow { color: #fcee0a; }
-  .text-cyber-cyan { color: #00f0ff; }
-  .text-cyber-red { color: #ff003c; }
-  .border-cyber-yellow { border-color: #fcee0a; }
-  .border-cyber-cyan { border-color: #00f0ff; }
-  .border-cyber-red { border-color: #ff003c; }
-  ")
+  .text-cyber-yellow { color: " (c :cyber-yellow) "; }
+  .text-cyber-cyan { color: " (c :cyber-cyan) "; }
+  .text-cyber-red { color: " (c :cyber-red) "; }
+  .border-cyber-yellow { border-color: " (c :cyber-yellow) "; }
+  .border-cyber-cyan { border-color: " (c :cyber-cyan) "; }
+  .border-cyber-red { border-color: " (c :cyber-red) "; }
+  "))
 
 (defn loading-state
   "Loading spinner and disabled state styles."
   []
-  "
+  (str "
   /* === Loading State === */
   .loading {
     position: relative;
     pointer-events: none;
-    opacity: 0.6;
   }
   .loading::after {
     content: '';
@@ -224,17 +237,17 @@
     width: 20px;
     height: 20px;
     margin: -10px 0 0 -10px;
-    border: 2px solid #00f0ff;
+    border: 2px solid " (c :cyber-cyan) ";
     border-top-color: transparent;
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
   }
-  ")
+  "))
 
 (defn toast-notifications
   "Toast notification container and variants."
   []
-  "
+  (str "
   /* === Toast Notifications === */
   #toast-container {
     position: fixed;
@@ -247,7 +260,7 @@
     pointer-events: none;
   }
   .toast {
-    background: #000;
+    background: " (c :black) ";
     border: 2px solid;
     padding: 16px 20px;
     min-width: 300px;
@@ -258,22 +271,22 @@
     font-size: 14px;
     font-weight: 700;
   }
-  .toast.success { border-color: #00ff00; box-shadow: 6px 6px 0px 0px #00ff00; color: #00ff00; }
-  .toast.error { border-color: #ff003c; box-shadow: 6px 6px 0px 0px #ff003c; color: #ff003c; }
-  .toast.info { border-color: #00f0ff; box-shadow: 6px 6px 0px 0px #00f0ff; color: #00f0ff; }
-  .toast.warning { border-color: #fcee0a; box-shadow: 6px 6px 0px 0px #fcee0a; color: #fcee0a; }
-  ")
+  .toast.success { border-color: " (c :success-green) "; box-shadow: 6px 6px 0px 0px " (c :success-green) "; color: " (c :success-green) "; }
+  .toast.error { border-color: " (c :cyber-red) "; box-shadow: 6px 6px 0px 0px " (c :cyber-red) "; color: " (c :cyber-red) "; }
+  .toast.info { border-color: " (c :cyber-cyan) "; box-shadow: 6px 6px 0px 0px " (c :cyber-cyan) "; color: " (c :cyber-cyan) "; }
+  .toast.warning { border-color: " (c :cyber-yellow) "; box-shadow: 6px 6px 0px 0px " (c :cyber-yellow) "; color: " (c :cyber-yellow) "; }
+  "))
 
 (defn responsive-design
   "Media queries for responsive layouts."
   []
-  "
+  (str "
   /* === Responsive Design === */
   @media (max-width: 768px) {
     body { background-size: 30px 30px; }
     .cyber-card { 
       padding: 1.5rem; 
-      box-shadow: 4px 4px 0px 0px #00f0ff; 
+      box-shadow: 4px 4px 0px 0px " (c :cyber-cyan) "; 
     }
     .glitch-text { font-size: 2.5rem !important; }
     #toast-container { right: 10px; left: 10px; top: 60px; }
@@ -287,12 +300,12 @@
       font-size: 0.875rem;
     }
   }
-  ")
+  "))
 
 (defn accessibility
   "Accessibility utilities (screen reader, focus states)."
   []
-  "
+  (str "
   /* === Accessibility === */
   .sr-only {
     position: absolute;
@@ -307,10 +320,10 @@
   }
   
   :focus-visible {
-    outline: 2px solid #fcee0a;
+    outline: 2px solid " (c :cyber-yellow) ";
     outline-offset: 4px;
   }
-  ")
+  "))
 
 ;; ------------------------------------------------------------
 ;; Main Stylesheet Composer (π Synthesis)
