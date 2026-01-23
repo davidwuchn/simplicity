@@ -2,13 +2,25 @@
 
 ## Start nREPL Server
 
+### Option 1: Clojure nREPL (Default)
+
 ```bash
 clojure -M:nrepl
 ```
 
-This starts an nREPL server on port 7888 with CIDER middleware.
+This starts a Clojure nREPL server on port 7888 with CIDER middleware.
+
+### Option 2: Babashka nREPL (Faster Startup)
+
+```bash
+bb nrepl-server 7888
+```
+
+This starts a Babashka nREPL server on port 7888 for faster startup times.
 
 ## Claude Desktop Configuration
+
+### For Clojure nREPL
 
 Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
@@ -20,6 +32,22 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
       "args": [
         "-c",
         "clojure -Tmcp start :not-cwd true :port 7888"
+      ]
+    }
+  }
+}
+```
+
+### For Babashka nREPL
+
+```json
+{
+  "mcpServers": {
+    "clojure-mcp": {
+      "command": "/bin/zsh",
+      "args": [
+        "-c",
+        "clojure -Tmcp start :not-cwd true :port 7888 :nrepl-env-type :bb"
       ]
     }
   }
@@ -47,8 +75,10 @@ When starting a conversation with an AI assistant, load these resources:
 
 | Command | Description |
 |---------|-------------|
-| `clojure -M:nrepl` | Start nREPL server on port 7888 |
-| `clojure -Tmcp start :port 7888` | Start clojure-mcp server |
+| `clojure -M:nrepl` | Start Clojure nREPL server on port 7888 |
+| `bb nrepl-server 7888` | Start Babashka nREPL server on port 7888 |
+| `clojure -Tmcp start :port 7888` | Start clojure-mcp (Clojure mode) |
+| `clojure -Tmcp start :port 7888 :nrepl-env-type :bb` | Start clojure-mcp (Babashka mode) |
 | `clojure -M:poly check` | Verify Polylith architecture |
 | `clojure -M:poly test :dev` | Run all tests |
 

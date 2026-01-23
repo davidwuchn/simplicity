@@ -26,7 +26,8 @@ Common tasks:
 
 ```bash
 bb help            # Show all available tasks
-bb dev             # Start development REPL with hot reload
+bb dev             # Start development REPL with hot reload (Clojure)
+bb nrepl           # Start Babashka nREPL server on port 7888
 bb test            # Run all tests (618 assertions)
 bb test:watch      # Watch mode (re-run tests on changes)
 bb check           # Check Polylith workspace integrity
@@ -44,9 +45,14 @@ See `bb help` for complete list of 30+ tasks.
 
 ### Development Workflow (Hot Reload) - USE bb dev
 
-**PRIMARY COMMAND:**
+**PRIMARY COMMAND (Clojure REPL):**
 ```bash
-bb dev              # Start development REPL (ALWAYS USE THIS)
+bb dev              # Start Clojure development REPL (ALWAYS USE THIS)
+```
+
+**ALTERNATIVE (Babashka nREPL for MCP integration):**
+```bash
+bb nrepl            # Start Babashka nREPL server on port 7888
 ```
 
 **In REPL:**
@@ -267,9 +273,11 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
     EOF
     ```
 - **clojure-mcp**: AI-assisted development via Model Context Protocol.
-  - **Skill**: Load with `eca__skill name: "clojure-mcp"` for detailed workflows.
-  - **Start nREPL**: `clojure -M:nrepl` (port 7888)
-  - **Configuration**: See `.clojure-mcp/config.edn` and `docs/clojure-mcp-integration.md`
+  - **Start nREPL (Clojure)**: `clojure -M:nrepl` or `bb dev` (port 7888)
+  - **Start nREPL (Babashka)**: `bb nrepl` or `bb nrepl-server 7888` (port 7888)
+  - **Start MCP Server (Clojure)**: `clojure -Tmcp start :port 7888`
+  - **Start MCP Server (Babashka)**: `clojure -Tmcp start :port 7888 :nrepl-env-type :bb`
+  - **Configuration**: See `.clojure-mcp/config.edn` and `.clojure-mcp/README.md`
   - **Context Files**: `PROJECT_SUMMARY.md`, `LLM_CODE_STYLE.md`, this file
   - **Integration**: Compatible with Claude Desktop, Claude Code, and other MCP clients
 - **Clerk**: Use `notebooks/` for interactive documentation and data visualization.

@@ -13,13 +13,17 @@
   ;; Development Tasks
   ;; ═══════════════════════════════════════════════════════════
   
-  dev
-  {:doc "Start development REPL with hot reload"
-   :task (shell "clojure -M:nrepl")}
-  
-  repl
-  {:doc "Start development REPL (alias for dev)"
-   :task (run 'dev)}
+   dev
+   {:doc "Start development REPL with hot reload"
+    :task (shell "clojure -M:nrepl")}
+   
+   nrepl
+   {:doc "Start Babashka nREPL server on port 7888"
+    :task (shell "bb nrepl-server 7888")}
+   
+   repl
+   {:doc "Start development REPL (alias for dev)"
+    :task (run 'dev)}
   
   check
   {:doc "Check Polylith workspace integrity"
@@ -259,11 +263,12 @@
            (println "  易简则天下之理得 (Simplicity allows obtaining the logic of the world)")
            (println "═══════════════════════════════════════════════════════════")
            (println "\nDEVELOPMENT:")
-           (println "  bb dev             - Start development REPL with hot reload")
-           (println "  bb repl            - Alias for 'dev'")
-           (println "  bb check           - Check Polylith workspace integrity")
-           (println "  bb info            - Show Polylith workspace info")
-           (println "  bb diff            - Show changed bricks")
+            (println "  bb dev             - Start development REPL with hot reload")
+            (println "  bb nrepl           - Start Babashka nREPL server on port 7888")
+            (println "  bb repl            - Alias for 'dev'")
+            (println "  bb check           - Check Polylith workspace integrity")
+            (println "  bb info            - Show Polylith workspace info")
+            (println "  bb diff            - Show changed bricks")
            (println "\nTESTING:")
             (println "  bb test            - Run all tests (618 assertions)")
            (println "  bb test:watch      - Watch mode (re-run on changes)")
