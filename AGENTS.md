@@ -207,11 +207,11 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
   - **Security Middleware Stack** (bases/web-server/src/cc/mindward/web_server/security.clj):
     - Security headers (CSP, X-Frame-Options, X-Content-Type-Options, etc.)
     - Rate limiting (token bucket algorithm for /login, /signup)
-    - Input validation (username, password, score)
+    - Input validation (username, password, name, score) - **All inputs validated at boundaries**
   - **Password Security**: bcrypt + sha512 with timing attack resistance
   - **SQL Injection**: Parameterized queries + input validation (test coverage: 36 assertions)
-  - **XSS Prevention**: HTML escaping + CSP headers (test coverage: 65 assertions)
-  - See [docs/security.md](./docs/security.md) for complete security controls (501 security-tested assertions)
+  - **XSS Prevention**: HTML escaping + CSP headers (test coverage: 99 assertions)
+  - See [docs/security.md](./docs/security.md) for complete security controls (618 security-tested assertions)
 - **Persistence**: Use `next.jdbc` with `rs/as-unqualified-lower-maps` for idiomatic data flow.
 - **Client-Side**: 
   - **Audio Policy**: Web Audio API requires a user gesture (`click`/`keydown`) to unlock. Always guard `new AudioContext()` with a `try-catch` and handle `suspended` state.
@@ -234,13 +234,13 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 ### 5. Self-Correction
 - If `poly check` fails, you have violated Polylith constraints (e.g., circular dependency or illegal import). Fix immediately.
 - Use `clj-kondo` to catch static analysis issues before committing.
-- **Test Coverage**: 618 passing assertions across test suite (current)
-  - Auth: 2 tests, 14 assertions
+- **Test Coverage**: 618 passing assertions across 135 tests (current)
+  - Auth: 3 tests, 25 assertions
   - Game: 13 tests, 136 assertions
-  - UI: 44 tests, 151 assertions (includes comprehensive script loading tests)
-  - User: tests passing
-  - Web-server: tests passing (includes security tests)
-- Run `clojure -M:poly test :dev` before committing to verify all tests pass.
+  - UI: 70 tests, 267 assertions (includes comprehensive script loading tests)
+  - User: 12 tests, 49 assertions
+  - Web-server: 37 tests, 177 assertions (includes security tests)
+- Run `bb test` or `clojure -M:poly test :dev` before committing to verify all tests pass.
 
 ## Tools & Utilities
 - **ripgrep (rg)**: The preferred search tool for code search and pattern matching.
@@ -288,7 +288,8 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - **Abstraction Leak**: Never let implementation details (like DB connections or third-party client objects) escape the component interface. Use data maps or domain records.
 - **The God Base**: Bases are Controllers, not Views. Do not mix routing, logic, and HTML generation in one file.
 - **The Test Illusion**: `(is (= 1 1))` is not a test. Verify actual logic or data persistence.
-- **Hardcoded Secrets**: Never commit passwords or API keys. Use `System/getenv` or a config component. **Security validated**: 501 security-tested assertions.
+- **Hardcoded Secrets**: Never commit passwords or API keys. Use `System/getenv` or a config component. **Security validated**: 618 security-tested assertions.
+- **Dead Code**: Regularly audit for unused functions, commented-out code, and obsolete files. Use dead code analysis to identify security gaps (e.g., missing validation).
 - **The Infinite Loop**: When using `requestAnimationFrame`, always wrap the loop body in a `try-catch` block to prevent a crash from freezing the entire tab/rendering thread.
 - **Security Bypass**: Never skip input validation or rate limiting. All user inputs must be validated at the boundary (see `bases/web-server/src/cc/mindward/web_server/security.clj`).
 - **Docker Anti-patterns**: 
@@ -312,6 +313,15 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 **Docker:**
 - `JAVA_OPTS` - JVM options (default: `-Xmx512m -Xms256m -XX:+UseG1GC`)
 
+**Configuration Recommendations (Future Enhancement):**
+For production deployments with varying scale requirements, consider adding:
+- `DB_POOL_MAX_SIZE` - Maximum database connections (currently hardcoded: 10)
+- `DB_POOL_MIN_IDLE` - Minimum idle connections (currently hardcoded: 2)
+- `RATE_LIMIT_MAX_REQUESTS` - Rate limit burst capacity (currently hardcoded: 10)
+- `RATE_LIMIT_REFILL_RATE` - Token refill rate (currently hardcoded: 0.5)
+- `GAME_TTL_MINUTES` - Game session TTL (currently hardcoded: 60 minutes)
+See hardcoded configuration analysis for complete list of tunable parameters.
+
 ### Health Monitoring
 - **Endpoint**: `GET /health`
 - **Response**: JSON with status, timestamp, database check, version
@@ -319,15 +329,16 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 
 ### Deployment Checklist
 **Before deploying to production:**
-1. ✅ Run `clojure -M:poly test :dev` (ensure 501 tests pass)
-2. ✅ Review [docs/security.md](./docs/security.md)
-3. ✅ Review [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md)
-4. ✅ Enable HTTPS and set `ENABLE_HSTS=true`
-5. ✅ Configure Cloudflare firewall rules
-6. ✅ Set `LOG_LEVEL=WARN`
-7. ✅ Configure persistent volumes (Docker: `/app/data`, `/app/logs`)
-8. ✅ Set up health check monitoring
-9. ✅ Configure Cloudflare Analytics
+1. ✅ Run `bb test` or `clojure -M:poly test :dev` (ensure all 618 tests pass)
+2. ✅ Run `bb lint` (ensure zero warnings)
+3. ✅ Review [docs/security.md](./docs/security.md)
+4. ✅ Review [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md)
+5. ✅ Enable HTTPS and set `ENABLE_HSTS=true`
+6. ✅ Configure Cloudflare firewall rules
+7. ✅ Set `LOG_LEVEL=WARN`
+8. ✅ Configure persistent volumes (Docker: `/app/data`, `/app/logs`)
+9. ✅ Set up health check monitoring
+10. ✅ Configure Cloudflare Analytics
 
 **Deployment Options:**
 - **Option 1**: VPS + Docker + Cloudflare proxy (recommended, $5-12/month)
