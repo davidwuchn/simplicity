@@ -34,15 +34,10 @@
  ;; Scratch pad persistence
  ;; Enable file-based persistence for session state and planning
  ;; Data will survive server restarts when enabled
- :scratch-pad {:persist true
-               :file ".clojure-mcp/scratch-pad.edn"}
+ :scratch-pad-load true
+ :scratch-pad-file ".clojure-mcp/scratch-pad.edn"
  
  ;; Tool configuration
- ;; Customize individual tool behavior
- :tools {:clojure_eval {:timeout-ms 30000}  ;; 30 second timeout for REPL evaluation
-         :bash {:timeout-ms 60000}}          ;; 60 second timeout for shell commands
- 
- ;; Security settings
- ;; Additional constraints for production use
- :security {:max-file-size-mb 10             ;; Maximum file size for read/write operations
-            :require-confirmation [:bash]}}   ;; Tools that require user confirmation
+ ;; Customize individual tool behavior (timeout values in milliseconds)
+ :tools-config {:clojure_eval {:timeout-ms 30000}  ;; 30 second timeout for REPL evaluation
+                :bash {:timeout-ms 60000}}}         ;; 60 second timeout for shell commands
