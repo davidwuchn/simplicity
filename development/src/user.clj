@@ -18,7 +18,9 @@
      Hot reload should preserve application state while reloading logic.
      Proper lifecycle management prevents resource leaks."
   (:require [clojure.tools.namespace.repl :as tools-ns]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [babashka.fs :as fs]
+            [clojure.java.io :as io]))
 
 ;; ∀ Vigilance: Exclude development-only files from refresh to avoid errors
 ;; Do NOT include "development/src" - causes test-runner to load test deps
@@ -37,6 +39,81 @@
 ;; Structure: {:server <jetty> :components {:user ... :game ...}}
 
 (defonce ^:private system (atom nil))
+
+;; ------------------------------------------------------------
+;; Auto-Reload File Watcher (φ Vitality)
+;; ------------------------------------------------------------
+;; Watch for .clj file changes and auto-restart the system
+;; Uses debouncing to avoid rapid successive restarts
+
+(defonce ^:private file-watcher (atom nil))
+(defonce ^:private last-modified (atom 0))
+
+(defn- get-last-modified
+  "Get the most recent modification time across all source files."
+  []
+  (->> (mapcat (fn [dir]
+                 (->> (fs/glob dir "**/*")
+                      (filter #(fs/regular-file? %))
+                      (map fs/last-modified-time)))
+               ["components/auth/src"
+                "components/user/src"
+                "components/game/src"
+                "components/ui/src"
+                "bases/web-server/src"
+                "bases/web-server/resources"])
+       (apply max)
+       inst-ms
+       (max 0)))
+
+(defn- watch-files!
+  "Start background thread to watch for file changes and auto-restart."
+  []
+  (when @file-watcher
+    (.interrupt @file-watcher))
+  (reset! file-watcher
+          (future
+            (loop []
+              (Thread/sleep 1000)  ;; Check every second
+              (let [current-mod (get-last-modified)]
+                (when (and @system (> current-mod @last-modified))
+                  (reset! last-modified current-mod)
+                  (log/info "📁 File change detected, auto-reloading...")
+                  (try
+                    (stop)
+                    (tools-ns/refresh)
+                    (start)
+                    (log/info "✅ Auto-reload complete")
+                    (catch Exception e
+                      (log/error e "Auto-reload failed")))))
+              (recur)))
+          {:daemon true}))
+
+(defn- stop-file-watcher!
+  "Stop the file watcher thread."
+  []
+  (when @file-watcher
+    (future-cancel @file-watcher)
+    (reset! file-watcher nil)))
+
+;; Toggle auto-reload on/off
+(defonce ^:private auto-reload-enabled? (atom false))
+
+(defn auto-reload
+  "Enable or disable auto-reload on file changes.
+   Usage: (auto-reload true)  ;; enable
+          (auto-reload false) ;; disable"
+  [enabled?]
+  (reset! auto-reload-enabled? enabled?)
+  (if enabled?
+    (do
+      (reset! last-modified (get-last-modified))
+      (watch-files!)
+      (log/info "👁️ Auto-reload enabled - watching for file changes"))
+    (do
+      (stop-file-watcher!)
+      (log/info "👁️ Auto-reload disabled")))
+  (println (if enabled? "✅ Auto-reload ON" "⏸️ Auto-reload OFF")))
 
 ;; ------------------------------------------------------------
 ;; Lifecycle Functions
@@ -88,6 +165,9 @@
    τ (Wisdom): Proper resource cleanup prevents leaks."
   []
   (when-let [sys @system]
+    ;; Stop file watcher first
+    (stop-file-watcher!)
+
     (when-let [server (:server sys)]
       (log/info "Stopping web server...")
       (try
@@ -132,11 +212,15 @@
         ;; Store system state for lifecycle management
         (reset! system {:server server :components components})
 
+        ;; Enable auto-reload by default
+        (auto-reload true)
+
         (log/info "")
         (log/info "═══════════════════════════════════════════════════════════")
         (log/info "  ✅ System started successfully")
         (log/info "     → http://localhost:" port)
-        (log/info "     → Use (stop) to stop, (restart) for hot reload")
+        (log/info "     → Auto-reload enabled (watching for file changes)")
+        (log/info "     → Use (stop) to stop, (restart) for manual hot reload")
         (log/info "═══════════════════════════════════════════════════════════")
         (log/info "")
 
@@ -184,11 +268,14 @@
   (println "📋 QUICK START:")
   (println "   (start)      - Start web server (http://localhost:3000)")
   (println "   (stop)       - Stop server and cleanup")
-  (println "   (restart)    - Hot reload: stop → refresh → start")
+  (println "   (restart)    - Manual hot reload")
   (println "   (status)     - Show system health and database stats")
   (println)
-  (println "🔧 UTILITIES:")
-  (println "   (reset)      - Reload code without server restart")
+  (println "🔧 AUTO-RELOAD:")
+  (println "   👁️ Auto-reload is ENABLED by default!")
+  (println "   → Edit any .clj file and changes apply automatically")
+  (println "   → Server restarts ~1 second after file change detected")
+  (println "   → Use (auto-reload false) to disable")
   (println)
   (println "🧪 TESTING:")
   (println "   Shell: bb test        - Run all 618 tests")

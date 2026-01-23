@@ -63,9 +63,12 @@ bb nrepl            # Start Babashka nREPL server on port 7888
 - **Reload Code Only**: `(reset)` - Reload code without server restart
 - **Check Status**: `(status)` - Show system health and database stats
 
-**Workflow**: `bb dev` → `(start)` → Edit code → `(restart)` → Test (0.5s hot reload)
+**Workflow**: `bb dev` → `(start)` → Edit code → Auto-reload → Test (browser refresh)
 
-**MANDATORY**: Always call `(restart)` after making code changes to see them in the browser. This reloads all changed files and restarts the server.
+**Auto-Reload (NEW)**: `(start)` now enables auto-reload by default. When you edit any `.clj` file, the server automatically restarts within ~1 second. No manual `(restart)` needed!
+
+**Manual Hot Reload**: `(restart)` - Stop, refresh, start (0.5s)
+**Disable Auto-reload**: `(auto-reload false)`
 
 **Alternative (direct Clojure CLI)**: `clojure -M:nrepl`
 
@@ -192,13 +195,18 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - **Connectivity**: Ensure all new bricks are registered in the root `deps.edn` `:dev` alias to enable cross-brick REPL access and `poly check` validation.
 
 ### 2. Implementation Loop (∃ Truth) - **HOT RELOAD WORKFLOW (BEST PRACTICE)**
-**⚠️ ALWAYS call `(restart)` after making code changes** — changes won't be visible until you restart the server.
+**Auto-reload is now ENABLED by default** when you run `(start)`!
 
-- **Step 1**: Identify the relevant Component or Base.
-- **Step 2**: Check the `interface` for existing contracts.
-- **Step 3**: Implement changes in `impl` or `core`.
-- **Step 4**: **Hot Reload**: Call `(restart)` in REPL to reload changes and restart server.
-- **Step 5**: **Verification**: Hard refresh browser (Cmd+Shift+R) to see changes.
+- **Step 1**: `bb dev` → Start development REPL
+- **Step 2**: `(start)` → Start server with auto-reload enabled
+- **Step 3**: Edit any `.clj` or `.js` file in components/bases/resources
+- **Step 4**: Server auto-restarts (~1 second delay)
+- **Step 5**: Hard refresh browser (Cmd+Shift+R) to see changes
+
+**Manual Control**:
+- `(auto-reload false)` → Disable auto-reload
+- `(restart)` → Manual hot reload
+- `(stop)` → Stop server
 
 **CRITICAL: Use the hot reload workflow** (see [docs/hot-reload-best-practices.md](./docs/hot-reload-best-practices.md)):
 ```clojure
@@ -207,14 +215,15 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 ```
 
 **Hot Reload Best Practices**:
-1. ✅ **Lifecycle Management**: `(stop)` properly shuts down scheduler and resources
-2. ✅ **State Preservation**: Uses `defonce` to preserve game state/user data across reloads
-3. ✅ **Clean Refresh Paths**: Excludes `development/src` and test files from reload
-4. ✅ **System State Pattern**: Single atom tracks server + components for atomic lifecycle
-5. ✅ **Error Resilience**: Try-catch on each component shutdown prevents cascade failures
-6. ✅ **Non-blocking Server**: `:join? false` keeps REPL interactive
+1. ✅ **Auto-reload**: File watcher detects changes and auto-restarts (~1 second)
+2. ✅ **Lifecycle Management**: `(stop)` properly shuts down scheduler and resources
+3. ✅ **State Preservation**: Uses `defonce` to preserve game state/user data across reloads
+4. ✅ **Clean Refresh Paths**: Excludes `development/src` and test files from reload
+5. ✅ **System State Pattern**: Single atom tracks server + components for atomic lifecycle
+6. ✅ **Error Resilience**: Try-catch on each component shutdown prevents cascade failures
+7. ✅ **Non-blocking Server**: `:join? false` keeps REPL interactive
 
-**Performance**: 60x faster feedback loop (0.5s vs 30s JVM restart)
+**Performance**: 60x faster feedback loop (auto-reload ~1s vs 30s JVM restart)
 
 ### 3. Technical Constraints (τ Wisdom)
 - **Middleware**: Be vigilant with `ring-defaults`. Form parameters are **keywordized** (e.g., use `:username` not `"username"`).
@@ -306,7 +315,7 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 ## ∀ Vigilance: Anti-Patterns
 - **Using grep**: **NEVER use `grep`** for code search. Always use `rg` (ripgrep) instead - it's faster, respects `.gitignore`, and has better defaults. See Tools & Utilities section.
 - **Complexity**: If a function exceeds 20 lines, reconsider the domain model.
-- **Forgot to Restart**: Always call `(restart)` after making code changes — the server won't pick up changes automatically.
+- **Auto-reload Disabled**: Ensure `(auto-reload true)` is enabled (default on start)
 - **Dependency Hell**: Avoid circular dependencies between components. Use `poly check` to verify.
 - **Slop**: Do not leave commented-out code or `(println ...)` in production paths. Use a logging library (logback configured).
 - **Abstraction Leak**: Never let implementation details (like DB connections or third-party client objects) escape the component interface. Use data maps or domain records.
