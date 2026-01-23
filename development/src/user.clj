@@ -19,8 +19,8 @@
      Proper lifecycle management prevents resource leaks."
   (:require [clojure.tools.namespace.repl :as tools-ns]
             [clojure.tools.logging :as log]
-            [babashka.fs :as fs]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.string :as str]))
 
 ;; ∀ Vigilance: Exclude development-only files from refresh to avoid errors
 ;; Do NOT include "development/src" - causes test-runner to load test deps
@@ -43,28 +43,44 @@
 ;; ------------------------------------------------------------
 ;; Auto-Reload File Watcher (φ Vitality)
 ;; ------------------------------------------------------------
-;; Watch for .clj file changes and auto-restart the system
-;; Uses debouncing to avoid rapid successive restarts
+;; Watch for .clj/.js file changes and auto-restart the system
+;; Uses standard Java APIs for Clojure REPL compatibility
 
 (defonce ^:private file-watcher (atom nil))
 (defonce ^:private last-modified (atom 0))
 
+(def ^:private watched-dirs
+  "Directories to watch for changes."
+  ["components/auth/src"
+   "components/user/src"
+   "components/game/src"
+   "components/ui/src"
+   "bases/web-server/src"
+   "bases/web-server/resources"])
+
 (defn- get-last-modified
-  "Get the most recent modification time across all source files."
+  "Get the most recent modification time across all source files.
+   Uses standard Java File APIs for REPL compatibility."
   []
-  (->> (mapcat (fn [dir]
-                 (->> (fs/glob dir "**/*")
-                      (filter #(fs/regular-file? %))
-                      (map fs/last-modified-time)))
-               ["components/auth/src"
-                "components/user/src"
-                "components/game/src"
-                "components/ui/src"
-                "bases/web-server/src"
-                "bases/web-server/resources"])
-       (apply max)
-       inst-ms
-       (max 0)))
+  (let [exts #{"clj" "cljs" "cljc" "js" "css"}]
+    (reduce (fn [max-time dir]
+              (try
+                (let [dir-file (io/file dir)]
+                  (if (.exists dir-file)
+                    (reduce (fn [t f]
+                              (let [fname (str f)
+                                    ext (last (str/split fname #"\."))]
+                                (if (and ext (exts ext))
+                                  (max t (.lastModified f))
+                                  t)))
+                            max-time
+                            (file-seq dir-file))
+                    max-time))
+                (catch Exception _ max-time)))
+            0
+            watched-dirs)))
+
+(declare start stop)
 
 (defn- watch-files!
   "Start background thread to watch for file changes and auto-restart."
@@ -74,7 +90,7 @@
   (reset! file-watcher
           (future
             (loop []
-              (Thread/sleep 1000)  ;; Check every second
+              (Thread/sleep 1000)
               (let [current-mod (get-last-modified)]
                 (when (and @system (> current-mod @last-modified))
                   (reset! last-modified current-mod)
@@ -86,8 +102,7 @@
                     (log/info "✅ Auto-reload complete")
                     (catch Exception e
                       (log/error e "Auto-reload failed")))))
-              (recur)))
-          {:daemon true}))
+              (recur)))))
 
 (defn- stop-file-watcher!
   "Stop the file watcher thread."
