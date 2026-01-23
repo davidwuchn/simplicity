@@ -73,7 +73,7 @@ const state = {
 // =============================================================================
 
 function init() {
-    state.canvas = document.getElementById('bgCanvas');
+    state.canvas = document.getElementById('lifeCanvas');
     if (!state.canvas) {
         console.error('Canvas element not found');
         return;

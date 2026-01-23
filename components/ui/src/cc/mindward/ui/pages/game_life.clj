@@ -24,7 +24,7 @@
                [:link {:href (:font cdn-links) :rel "stylesheet"}]
                [:style "
               body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #050505; }
-              #bgCanvas { display: block; width: 100%; height: 100%; }
+              #lifeCanvas { display: block; width: 100%; height: 100%; }
 
               /* Controls */
               .life-controls {
@@ -54,7 +54,7 @@
               [:input {:type "hidden" :id "csrf-token" :value (:csrf-token session "")}]
 
                ;; Canvas
-              [:canvas {:id "bgCanvas" :aria-label "Conway's Game of Life canvas"}]
+              [:canvas {:id "lifeCanvas" :aria-label "Conway's Game of Life canvas"}]
 
                ;; HUD
               [:div {:class "life-hud"}
@@ -82,7 +82,7 @@
 
                ;; Controls and Game initialization script
               [:script (h/raw "
-              const canvas = document.getElementById('bgCanvas');
+              const canvas = document.getElementById('lifeCanvas');
               const ctx = canvas.getContext('2d');
               const cellSize = 8;
               let cols, rows;
