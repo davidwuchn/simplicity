@@ -32,6 +32,7 @@ let lastKillTime = 0; // Time of last kill
 const COMBO_WINDOW = 2000; // 2 seconds to maintain combo
 let comboDisplay = 0; // For fade animation
 let topScores = []; // Top 10 scores from leaderboard
+let lastComboMilestone = 0; // Track last milestone for sound
 
 // === Piano Particles ===
 let pianoParticles = [];
@@ -68,6 +69,10 @@ let delayFilter = null;
 // Vinyl crackle
 let crackleSource = null;
 let crackleGain = null;
+// Engine thrust sound
+let engineOsc = null;
+let engineGain = null;
+let engineFilter = null;
 
 // === Music Styles (Expanded & Enhanced) ===
 const musicStyles = [
@@ -383,6 +388,26 @@ function startCrackle() {
         crackleGain.connect(masterGain);
         
         crackleSource.start();
+        
+        // Engine thrust sound (continuous low rumble)
+        engineOsc = audioCtx.createOscillator();
+        engineFilter = audioCtx.createBiquadFilter();
+        engineGain = audioCtx.createGain();
+        
+        engineOsc.type = 'sawtooth';
+        engineOsc.frequency.value = 60; // Low rumble
+        
+        engineFilter.type = 'lowpass';
+        engineFilter.frequency.value = 200;
+        engineFilter.Q.value = 2;
+        
+        engineGain.gain.value = 0; // Start silent, will modulate based on movement
+        
+        engineOsc.connect(engineFilter);
+        engineFilter.connect(engineGain);
+        engineGain.connect(masterGain);
+        
+        engineOsc.start();
     } catch (e) {}
 }
 
@@ -424,7 +449,26 @@ function playSound(type) {
             }
         } 
         else if (type === 'missile') {
-            // Rising sweep with sub
+            // Enhanced missile: rising sweep with whoosh + sub
+            // Whoosh (wind-like noise sweep)
+            if (noiseBuffer) {
+                const whoosh = audioCtx.createBufferSource();
+                const whooshGain = audioCtx.createGain();
+                const whooshFilter = audioCtx.createBiquadFilter();
+                
+                whoosh.buffer = noiseBuffer;
+                whooshFilter.type = 'highpass';
+                whooshFilter.frequency.setValueAtTime(1000, t);
+                whooshFilter.frequency.exponentialRampToValueAtTime(4000, t + 0.3);
+                whooshGain.gain.setValueAtTime(0.08, t);
+                whooshGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+                
+                whoosh.connect(whooshFilter).connect(whooshGain).connect(compressor);
+                whoosh.start(t);
+                whoosh.stop(t + 0.3);
+            }
+            
+            // Rising sweep
             const osc1 = audioCtx.createOscillator();
             const osc2 = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
@@ -446,30 +490,57 @@ function playSound(type) {
             osc2.start(t); osc2.stop(t + 0.25);
         } 
         else if (type === 'explosion' && noiseBuffer) {
-            // Layered explosion: noise + low sine thump
+            // ENHANCED MASSIVE EXPLOSION: multi-layered with impact
+            
+            // Layer 1: White noise burst (high-frequency shrapnel)
             const src = audioCtx.createBufferSource();
             const noiseGain = audioCtx.createGain();
             const filter = audioCtx.createBiquadFilter();
             
             src.buffer = noiseBuffer;
             filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(2000, t);
-            filter.frequency.exponentialRampToValueAtTime(80, t + 0.4);
-            noiseGain.gain.setValueAtTime(0.2, t);
-            noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+            filter.frequency.setValueAtTime(3000, t);
+            filter.frequency.exponentialRampToValueAtTime(60, t + 0.5);
+            noiseGain.gain.setValueAtTime(0.3, t);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
             src.connect(filter).connect(noiseGain).connect(compressor);
-            src.start(t); src.stop(t + 0.4);
+            src.start(t); src.stop(t + 0.5);
             
-            // Sub thump
+            // Layer 2: Sub bass thump (impact)
             const sub = audioCtx.createOscillator();
             const subGain = audioCtx.createGain();
             sub.type = 'sine';
-            sub.frequency.setValueAtTime(80, t);
-            sub.frequency.exponentialRampToValueAtTime(30, t + 0.3);
-            subGain.gain.setValueAtTime(0.25, t);
-            subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-            sub.connect(subGain).connect(compressor);
-            sub.start(t); sub.stop(t + 0.3);
+            sub.frequency.setValueAtTime(100, t);
+            sub.frequency.exponentialRampToValueAtTime(25, t + 0.4);
+            subGain.gain.setValueAtTime(0.4, t);
+            subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+            sub.connect(subGain).connect(masterGain); // Direct to master for max impact
+            sub.start(t); sub.stop(t + 0.4);
+            
+            // Layer 3: Mid-range crunch (debris)
+            const crunch = audioCtx.createOscillator();
+            const crunchGain = audioCtx.createGain();
+            const crunchFilter = audioCtx.createBiquadFilter();
+            crunch.type = 'square';
+            crunch.frequency.setValueAtTime(200, t);
+            crunch.frequency.exponentialRampToValueAtTime(50, t + 0.3);
+            crunchFilter.type = 'bandpass';
+            crunchFilter.frequency.value = 400;
+            crunchFilter.Q.value = 3;
+            crunchGain.gain.setValueAtTime(0.2, t);
+            crunchGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+            crunch.connect(crunchFilter).connect(crunchGain).connect(compressor);
+            crunch.start(t); crunch.stop(t + 0.3);
+            
+            // Layer 4: Click transient (initial impact)
+            const click = audioCtx.createOscillator();
+            const clickGain = audioCtx.createGain();
+            click.type = 'square';
+            click.frequency.value = 1500;
+            clickGain.gain.setValueAtTime(0.25, t);
+            clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
+            click.connect(clickGain).connect(compressor);
+            click.start(t); click.stop(t + 0.02);
             
             // Trigger arpeggio on kill
             if (melodyQueue.length < 6) {
@@ -571,6 +642,197 @@ function playSound(type) {
             subDropGain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
             subDrop.connect(subDropGain).connect(masterGain);
             subDrop.start(t + 0.3); subDrop.stop(t + 0.6);
+        }
+        else if (type === 'combo-3x') {
+            // 3x combo: Rising cheerful chord
+            const frequencies = [style.scale[0], style.scale[2], style.scale[4]]; // Triad
+            frequencies.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, t + i * 0.05);
+                gain.gain.setValueAtTime(0, t + i * 0.05);
+                gain.gain.linearRampToValueAtTime(0.15, t + i * 0.05 + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.05 + 0.3);
+                osc.connect(gain).connect(compressor);
+                osc.start(t + i * 0.05);
+                osc.stop(t + i * 0.05 + 0.3);
+            });
+        }
+        else if (type === 'combo-5x') {
+            // 5x combo: Major chord + shimmer
+            const frequencies = [style.scale[0], style.scale[2], style.scale[4], style.scale[6] || style.scale[4]];
+            frequencies.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.value = freq * 2;
+                filter.Q.value = 3;
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, t + i * 0.04);
+                gain.gain.setValueAtTime(0, t + i * 0.04);
+                gain.gain.linearRampToValueAtTime(0.18, t + i * 0.04 + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.04 + 0.4);
+                osc.connect(filter).connect(gain).connect(compressor);
+                osc.start(t + i * 0.04);
+                osc.stop(t + i * 0.04 + 0.4);
+            });
+            // Bright shimmer on top
+            const shimmer = audioCtx.createOscillator();
+            const shimmerGain = audioCtx.createGain();
+            shimmer.type = 'sine';
+            shimmer.frequency.setValueAtTime(style.scale[style.scale.length - 1] * 2, t);
+            shimmerGain.gain.setValueAtTime(0.1, t);
+            shimmerGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+            shimmer.connect(shimmerGain).connect(compressor);
+            shimmer.start(t);
+            shimmer.stop(t + 0.5);
+        }
+        else if (type === 'combo-10x') {
+            // 10x combo: Epic fanfare with rising arp + sub bass
+            // Sub bass hit
+            const sub = audioCtx.createOscillator();
+            const subGain = audioCtx.createGain();
+            sub.type = 'sine';
+            sub.frequency.setValueAtTime(style.bass[0] / 2, t);
+            subGain.gain.setValueAtTime(0.35, t);
+            subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+            sub.connect(subGain).connect(compressor);
+            sub.start(t);
+            sub.stop(t + 0.6);
+            
+            // Rising arpeggio
+            for (let i = 0; i < style.scale.length; i++) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.value = style.scale[i] * 3;
+                filter.Q.value = 5;
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(style.scale[i], t + i * 0.06);
+                gain.gain.setValueAtTime(0, t + i * 0.06);
+                gain.gain.linearRampToValueAtTime(0.2, t + i * 0.06 + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.06 + 0.4);
+                osc.connect(filter).connect(gain).connect(compressor);
+                osc.start(t + i * 0.06);
+                osc.stop(t + i * 0.06 + 0.4);
+            }
+        }
+        else if (type === 'combo-15x' || type === 'combo-20x') {
+            // 15x/20x combo: ULTRA fanfare - massive impact
+            // Massive sub drop
+            const sub = audioCtx.createOscillator();
+            const subGain = audioCtx.createGain();
+            sub.type = 'sine';
+            sub.frequency.setValueAtTime(style.bass[0] / 2, t);
+            sub.frequency.exponentialRampToValueAtTime(style.bass[0] / 4, t + 0.8);
+            subGain.gain.setValueAtTime(0.5, t);
+            subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+            sub.connect(subGain).connect(masterGain);
+            sub.start(t);
+            sub.stop(t + 0.8);
+            
+            // Explosion of notes (all scale notes at once)
+            style.scale.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(freq * 4, t);
+                filter.frequency.exponentialRampToValueAtTime(freq * 2, t + 0.6);
+                filter.Q.value = 8;
+                osc.type = type === 'combo-20x' ? 'square' : 'sawtooth';
+                osc.frequency.setValueAtTime(freq * (1 + i * 0.002), t); // Slight detune for richness
+                gain.gain.setValueAtTime(0.15, t);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+                osc.connect(filter).connect(gain).connect(compressor);
+                osc.start(t);
+                osc.stop(t + 0.7);
+            });
+            
+            // White noise burst
+            if (noiseBuffer) {
+                const noiseSrc = audioCtx.createBufferSource();
+                const noiseGain = audioCtx.createGain();
+                const noiseFilter = audioCtx.createBiquadFilter();
+                noiseFilter.type = 'highpass';
+                noiseFilter.frequency.value = 2000;
+                noiseSrc.buffer = noiseBuffer;
+                noiseGain.gain.setValueAtTime(0.3, t);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+                noiseSrc.connect(noiseFilter).connect(noiseGain).connect(compressor);
+                noiseSrc.start(t);
+                noiseSrc.stop(t + 0.3);
+            }
+        }
+        else if (type === 'boss-warning') {
+            // Boss warning: ominous siren-like sound
+            for (let i = 0; i < 3; i++) {
+                const siren = audioCtx.createOscillator();
+                const sirenGain = audioCtx.createGain();
+                const sirenFilter = audioCtx.createBiquadFilter();
+                
+                siren.type = 'sawtooth';
+                siren.frequency.setValueAtTime(440, t + i * 0.4);
+                siren.frequency.linearRampToValueAtTime(220, t + i * 0.4 + 0.2);
+                siren.frequency.linearRampToValueAtTime(440, t + i * 0.4 + 0.4);
+                
+                sirenFilter.type = 'bandpass';
+                sirenFilter.frequency.value = 800;
+                sirenFilter.Q.value = 5;
+                
+                sirenGain.gain.setValueAtTime(0.2, t + i * 0.4);
+                sirenGain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.4 + 0.4);
+                
+                siren.connect(sirenFilter).connect(sirenGain).connect(compressor);
+                siren.start(t + i * 0.4);
+                siren.stop(t + i * 0.4 + 0.4);
+            }
+        }
+        else if (type === 'game-over') {
+            // Game over: descending "wah wah" sound
+            const gameOverOsc = audioCtx.createOscillator();
+            const gameOverGain = audioCtx.createGain();
+            const gameOverFilter = audioCtx.createBiquadFilter();
+            
+            gameOverOsc.type = 'sawtooth';
+            gameOverOsc.frequency.setValueAtTime(440, t);
+            gameOverOsc.frequency.exponentialRampToValueAtTime(110, t + 1.5);
+            
+            gameOverFilter.type = 'lowpass';
+            gameOverFilter.frequency.setValueAtTime(2000, t);
+            gameOverFilter.frequency.exponentialRampToValueAtTime(200, t + 1.5);
+            gameOverFilter.Q.value = 8;
+            
+            gameOverGain.gain.setValueAtTime(0.25, t);
+            gameOverGain.gain.setValueAtTime(0.2, t + 0.5);
+            gameOverGain.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
+            
+            gameOverOsc.connect(gameOverFilter).connect(gameOverGain).connect(compressor);
+            gameOverOsc.start(t);
+            gameOverOsc.stop(t + 1.5);
+        }
+        else if (type === 'whoosh') {
+            // Generic whoosh sound (for power-up drops, etc.)
+            if (noiseBuffer) {
+                const whoosh = audioCtx.createBufferSource();
+                const whooshGain = audioCtx.createGain();
+                const whooshFilter = audioCtx.createBiquadFilter();
+                
+                whoosh.buffer = noiseBuffer;
+                whooshFilter.type = 'bandpass';
+                whooshFilter.frequency.setValueAtTime(800, t);
+                whooshFilter.frequency.exponentialRampToValueAtTime(2000, t + 0.2);
+                whooshFilter.Q.value = 3;
+                whooshGain.gain.setValueAtTime(0.06, t);
+                whooshGain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+                
+                whoosh.connect(whooshFilter).connect(whooshGain).connect(compressor);
+                whoosh.start(t);
+                whoosh.stop(t + 0.2);
+            }
         }
     } catch (e) {}
 }
@@ -844,7 +1106,7 @@ window.addEventListener('keydown', e => {
         player.x = canvas.width / 2; player.y = canvas.height - 60;
         weaponLevel = 1; powerUpActive = false; player.missileCooldown = 0;
         invincible = false; invincibilityEnd = 0; invincibilityCooldown = 0;
-        combo = 0; lastKillTime = 0; comboDisplay = 0;
+        combo = 0; lastKillTime = 0; comboDisplay = 0; lastComboMilestone = 0;
     }
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
@@ -889,9 +1151,28 @@ function killEnemy(e) {
         combo++;
     } else {
         combo = 1; // Reset combo
+        lastComboMilestone = 0; // Reset milestone tracker
     }
     lastKillTime = now;
     comboDisplay = combo; // For fade animation
+    
+    // Play combo milestone sounds
+    if (combo === 3 && lastComboMilestone < 3) {
+        playSound('combo-3x');
+        lastComboMilestone = 3;
+    } else if (combo === 5 && lastComboMilestone < 5) {
+        playSound('combo-5x');
+        lastComboMilestone = 5;
+    } else if (combo === 10 && lastComboMilestone < 10) {
+        playSound('combo-10x');
+        lastComboMilestone = 10;
+    } else if (combo === 15 && lastComboMilestone < 15) {
+        playSound('combo-15x');
+        lastComboMilestone = 15;
+    } else if (combo === 20 && lastComboMilestone < 20) {
+        playSound('combo-20x');
+        lastComboMilestone = 20;
+    }
     
     // Base score with combo multiplier
     let baseScore = e.isBoss ? 500 : (e.hp >= 5 ? 50 : (e.hp >= 3 ? 30 : 10));
@@ -962,6 +1243,7 @@ function killEnemy(e) {
     // PowerUp drop
     if (Math.random() < 0.12 && powerUps.length < MAX_POWERUPS) {
         powerUps.push({ x: e.x, y: e.y, vy: 2, size: 15, type: Math.random() < 0.5 ? 'upgrade' : 'rapid' });
+        playSound('whoosh');
     }
 }
 
@@ -1073,6 +1355,17 @@ function update() {
     if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
     if (keys['ArrowRight'] && player.x < canvas.width - player.size) player.x += player.speed;
     
+    // Engine sound modulation (based on movement)
+    if (engineGain && audioCtx) {
+        const isMoving = keys['ArrowUp'] || keys['ArrowDown'] || keys['ArrowLeft'] || keys['ArrowRight'];
+        const targetVolume = isMoving ? 0.08 : 0.02; // Louder when moving, quieter when idle
+        const targetFreq = isMoving ? 80 : 60; // Higher pitch when moving
+        engineGain.gain.linearRampToValueAtTime(targetVolume, audioCtx.currentTime + 0.1);
+        if (engineOsc) {
+            engineOsc.frequency.linearRampToValueAtTime(targetFreq, audioCtx.currentTime + 0.1);
+        }
+    }
+    
     // Player shooting
     const cooldown = powerUpActive ? 120 : 200;
     if (now - player.lastShotTime > cooldown && bullets.length < MAX_BULLETS) {
@@ -1161,6 +1454,7 @@ function update() {
             const dy = b.y - player.y - player.size / 2;
             const bulletRadius = b.isExplosive ? (b.size || 8) : 5;
             if (Math.sqrt(dx * dx + dy * dy) < player.size / 2 + bulletRadius) {
+                playSound('game-over');
                 gameOver = true; saveScore(); return false;
             }
         }
@@ -1261,6 +1555,7 @@ function update() {
             const dx = e.x - player.x - player.size / 2;
             const dy = e.y - player.y - player.size / 2;
             if (Math.sqrt(dx * dx + dy * dy) < e.size / 2 + player.size / 2) {
+                playSound('game-over');
                 gameOver = true; saveScore();
             }
         }
@@ -1317,6 +1612,7 @@ function update() {
     // Spawn enemies
     if (Math.random() < 0.035 && enemies.length < MAX_ENEMIES - 2) spawnEnemy();
     if (score >= lastBossSpawnScore + 500 && !enemies.some(e => e.isBoss)) {
+        playSound('boss-warning');
         spawnEnemy(true);
         lastBossSpawnScore = score;
     }
