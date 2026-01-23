@@ -60,19 +60,21 @@
       (loop [last-tracker (track/tracker)]
         (when @enabled-atom
           (Thread/sleep 2000) ; Check every 2 seconds
-          (try
-            (let [new-tracker (dir/scan-dirs last-tracker dirs)]
-              (if (seq (::track/load new-tracker))
-                (do
-                  (log/info "🔍 File changes detected, auto-reloading...")
-                  ;; Use resolve to avoid forward reference to (stop)
-                  ((resolve 'user/stop))
-                  (tools-ns/refresh :after 'user/start)
-                  (recur (track/tracker))) ; Reset tracker after reload
-                (recur new-tracker)))
-            (catch Exception e
-              (log/error e "Auto-reload error")
-              (recur last-tracker))))))
+          (let [next-tracker
+                (try
+                  (let [new-tracker (dir/scan-dirs last-tracker dirs)]
+                    (if (seq (::track/load new-tracker))
+                      (do
+                        (log/info "🔍 File changes detected, auto-reloading...")
+                        ;; Use resolve to avoid forward reference to (stop)
+                        ((resolve 'user/stop))
+                        (tools-ns/refresh :after 'user/start)
+                        (track/tracker)) ; Reset tracker after reload
+                      new-tracker))
+                  (catch Exception e
+                    (log/error e "Auto-reload error")
+                    last-tracker))]
+            (recur next-tracker)))))
     (catch Exception e
       (log/error e "Auto-reload loop crashed"))))
 

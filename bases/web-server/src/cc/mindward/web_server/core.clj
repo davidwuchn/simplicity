@@ -36,7 +36,7 @@
 (defn handle-signup [{:keys [params session]}]
   (let [username (:username params)
         password (:password params)
-        display-name (:name params)
+        _display-name (:name params)  ;; Used by user/create-user!
         ;; Validate inputs (∀ Vigilance - validate at boundaries)
         username-check (security/validate-username username)
         password-check (security/validate-password password)]

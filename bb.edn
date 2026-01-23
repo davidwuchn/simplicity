@@ -34,9 +34,9 @@
   ;; Testing Tasks
   ;; ═══════════════════════════════════════════════════════════
   
-  test
-  {:doc "Run all tests (611 assertions)"
-   :task (shell "clojure -M:poly test :dev")}
+   test
+   {:doc "Run all tests (618 assertions)"
+    :task (shell "clojure -M:poly test :dev")}
   
   test:watch
   {:doc "Run tests in watch mode (re-run on file changes)"
@@ -83,13 +83,13 @@
   ;; Linting & Formatting Tasks
   ;; ═══════════════════════════════════════════════════════════
   
-  lint
-  {:doc "Lint all source files with clj-kondo"
-   :task (shell "clj-kondo --lint components/*/src bases/*/src development/src")}
+   lint
+   {:doc "Lint all source files with clj-kondo"
+    :task (shell "clj-kondo --lint components/auth/src components/game/src components/ui/src components/user/src bases/web-server/src development/src")}
   
-  lint:fix
-  {:doc "Auto-fix linting issues where possible"
-   :task (shell "clj-kondo --lint components/*/src bases/*/src development/src --auto-fix")}
+   lint:fix
+   {:doc "Auto-fix linting issues where possible"
+    :task (shell "clj-kondo --lint components/auth/src components/game/src components/ui/src components/user/src bases/web-server/src development/src --auto-fix")}
   
   format:check
   {:doc "Check code formatting (requires cljfmt)"
@@ -243,7 +243,7 @@
            (println (str "Source files:     " src-files))
            (println (str "Test files:       " test-files))
            (println (str "Total files:      " clj-files))
-           (println (str "Test assertions:  611"))
+            (println (str "Test assertions:  618"))
            (println (str "Components:       4 (auth, game, ui, user)"))
            (println (str "Bases:            1 (web-server)"))
            (println "═══════════════════════════════════════════════════════════"))}
@@ -262,7 +262,7 @@
            (println "  bb info            - Show Polylith workspace info")
            (println "  bb diff            - Show changed bricks")
            (println "\nTESTING:")
-           (println "  bb test            - Run all tests (611 assertions)")
+            (println "  bb test            - Run all tests (618 assertions)")
            (println "  bb test:watch      - Watch mode (re-run on changes)")
            (println "  bb test:auth       - Test auth component")
            (println "  bb test:game       - Test game component")

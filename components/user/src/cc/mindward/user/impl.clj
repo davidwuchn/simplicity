@@ -136,7 +136,7 @@
   []
   (try
     (let [datasource @db-state
-          result (jdbc/execute! (ds) ["SELECT 1"])
+          _result (jdbc/execute! (ds) ["SELECT 1"])  ;; Health check query
           user-count (-> (jdbc/execute! (ds) ["SELECT COUNT(*) as count FROM users"]
                                        {:builder-fn rs/as-unqualified-lower-maps})
                         first

@@ -2,7 +2,8 @@
   "Input validation configuration and helpers.
    
    (∃ Truth): Single source of truth for all validation rules.
-   (fractal Clarity): Centralized configuration eliminates inconsistencies.")
+   (fractal Clarity): Centralized configuration eliminates inconsistencies."
+  (:require [clojure.string :as str]))
 
 ;; ------------------------------------------------------------
 ;; Validation Rules Configuration
@@ -71,7 +72,7 @@
     (not (string? username))
     {:valid? false :error "Username must be a string"}
     
-    (not= username (clojure.string/trim username))
+    (not= username (str/trim username))
     {:valid? false :error "Username cannot have leading/trailing whitespace"}
     
     (< (count username) username-min-length)

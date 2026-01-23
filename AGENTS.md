@@ -27,7 +27,7 @@ Common tasks:
 ```bash
 bb help            # Show all available tasks
 bb dev             # Start development REPL with hot reload
-bb test            # Run all tests (611 assertions)
+bb test            # Run all tests (618 assertions)
 bb test:watch      # Watch mode (re-run tests on changes)
 bb check           # Check Polylith workspace integrity
 bb lint            # Lint all source files
@@ -68,7 +68,7 @@ bb dev              # Start development REPL (ALWAYS USE THIS)
 
 ### Testing (τ Wisdom) - USE bb test
 
-- **Run All Tests**: `bb test` (primary, 611 passing assertions)
+- **Run All Tests**: `bb test` (primary, 618 passing assertions)
 - **Run Tests (Watch Mode)**: `bb test:watch` (auto-reruns on file changes)
 - **Run Specific Brick Tests**: `bb test:game`, `bb test:ui`, `bb test:user`, etc.
 - **Interactive REPL (brepl)**: Use `brepl` for fast evaluation (see Tools).
@@ -233,7 +233,7 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 ### 5. Self-Correction
 - If `poly check` fails, you have violated Polylith constraints (e.g., circular dependency or illegal import). Fix immediately.
 - Use `clj-kondo` to catch static analysis issues before committing.
-- **Test Coverage**: 611 passing assertions across test suite (current)
+- **Test Coverage**: 618 passing assertions across test suite (current)
   - Auth: 2 tests, 14 assertions
   - Game: 13 tests, 136 assertions
   - UI: 44 tests, 151 assertions (includes comprehensive script loading tests)

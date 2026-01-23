@@ -46,3 +46,6 @@ simplicity.db
 # Clerk
 .clerk/
 clerk.log
+
+# OpenCode (may contain user-specific paths)
+.opencode/config.json
