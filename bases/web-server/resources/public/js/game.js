@@ -156,11 +156,21 @@ resize();
 // === Audio System (Enhanced with reverb, compression, better sound design) ===
 function initAudio() {
     if (audioCtx) {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+        // Resume if suspended (user gesture required)
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume().then(() => {
+                console.log('AudioContext resumed successfully');
+            }).catch(e => console.error('AudioContext resume failed:', e));
+        }
         return;
     }
     try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Immediately try to resume (Chrome requires user gesture)
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
         
         // Master chain: source -> compressor -> masterGain -> destination
         compressor = audioCtx.createDynamicsCompressor();
@@ -283,10 +293,18 @@ function startCrackle() {
 
 // Throttled sound player with enhanced sound design
 function playSound(type) {
-    if (!audioCtx || audioCtx.state !== 'running') return;
+    if (!audioCtx) return;
+    
+    // Try to resume if suspended (defensive - should be handled by initAudio)
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+        return; // Skip this sound, next one will play
+    }
+    
+    if (audioCtx.state !== 'running') return;
     
     const now = Date.now();
-    const minInterval = { 
+    const minInterval = {
         shoot: 80, missile: 150, explosion: 120, powerup: 100, 'boss-shoot': 180, hit: 50,
         'zerg-death': 100, 'protoss-death': 100, 'tank-explosion': 120, 'boss-death': 500
     }[type] || 100;
@@ -852,7 +870,9 @@ function playSound(type) {
 
 // Play piano note based on Y position (for particles)
 function playPianoNote(yPosition, intensity = 0.03) {
-    if (!audioCtx || audioCtx.state !== 'running') return;
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') { audioCtx.resume(); return; }
+    if (audioCtx.state !== 'running') return;
     
     try {
         const t = audioCtx.currentTime;
@@ -887,7 +907,15 @@ function playPianoNote(yPosition, intensity = 0.03) {
 
 // BGM tick - called from game loop with full drum machine + melody
 function tickBGM() {
-    if (!audioCtx || audioCtx.state !== 'running') return;
+    if (!audioCtx) return;
+    
+    // Try to resume if suspended
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+        return;
+    }
+    
+    if (audioCtx.state !== 'running') return;
     
     const style = musicStyles[currentStyle];
     const beatInterval = 60000 / style.bpm / 2; // 8th notes
@@ -1171,8 +1199,8 @@ function spawnEnemy(isBoss = false) {
     
     if (isBoss) {
         enemies.push({
-            x: canvas.width / 2, y: -100, vx: 0, vy: 1, size: 120, color: '#fcee0a',
-            hp: 50, isBoss: true, faction, behavior: 'boss', lastShot: 0, hitFlash: 0, rotation: 0, trail: []
+            x: canvas.width / 2, y: -100, vx: 0, vy: 1, size: BOSS.SIZE, color: '#fcee0a',
+            hp: BOSS.HP, isBoss: true, faction, behavior: 'boss', lastShot: 0, hitFlash: 0, rotation: 0, trail: []
         });
     } else {
         const rand = Math.random();
@@ -1234,7 +1262,7 @@ function killEnemy(e) {
     }
     
     // Base score with combo multiplier
-    let baseScore = e.isBoss ? 500 : (e.hp >= 5 ? 50 : (e.hp >= 3 ? 30 : 10));
+    let baseScore = e.isBoss ? 300 : (e.hp >= 5 ? 50 : (e.hp >= 3 ? 30 : 10));  // Boss gives 300 instead of 500 (weaker boss)
     let comboBonus = 0;
     
     if (combo >= 3) {
@@ -1749,20 +1777,20 @@ function update() {
         if (e.hitFlash > 0) e.hitFlash--;
         
         if (e.isBoss) {
-            const rage = 1 + (50 - e.hp) / 20;
+            const rage = 1 + (BOSS.HP - e.hp) / 10;  // Adjusted for new HP
             if (e.y < 120) e.y += 1.5;
-            else e.x += Math.sin(now / (500 / rage)) * 3 * rage;
+            else e.x += Math.sin(now / (500 / rage)) * 2 * rage;  // Weaker movement
             
-            if (now - e.lastShot > 1000 / rage && enemyBullets.length < MAX_ENEMY_BULLETS - 5) {
+            if (now - e.lastShot > BOSS.SPAWN_INTERVAL / (rage * BOSS.SHOOT_RATE) && enemyBullets.length < MAX_ENEMY_BULLETS - 5) {
                 const angle = Math.atan2(player.y - e.y, player.x - e.x);
                 // Shoot 5 bullets in a spread pattern
                 for (let i = -2; i <= 2; i++) {
-                    const spreadAngle = angle + (i * 0.15);
-                    enemyBullets.push({ 
-                        x: e.x, 
-                        y: e.y, 
-                        vx: Math.cos(spreadAngle) * 5 * rage, 
-                        vy: Math.sin(spreadAngle) * 5 * rage 
+                    const spreadAngle = angle + (i * BOSS.BULLET_SPREAD);
+                    enemyBullets.push({
+                        x: e.x,
+                        y: e.y,
+                        vx: Math.cos(spreadAngle) * BOSS.BULLET_SPEED * rage,
+                        vy: Math.sin(spreadAngle) * BOSS.BULLET_SPEED * rage
                     });
                 }
                 e.lastShot = now;
@@ -1890,7 +1918,7 @@ function update() {
     
     // Spawn enemies
     if (Math.random() < 0.035 && enemies.length < MAX_ENEMIES - 2) spawnEnemy();
-    if (score >= lastBossSpawnScore + 500 && !enemies.some(e => e.isBoss)) {
+    if (score >= lastBossSpawnScore + ENEMIES.BOSS_SCORE_INTERVAL && !enemies.some(e => e.isBoss)) {
         playSound('boss-warning');
         spawnEnemy(true);
         lastBossSpawnScore = score;

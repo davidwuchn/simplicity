@@ -27,7 +27,7 @@ const PLAYER = {
 
 // === Invincibility Shield ===
 const SHIELD = {
-    DURATION: 3000,      // 3 seconds active
+    DURATION: 5000,      // 5 seconds active (was 3)
     COOLDOWN: 10000,     // 10 seconds total cooldown
     FLASH_INTERVAL: 100  // Visual flash interval (ms)
 };
@@ -46,9 +46,19 @@ const WEAPONS = {
 
 // === Enemy Spawn Configuration ===
 const ENEMIES = {
-    BOSS_SCORE_INTERVAL: 500,  // Spawn boss every 500 points
+    BOSS_SCORE_INTERVAL: 750,  // Spawn boss every 750 points (was 500)
     PARTICLE_COUNT_NORMAL: 20,
     PARTICLE_COUNT_BOSS: 50
+};
+
+// === Boss Configuration (Difficulty) ===
+const BOSS = {
+    HP: 25,                    // Boss HP (was 50) - make it weaker!
+    SIZE: 100,                 // Boss size (was 120)
+    BULLET_SPEED: 4,           // Boss bullet speed (was 5)
+    BULLET_SPREAD: 0.12,       // Boss bullet spread angle (was 0.15)
+    SPAWN_INTERVAL: 1000,      // Time between boss shots (ms, was 1000)
+    SHOOT_RATE: 1.2            // Multiplier for shoot rate (was 1.0, higher = faster)
 };
 
 // === Particle Configuration ===
@@ -162,6 +172,7 @@ if (typeof module !== 'undefined' && module.exports) {
         PARTICLES,
         BACKGROUND,
         AUDIO,
-        FACTIONS
+        FACTIONS,
+        BOSS
     };
 }
