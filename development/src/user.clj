@@ -48,6 +48,7 @@
 
 (defonce ^:private file-watcher (atom nil))
 (defonce ^:private last-modified (atom 0))
+(defonce ^:private refresh-future (atom nil))  ;; Track refresh future for cancellation
 
 (def ^:private watched-dirs
   "Directories to watch for changes."
@@ -83,7 +84,8 @@
 (declare start stop)
 
 (defn- watch-files!
-  "Start background thread to watch for file changes and auto-restart."
+  "Start background thread to watch for file changes and auto-restart.
+   Uses future on REPL thread to avoid *ns* binding issues."
   []
   (when @file-watcher
     (.interrupt @file-watcher))
@@ -96,9 +98,18 @@
                   (reset! last-modified current-mod)
                   (log/info "📁 File change detected, auto-reloading...")
                   (try
-                    (stop)
-                    (tools-ns/refresh)
-                    (start)
+                    ;; Cancel any pending refresh
+                    (when @refresh-future (future-cancel @refresh-future))
+                    ;; Run refresh on REPL thread via future with proper binding
+                    (reset! refresh-future
+                            (future
+                              (binding [*ns* (find-ns 'user)]
+                                (stop)
+                                (tools-ns/refresh)
+                                (start))))
+                    ;; Wait for refresh to complete (with timeout)
+                    (when @refresh-future
+                      (deref @refresh-future 30000 nil))
                     (log/info "✅ Auto-reload complete")
                     (catch Exception e
                       (log/error e "Auto-reload failed")))))
@@ -107,6 +118,9 @@
 (defn- stop-file-watcher!
   "Stop the file watcher thread."
   []
+  (when @refresh-future
+    (future-cancel @refresh-future)
+    (reset! refresh-future nil))
   (when @file-watcher
     (future-cancel @file-watcher)
     (reset! file-watcher nil)))
@@ -249,9 +263,9 @@
     (do
       (log/info "Restarting with hot reload...")
       (stop)
-      ;; Just refresh without removing namespaces
-      ;; The aliases will be updated on next require
-      (tools-ns/refresh)
+      ;; Refresh with proper namespace binding
+      (binding [*ns* (find-ns 'user)]
+        (tools-ns/refresh))
       (start))
     (do
       (println)
