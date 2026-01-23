@@ -52,16 +52,16 @@
               (throw (Exception. "Too many coordinates")))
           ;; Parse and validate each coordinate
           validated (into []
-                         (comp (map (fn [c]
-                                     (when (and (vector? c) (= 2 (count c)))
-                                       (let [x (int (first c))
-                                             y (int (second c))]
+                          (comp (map (fn [c]
+                                       (when (and (vector? c) (= 2 (count c)))
+                                         (let [x (int (first c))
+                                               y (int (second c))]
                                          ;; Bounds check using game config
-                                         (when (and (<= game-config/board-min-x x game-config/board-max-x)
-                                                    (<= game-config/board-min-y y game-config/board-max-y))
-                                           [x y])))))
-                               (filter some?))
-                         coords)]
+                                           (when (and (<= game-config/board-min-x x game-config/board-max-x)
+                                                      (<= game-config/board-min-y y game-config/board-max-y))
+                                             [x y])))))
+                                (filter some?))
+                          coords)]
       (set validated))
     (catch Exception e
       (log/warn "Coordinate parsing failed:" (.getMessage e))
@@ -79,19 +79,19 @@
   (cond
     (nil? game-name)
     {:valid? false :error "Game name is required"}
-    
+
     (not (string? game-name))
     {:valid? false :error "Game name must be a string"}
-    
+
     (< (count game-name) 3)
     {:valid? false :error "Game name must be at least 3 characters"}
-    
+
     (> (count game-name) 100)
     {:valid? false :error "Game name must be at most 100 characters"}
-    
+
     (not (re-matches #"^[a-zA-Z0-9_\-\s]+$" game-name))
     {:valid? false :error "Game name contains invalid characters"}
-    
+
     :else
     {:valid? true}))
 
@@ -118,42 +118,54 @@
       (do
         (log/warn "Invalid username on signup:" (:error username-check))
         (redirect-with-error "/signup" (:error username-check)))
-      
+
       (not (:valid? password-check))
       (do
         (log/warn "Invalid password on signup:" (:error password-check))
         (redirect-with-error "/signup" (:error password-check)))
-      
+
       (not (:valid? name-check))
       (do
         (log/warn "Invalid display name on signup:" (:error name-check))
         (redirect-with-error "/signup" (:error name-check)))
-      
+
       :else
       (try
         (user/create-user! params)
         (log/info "User created successfully:" username)
-        (-> (res/redirect "/game")
+        (-> (res/redirect "/select-game")
             (assoc :session (assoc session :username username)))
         (catch Exception e
           (log/warn e "User creation failed:" username)
           (redirect-with-error "/signup" "Username already exists"))))))
 
-(defn game-page [request]
+(defn shooter-page [request]
   (let [{:keys [session anti-forgery-token]} request]
     (if-let [username (:username session)]
       (let [high-score (user/get-high-score username)]
-        (ui/game-page session anti-forgery-token high-score))
+        (ui/shooter-page session anti-forgery-token high-score))
+      (res/redirect "/login"))))
+
+(defn game-life-page [request]
+  (let [{:keys [session]} request]
+    (if (:username session)
+      (ui/game-life-page session)
+      (res/redirect "/login"))))
+
+(defn select-game-page [request]
+  (let [{:keys [session]} request]
+    (if (:username session)
+      (ui/select-game-page session)
       (res/redirect "/login"))))
 
 (defn landing-page [{:keys [session]}]
   (if (:username session)
-    (res/redirect "/game")
+    (res/redirect "/select-game")
     (ui/landing-page session)))
 
 (defn login-page [{:keys [session params anti-forgery-token]}]
   (if (:username session)
-    (res/redirect "/game")
+    (res/redirect "/select-game")
     (ui/login-page session params anti-forgery-token)))
 
 (defn handle-login [{:keys [params session]}]
@@ -169,7 +181,7 @@
         (if auth-result
           (do
             (log/info "User logged in successfully:" username)
-            (-> (res/redirect "/game")
+            (-> (res/redirect "/select-game")
                 (assoc :session (assoc session :username username))))
           (do
             (log/warn "Failed login attempt for user:" username)
@@ -221,14 +233,14 @@
             (res/response (json/write-str {:board (into [] (game/get-board game-id))
                                            :generation (game/get-generation game-id)
                                            :score (game/get-score game-id)})))
-          
+
           "evolve"
           (let [evolved (game/evolve! game-id)]
             (res/response (json/write-str {:board (into [] evolved)
                                            :generation (game/get-generation game-id)
                                            :score (game/get-score game-id)
                                            :triggers (game/get-musical-triggers game-id)})))
-          
+
           "manipulate"
           (let [cells-to-add (parse-coordinates (:cells params))
                 cells-to-remove (parse-coordinates (:remove params))]
@@ -237,7 +249,7 @@
             (res/response (json/write-str {:board (into [] (game/get-board game-id))
                                            :generation (game/get-generation game-id)
                                            :score (game/get-score game-id)})))
-          
+
           "save"
           (let [game-name (:name params)
                 name-validation (validate-game-name game-name)]
@@ -247,7 +259,7 @@
                                                :name (:name saved)
                                                :saved true})))
               (res/bad-request (json/write-str {:error (:error name-validation)}))))
-          
+
           "load"
           (if-let [saved-id (:savedId params)]
             (let [loaded (game/load-game! saved-id game-id)]
@@ -256,7 +268,7 @@
                                              :score (game/get-score game-id)
                                              :loaded true})))
             (res/bad-request (json/write-str {:error "Saved ID required"})))
-          
+
           (res/bad-request (json/write-str {:error "Invalid action"}))))
       username)))  ;; Return 401 response
 
@@ -282,10 +294,10 @@
         response
         (do
           (log/info (format "%s %s -> %s (%dms)"
-                           (str/upper-case (name request-method))
-                           uri
-                           status
-                           duration))
+                            (str/upper-case (name request-method))
+                            uri
+                            status
+                            duration))
           response)))))
 
 (defn wrap-error-logging
@@ -307,7 +319,7 @@
 ;; Health Check Endpoint (Production Monitoring)
 ;; ------------------------------------------------------------
 
-(defn health-check 
+(defn health-check
   "Health check endpoint for load balancers and monitoring.
    Verifies database connectivity and returns system status."
   [_]
@@ -325,8 +337,8 @@
        :headers {"Content-Type" "application/json"}
        :body (json/write-str {:status status
                               :timestamp (System/currentTimeMillis)
-                              :checks {:database {:status (if db-healthy? "up" "down")
-                                                 :responseTimeMs response-time}}
+                              :checks {:database {:status (if db-healthy? "up" "down")}
+                                       :responseTimeMs response-time}
                               :version "1.0.0"})})
     (catch Exception e
       (log/error e "Health check endpoint failed")
@@ -344,15 +356,17 @@
                 :post handle-login}]
      ["/signup" {:get signup-page
                  :post handle-signup}]
-      ["/logout" {:get handle-logout}]
-      ["/leaderboard" {:get leaderboard-page}]
-      ["/game" {:get game-page}]
-      ["/game/score" {:post save-score}]
-      ["/api/game" {:post game-api}]
-      ["/api/games" {:get list-saved-games-api}]
-      ["/api/leaderboard" {:get (fn [_] {:status 200
-                                         :headers {"Content-Type" "application/json"}
-                                         :body (json/write-str (user/get-leaderboard))})}]])
+     ["/logout" {:get handle-logout}]
+     ["/leaderboard" {:get leaderboard-page}]
+     ["/select-game" {:get select-game-page}]
+     ["/game/shooter" {:get shooter-page}]
+     ["/game/life" {:get game-life-page}]
+     ["/game/score" {:post save-score}]
+     ["/api/game" {:post game-api}]
+     ["/api/games" {:get list-saved-games-api}]
+     ["/api/leaderboard" {:get (fn [_] {:status 200
+                                        :headers {"Content-Type" "application/json"}
+                                        :body (json/write-str (user/get-leaderboard))})}]])
    (ring/create-default-handler)))
 
 (def site-app
