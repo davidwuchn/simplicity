@@ -1,14 +1,20 @@
 (ns cc.mindward.ui.helpers
   "Helper functions for UI rendering.
    
-   Contains pure utility functions for common UI patterns."
+   Contains pure utility functions for common UI patterns.
+   
+   Note (φ Vitality): Many functions in this namespace are currently unused in production
+   but are preserved for future feature development. They are fully tested and ready to use.
+   
+   Functions marked with [FUTURE USE] are not currently called by any production code
+   but provide useful abstractions for planned features or optional enhancements."
   (:require [clojure.string :as str]
             [cc.mindward.user.interface :as user]))
 
 ;; === Class Name Helpers ===
 
 (defn classes
-  "Combine multiple class names, filtering out nils and empty strings.
+  "[FUTURE USE] Combine multiple class names, filtering out nils and empty strings.
    
    Examples:
    (classes \"foo\" \"bar\") => \"foo bar\"
@@ -21,7 +27,7 @@
        (str/join " ")))
 
 (defn conditional-class
-  "Add a class name conditionally.
+  "[FUTURE USE] Add a class name conditionally.
    
    Examples:
    (conditional-class true \"active\") => \"active\"
@@ -51,7 +57,7 @@
       merged)))
 
 (defn data-attrs
-  "Convert a map to data-* attributes.
+  "[FUTURE USE] Convert a map to data-* attributes.
    
    Examples:
    (data-attrs {:user-id 123 :active true})
@@ -65,7 +71,7 @@
 ;; === Form Helpers ===
 
 (defn form-errors
-  "Extract form errors from params.
+  "[FUTURE USE] Extract form errors from params.
    
    Returns a map of field-name -> error-message."
   [params]
@@ -174,7 +180,7 @@
 ;; === URL Helpers ===
 
 (defn query-params
-  "Build query string from map.
+  "[FUTURE USE] Build query string from map.
    
    Examples:
    (query-params {:page 2 :sort \"name\"}) => \"page=2&sort=name\"
@@ -187,7 +193,7 @@
          (clojure.string/join "&"))))
 
 (defn url-with-params
-  "Build URL with query parameters.
+  "[FUTURE USE] Build URL with query parameters.
    
    Examples:
    (url-with-params \"/search\" {:q \"test\" :page 2})
@@ -201,7 +207,7 @@
 ;; === JavaScript Helpers ===
 
 (defn js-safe-string
-  "Escape string for safe JavaScript inclusion.
+  "[FUTURE USE] Escape string for safe JavaScript inclusion.
    
    Examples:
    (js-safe-string \"Hello\") => \"Hello\"
@@ -214,7 +220,7 @@
       (clojure.string/replace "\n" "\\n")))
 
 (defn js-object
-  "Convert Clojure map to JavaScript object literal.
+  "[FUTURE USE] Convert Clojure map to JavaScript object literal.
    
    Examples:
    (js-object {:name \"Alice\" :age 30})

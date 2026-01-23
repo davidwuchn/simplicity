@@ -80,10 +80,6 @@
     (let [result (bench 50 (game/evolve! :bench-large))]
       (print-benchmark "Large board evolution (100x100, ~2000 cells)" result)))
   
-  ;; Pattern analysis
-  (let [result (bench 100 (game/get-pattern-analysis :bench-medium))]
-    (print-benchmark "Pattern analysis" result))
-  
   ;; Musical triggers
   (let [result (bench 100 (game/get-musical-triggers :bench-medium))]
     (print-benchmark "Musical trigger generation" result))

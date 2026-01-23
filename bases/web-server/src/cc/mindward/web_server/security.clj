@@ -153,4 +153,5 @@
 
 (def validate-username user/validate-username)
 (def validate-password user/validate-password)
+(def validate-name user/validate-name)
 (def validate-score user/validate-score)

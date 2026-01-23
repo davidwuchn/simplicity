@@ -36,10 +36,11 @@
 (defn handle-signup [{:keys [params session]}]
   (let [username (:username params)
         password (:password params)
-        _display-name (:name params)  ;; Used by user/create-user!
+        display-name (:name params)
         ;; Validate inputs (∀ Vigilance - validate at boundaries)
         username-check (security/validate-username username)
-        password-check (security/validate-password password)]
+        password-check (security/validate-password password)
+        name-check (security/validate-name display-name)]
     (cond
       (not (:valid? username-check))
       (do
@@ -50,6 +51,11 @@
       (do
         (log/warn "Invalid password on signup:" (:error password-check))
         (redirect-with-error "/signup" (:error password-check)))
+      
+      (not (:valid? name-check))
+      (do
+        (log/warn "Invalid display name on signup:" (:error name-check))
+        (redirect-with-error "/signup" (:error name-check)))
       
       :else
       (try
