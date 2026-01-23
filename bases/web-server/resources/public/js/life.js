@@ -315,32 +315,43 @@ function handleClick(e) {
 
 function handleKeydown(e) {
     initAudio();
-    
+
+    // Prevent default browser behavior for our keys
+    const handledKeys = ['1', '2', '3', '4', '5', '6', ' ', 'r', 'R', 'c', 'C'];
+    if (handledKeys.includes(e.key)) {
+        e.preventDefault();
+    }
+
     // Number keys 1-6 change scale
     const scaleKeys = {
         '1': 'major',
-        '2': 'minor', 
+        '2': 'minor',
         '3': 'japanese',
         '4': 'blues',
         '5': 'chromatic',
         '6': 'wholetone'
     };
-    
+
     if (scaleKeys[e.key]) {
         state.currentScale = SCALES[scaleKeys[e.key]];
         const chordType = ['2', '4'].includes(e.key) ? 'minor' : 'major';
         playChord(200, chordType);
         return;
     }
-    
+
     // Space - add random cells
     if (e.code === 'Space') {
-        e.preventDefault();
         addRandomCells(50);
         draw();
         return;
     }
-    
+
+    // C - clear board
+    if (e.key === 'c' || e.key === 'C') {
+        lifeClear();
+        return;
+    }
+
     // R - reset board
     if (e.key === 'r' || e.key === 'R') {
         initializeRandomBoard();
