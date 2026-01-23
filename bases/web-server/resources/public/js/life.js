@@ -317,7 +317,7 @@ function handleKeydown(e) {
     initAudio();
 
     // Prevent default browser behavior for our keys
-    const handledKeys = ['1', '2', '3', '4', '5', '6', ' ', 'r', 'R', 'c', 'C'];
+    const handledKeys = ['1', '2', '3', '4', '5', '6', ' ', 'r', 'R', 'c', 'C', 's', 'S'];
     if (handledKeys.includes(e.key)) {
         e.preventDefault();
     }
@@ -349,6 +349,12 @@ function handleKeydown(e) {
     // C - clear board
     if (e.key === 'c' || e.key === 'C') {
         lifeClear();
+        return;
+    }
+
+    // S - step one generation
+    if (e.key === 's' || e.key === 'S') {
+        lifeStep();
         return;
     }
 
