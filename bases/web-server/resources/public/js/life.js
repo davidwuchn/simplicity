@@ -908,14 +908,23 @@ function draw() {
 }
 
 // === Main Loop ===
+let lastLoopUpdate = 0;
+
 function loop() {
-    try {
-        update();
-        draw();
-    } catch (e) {
-        console.error('Loop error:', e);
+    const now = Date.now();
+    
+    // Throttle updates to TICK_MS interval
+    if (now - lastLoopUpdate >= TICK_MS) {
+        try {
+            update();
+            draw();
+        } catch (e) {
+            console.error('Loop error:', e);
+        }
+        lastLoopUpdate = now;
     }
-    setTimeout(() => requestAnimationFrame(loop), TICK_MS);
+    
+    requestAnimationFrame(loop);
 }
 
 // === Input ===
