@@ -23,6 +23,13 @@
   [path error-msg]
   (res/redirect (str path "?error=" (java.net.URLEncoder/encode error-msg "UTF-8"))))
 
+(defn- redirect-with-success
+  "Redirect to path with URL-encoded success message (flash).
+   Provides user feedback on successful actions."
+  [path success-msg]
+  (-> (res/redirect path)
+      (assoc-in [:session :flash] {:type :success :message success-msg})))
+
 ;; ------------------------------------------------------------
 ;; Input Validation (∀ Vigilance)
 ;; ------------------------------------------------------------
@@ -132,8 +139,7 @@
       (try
         (user/create-user! params)
         (log/info "User created successfully:" username)
-        (-> (res/redirect "/select-game")
-            (assoc :session (assoc session :username username)))
+        (redirect-with-success "/select-game" (str "Identity established. Welcome, " username "."))
         (catch Exception e
           (log/warn e "User creation failed:" username)
           (redirect-with-error "/signup" "Username already exists"))))))
@@ -180,8 +186,7 @@
         (if auth-result
           (do
             (log/info "User logged in successfully:" username)
-            (-> (res/redirect "/select-game")
-                (assoc :session (assoc session :username username))))
+            (redirect-with-success "/select-game" (str "Access granted. Connection established, " username ".")))
           (do
             (log/warn "Failed login attempt for user:" username)
             (redirect-with-error "/login" "Invalid credentials")))))))

@@ -119,38 +119,54 @@
                        :text "LOGIN"
                        :aria-label "Login"})])]]]))
 
+;; === Flash Message Helpers ===
+
+(defn- render-flash-script
+  "Render JavaScript to show flash message toast.
+   Reads flash from session and clears it after showing."
+  [session]
+  (when-let [flash (:flash session)]
+    (let [{:keys [type message]} flash
+          toast-type (name (or type :info))]
+      [:script (h/raw (str "setTimeout(() => showToast("
+                           (pr-str message) ", " (pr-str toast-type) "), 100);"))])))
+
 ;; === Layout Component ===
 
 (defn layout
   "Main page layout.
-   
+
    Options:
-   - :session - Ring session map
+   - :session - Ring session map (may contain :flash for success/error messages)
    - :title - Page title (required)
    - :content - Page content (Hiccup) (required)
    - :extra-footer - Optional footer content (Hiccup)"
   [{:keys [session title content extra-footer]}]
-  (str
-   "<!DOCTYPE html>\n"
-   (h/html
-    [:html {:lang "en"}
-     (page-head {:title title})
-     [:body
-      ;; Toast container
-      [:div {:id "toast-container" :role "alert" :aria-live "polite"}]
-      
-      ;; Navigation
-      (navigation session)
-      
-      ;; Main content
-      [:main {:class "container mx-auto px-4" :role "main"}
-       content]
-      
-      ;; Footer/extra
-      extra-footer
-      
-       ;; Scripts
-       [:script {:src (str "/js/ui.js?v=" @app-version)}]]])))
+  (let [clean-session (dissoc session :flash)]  ; Clear flash after reading
+    (str
+     "<!DOCTYPE html>\n"
+     (h/html
+      [:html {:lang "en"}
+       (page-head {:title title})
+       [:body
+        ;; Toast container
+        [:div {:id "toast-container" :role "alert" :aria-live "polite"}]
+
+        ;; Flash message toast (auto-shown via script)
+        (render-flash-script session)
+
+        ;; Navigation
+        (navigation clean-session)
+
+        ;; Main content
+        [:main {:class "container mx-auto px-4" :role "main"}
+         content]
+
+        ;; Footer/extra
+        extra-footer
+
+        ;; Scripts
+        [:script {:src (str "/js/ui.js?v=" @app-version)}]]]))))
 
 
 ;; === Public Getters (for use in page namespaces) ===
