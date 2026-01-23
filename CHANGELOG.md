@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Developer Experience**
+  - REPL startup banner with quick reference commands and emoji-organized categories
+  - `(banner)` command to redisplay help anytime
+  - Better error messages when calling `(restart)` without running system
 - **Clojure-MCP Integration**
   - nREPL server configuration (`:nrepl` alias on port 7888)
   - `.clojure-mcp/config.edn` with security boundaries and tool settings
@@ -20,6 +24,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LICENSE file (MIT License)
 - GitHub Actions CI/CD workflow
 - CHANGELOG.md for version tracking
+
+### Changed
+- **Code Quality**
+  - Refactored `ui/styles.clj` to use centralized color palette (eliminated 40+ hardcoded hex values)
+  - Added `c()` helper function for type-safe color lookups with DRY principle
+  - Improved theme maintainability - single source of truth for all colors
+
+### Fixed
+- Missing `clojure.string` require in `user/validation.clj` (critical namespace error)
+- Unused bindings in `web-server/core.clj` and `user/impl.clj`
+- Broken `bb lint` task (shell glob expansion issue)
+- Stale test count documentation (611 → 618 assertions)
 
 ## [1.0.0] - 2026-01-22
 
@@ -57,13 +73,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - AI agent operational guidelines (`AGENTS.md`)
 
 - **Testing**
-  - 501 passing assertions across 71 test cases
+  - 618 passing assertions across test suite
   - Component breakdown:
-    - Auth: 2 tests, 14 assertions
-    - Game: 15 tests, 146 assertions
-    - UI: 42 tests, 149 assertions
+    - Auth: 3 tests, 25 assertions
+    - Game: 13 tests, 136 assertions
+    - UI: 70 tests, 267 assertions
     - User: 12 tests, 49 assertions (includes SQL injection tests)
-    - Web-server: 28 tests, 143 assertions (includes security tests)
+    - Web-server: 37 tests, 177 assertions (includes security tests)
 
 ### Changed
 - Password minimum length increased from 6 to 8 characters

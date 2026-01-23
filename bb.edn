@@ -6,7 +6,10 @@
         babashka/process {:mvn/version "0.6.25"}}
  
  :tasks
- {:override-builtin true;; ═══════════════════════════════════════════════════════════
+ {;; Suppress warnings for overriding built-in commands (repl, help, uberjar)
+  :override-builtin true
+  
+  ;; ═══════════════════════════════════════════════════════════
   ;; Development Tasks
   ;; ═══════════════════════════════════════════════════════════
   
