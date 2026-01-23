@@ -1,1 +1,298 @@
-{:deps {com.lambdaisland/launchpad {:mvn/version "RELEASE"}}}
+{:min-bb-version "1.0.0"
+ 
+ :paths ["scripts"]
+ 
+ :deps {babashka/fs {:mvn/version "0.5.30"}
+        babashka/process {:mvn/version "0.6.25"}}
+ 
+ :tasks
+ {:override-builtin true;; ═══════════════════════════════════════════════════════════
+  ;; Development Tasks
+  ;; ═══════════════════════════════════════════════════════════
+  
+  dev
+  {:doc "Start development REPL with hot reload"
+   :task (shell "clojure -M:nrepl")}
+  
+  repl
+  {:doc "Start development REPL (alias for dev)"
+   :task (run 'dev)}
+  
+  check
+  {:doc "Check Polylith workspace integrity"
+   :task (shell "clojure -M:poly check")}
+  
+  info
+  {:doc "Show Polylith workspace info"
+   :task (shell "clojure -M:poly info")}
+  
+  diff
+  {:doc "Show changed bricks in workspace"
+   :task (shell "clojure -M:poly diff")}
+  
+  ;; ═══════════════════════════════════════════════════════════
+  ;; Testing Tasks
+  ;; ═══════════════════════════════════════════════════════════
+  
+  test
+  {:doc "Run all tests (611 assertions)"
+   :task (shell "clojure -M:poly test :dev")}
+  
+  test:watch
+  {:doc "Run tests in watch mode (re-run on file changes)"
+   :requires ([babashka.fs :as fs]
+              [babashka.process :as p])
+   :task (do
+           (println "Watching for file changes...")
+           (println "Press Ctrl+C to stop")
+           (loop [last-modified 0]
+             (let [current-modified (->> (fs/glob "." "**/*.clj")
+                                         (map fs/last-modified-time)
+                                         (apply max)
+                                         inst-ms)]
+               (when (> current-modified last-modified)
+                 (println "\n═══ Running tests ═══")
+                 (try
+                   (shell "clojure -M:poly test :dev")
+                   (catch Exception e
+                     (println "Test failed:" (ex-message e)))))
+               (Thread/sleep 2000)
+               (recur current-modified))))}
+  
+  test:auth
+  {:doc "Run auth component tests"
+   :task (shell "clojure -M:test -e \"(require 'cc.mindward.auth.interface-test) (clojure.test/run-tests 'cc.mindward.auth.interface-test)\"")}
+  
+  test:game
+  {:doc "Run game component tests"
+   :task (shell "clojure -M:test -e \"(require 'cc.mindward.game.interface-test) (clojure.test/run-tests 'cc.mindward.game.interface-test)\"")}
+  
+  test:ui
+  {:doc "Run UI component tests"
+   :task (shell "clojure -M:test -e \"(require 'cc.mindward.ui.core-test 'cc.mindward.ui.components-test 'cc.mindward.ui.helpers-test) (clojure.test/run-tests 'cc.mindward.ui.core-test 'cc.mindward.ui.components-test 'cc.mindward.ui.helpers-test)\"")}
+  
+  test:user
+  {:doc "Run user component tests"
+   :task (shell "clojure -M:test -e \"(require 'cc.mindward.user.interface-test 'cc.mindward.user.security-test) (clojure.test/run-tests 'cc.mindward.user.interface-test 'cc.mindward.user.security-test)\"")}
+  
+  test:web-server
+  {:doc "Run web-server base tests"
+   :task (shell "clojure -M:test -e \"(require 'cc.mindward.web-server.core-test 'cc.mindward.web-server.security-test) (clojure.test/run-tests 'cc.mindward.web-server.core-test 'cc.mindward.web-server.security-test)\"")}
+  
+  ;; ═══════════════════════════════════════════════════════════
+  ;; Linting & Formatting Tasks
+  ;; ═══════════════════════════════════════════════════════════
+  
+  lint
+  {:doc "Lint all source files with clj-kondo"
+   :task (shell "clj-kondo --lint components/*/src bases/*/src development/src")}
+  
+  lint:fix
+  {:doc "Auto-fix linting issues where possible"
+   :task (shell "clj-kondo --lint components/*/src bases/*/src development/src --auto-fix")}
+  
+  format:check
+  {:doc "Check code formatting (requires cljfmt)"
+   :task (shell "clojure -M:format check")}
+  
+  format:fix
+  {:doc "Fix code formatting (requires cljfmt)"
+   :task (shell "clojure -M:format fix")}
+  
+  ;; ═══════════════════════════════════════════════════════════
+  ;; Build Tasks
+  ;; ═══════════════════════════════════════════════════════════
+  
+  clean
+  {:doc "Clean build artifacts"
+   :requires ([babashka.fs :as fs])
+   :task (do
+           (println "Cleaning build artifacts...")
+           (when (fs/exists? "target")
+             (fs/delete-tree "target")
+             (println "✓ Deleted target/"))
+           (when (fs/exists? "simplicity.db")
+             (fs/delete "simplicity.db")
+             (println "✓ Deleted simplicity.db"))
+           (when (fs/exists? ".nrepl-port")
+             (fs/delete ".nrepl-port")
+             (println "✓ Deleted .nrepl-port"))
+           (println "Clean complete."))}
+  
+  uberjar
+  {:doc "Build standalone uberjar (45MB)"
+   :task (do
+           (println "═══════════════════════════════════════════════════════════")
+           (println "  Building Simplicity Uberjar")
+           (println "═══════════════════════════════════════════════════════════")
+           (shell "clojure -T:build uberjar")
+           (println "\n✓ Build complete!")
+           (println "\nRun with:")
+           (println "  java -jar target/simplicity-standalone.jar"))}
+  
+  jar-info
+  {:doc "Show information about built jar"
+   :task (shell "clojure -T:build jar-info")}
+  
+  build
+  {:doc "Full build: clean + test + uberjar"
+   :depends [clean test uberjar]
+   :task (println "\n✓ Full build complete!")}
+  
+  ;; ═══════════════════════════════════════════════════════════
+  ;; Docker Tasks
+  ;; ═══════════════════════════════════════════════════════════
+  
+  docker:build
+  {:doc "Build Docker image"
+   :requires ([clojure.string :as str])
+   :task (let [version (str/trim (slurp "VERSION" :encoding "utf-8"))]
+           (println (str "Building Docker image: simplicity:" version))
+           (shell (str "docker build -t simplicity:" version " -t simplicity:latest ."))
+           (println (str "\n✓ Docker image built: simplicity:" version)))}
+  
+  docker:run
+  {:doc "Run Docker container locally"
+   :task (do
+           (println "Starting Simplicity in Docker...")
+           (println "Access at: http://localhost:3000")
+           (shell "docker run -p 3000:3000 -v $(pwd)/data:/app/data simplicity:latest"))}
+  
+  docker:compose
+  {:doc "Start with Docker Compose (with volumes)"
+   :task (shell "docker-compose up -d")}
+  
+  docker:compose:down
+  {:doc "Stop Docker Compose"
+   :task (shell "docker-compose down")}
+  
+  docker:compose:logs
+  {:doc "View Docker Compose logs"
+   :task (shell "docker-compose logs -f")}
+  
+  ;; ═══════════════════════════════════════════════════════════
+  ;; Deployment Tasks
+  ;; ═══════════════════════════════════════════════════════════
+  
+  deploy:build
+  {:doc "Interactive build menu for deployment"
+   :task (shell "./scripts/build-deployment.sh")}
+  
+  deploy:health
+  {:doc "Monitor production health endpoint"
+   :task (shell "./scripts/health-monitor.sh")}
+  
+  ;; ═══════════════════════════════════════════════════════════
+  ;; Database Tasks
+  ;; ═══════════════════════════════════════════════════════════
+  
+  db:reset
+  {:doc "Reset local development database"
+   :requires ([babashka.fs :as fs])
+   :task (do
+           (println "Resetting development database...")
+           (when (fs/exists? "simplicity.db")
+             (fs/delete "simplicity.db")
+             (println "✓ Deleted simplicity.db"))
+           (println "Database will be recreated on next server start."))}
+  
+  db:backup
+  {:doc "Backup production database"
+   :requires ([babashka.fs :as fs]
+              [java-time.local :as t])
+   :task (let [timestamp (.format (t/local-date-time) "yyyyMMdd-HHmmss")
+               backup-file (str "backups/simplicity-" timestamp ".db")]
+           (fs/create-dirs "backups")
+           (fs/copy "simplicity.db" backup-file)
+           (println (str "✓ Database backed up to: " backup-file)))}
+  
+  ;; ═══════════════════════════════════════════════════════════
+  ;; Utility Tasks
+  ;; ═══════════════════════════════════════════════════════════
+  
+  ver
+  {:doc "Show project version"
+   :task (print (slurp "VERSION"))}
+  
+  ver:bump
+  {:doc "Bump version (patch)"
+   :requires ([clojure.string :as str])
+   :task (let [current (str/trim (slurp "VERSION"))
+               parts (str/split current (re-pattern "\\."))
+               major (first parts)
+               minor (second parts)
+               patch (parse-long (nth parts 2))
+               new-version (str major "." minor "." (inc patch))]
+           (spit "VERSION" (str new-version "\n"))
+           (println (str "Version bumped: " current " → " new-version)))}
+  
+  health
+  {:doc "Check local server health"
+   :task (shell "curl -s http://localhost:3000/health | jq")}
+  
+  stats
+  {:doc "Show project statistics"
+   :requires ([babashka.process :as p]
+              [babashka.fs :as fs])
+   :task (let [clj-files (count (fs/glob "." "**/*.clj"))
+               test-files (count (fs/glob "." "**/*_test.clj"))
+               src-files (- clj-files test-files)]
+           (println "═══════════════════════════════════════════════════════════")
+           (println "  Simplicity Project Statistics")
+           (println "═══════════════════════════════════════════════════════════")
+           (println (str "Source files:     " src-files))
+           (println (str "Test files:       " test-files))
+           (println (str "Total files:      " clj-files))
+           (println (str "Test assertions:  611"))
+           (println (str "Components:       4 (auth, game, ui, user)"))
+           (println (str "Bases:            1 (web-server)"))
+           (println "═══════════════════════════════════════════════════════════"))}
+  
+  help
+  {:doc "Show all available tasks"
+   :task (do
+           (println "═══════════════════════════════════════════════════════════")
+           (println "  Simplicity - Babashka Build System")
+           (println "  易简则天下之理得 (Simplicity allows obtaining the logic of the world)")
+           (println "═══════════════════════════════════════════════════════════")
+           (println "\nDEVELOPMENT:")
+           (println "  bb dev             - Start development REPL with hot reload")
+           (println "  bb repl            - Alias for 'dev'")
+           (println "  bb check           - Check Polylith workspace integrity")
+           (println "  bb info            - Show Polylith workspace info")
+           (println "  bb diff            - Show changed bricks")
+           (println "\nTESTING:")
+           (println "  bb test            - Run all tests (611 assertions)")
+           (println "  bb test:watch      - Watch mode (re-run on changes)")
+           (println "  bb test:auth       - Test auth component")
+           (println "  bb test:game       - Test game component")
+           (println "  bb test:ui         - Test UI component")
+           (println "  bb test:user       - Test user component")
+           (println "  bb test:web-server - Test web-server base")
+           (println "\nLINTING:")
+           (println "  bb lint            - Lint all source files")
+           (println "  bb lint:fix        - Auto-fix linting issues")
+           (println "\nBUILD:")
+           (println "  bb clean           - Clean build artifacts")
+           (println "  bb uberjar         - Build standalone jar (45MB)")
+           (println "  bb build           - Full build (clean + test + uberjar)")
+           (println "  bb jar-info        - Show jar information")
+           (println "\nDOCKER:")
+           (println "  bb docker:build    - Build Docker image")
+           (println "  bb docker:run      - Run Docker container")
+           (println "  bb docker:compose  - Start with Docker Compose")
+           (println "\nDEPLOYMENT:")
+           (println "  bb deploy:build    - Interactive build menu")
+           (println "  bb deploy:health   - Monitor production health")
+           (println "\nDATABASE:")
+           (println "  bb db:reset        - Reset local database")
+           (println "  bb db:backup       - Backup database")
+           (println "\nUTILITIES:")
+           (println "  bb ver             - Show project version")
+           (println "  bb ver:bump        - Bump version (patch)")
+           (println "  bb health          - Check local server health")
+           (println "  bb stats           - Show project statistics")
+           (println "  bb help            - Show this help")
+           (println "\n═══════════════════════════════════════════════════════════")
+           (println "For detailed documentation, see docs/ directory")
+           (println "═══════════════════════════════════════════════════════════"))}}}
