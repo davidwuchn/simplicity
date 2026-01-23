@@ -25,7 +25,7 @@
 (deftest get-board-test
   (testing "get-board returns current board state"
     (let [initial #{[0 0] [1 1]}
-          created (game/create-game! :get-board-test initial)
+          _ (game/create-game! :get-board-test initial)
           retrieved (game/get-board :get-board-test)]
       (is (= initial retrieved) "retrieved board should match created board")))
   
@@ -299,7 +299,7 @@
           game-ids (mapv #(keyword (str "stable-" %)) (range (count patterns)))]
       (doseq [[game-id pattern] (map vector game-ids patterns)]
         (game/create-game! game-id pattern)
-        (dotimes [n 10]
+        (dotimes [_ 10]
           (game/evolve! game-id)
           (let [board (game/get-board game-id)]
             (is (set? board) "board is a set")

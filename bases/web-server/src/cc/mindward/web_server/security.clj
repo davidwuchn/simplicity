@@ -7,7 +7,8 @@
    - Input validation helpers
    
    Philosophy (∀ Vigilance): Defense in depth. Layer security controls."
-  (:require [clojure.tools.logging :as log]))
+  (:require [clojure.string :as str]
+            [clojure.tools.logging :as log]))
 
 ;; ------------------------------------------------------------
 ;; Security Headers Middleware (OWASP Best Practices)
@@ -33,10 +34,10 @@
           enable-hsts? (= "true" (System/getenv "ENABLE_HSTS"))
           base-headers {"Content-Security-Policy" 
                         (str "default-src 'self'; "
-                             "script-src 'self' 'unsafe-inline'; "  ;; inline scripts for game
-                             "style-src 'self' 'unsafe-inline'; "   ;; inline styles
+                             "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "  ;; inline scripts + Tailwind CDN
+                             "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com; "   ;; inline styles + CDN
                              "img-src 'self' data:; "
-                             "font-src 'self'; "
+                             "font-src 'self' https://fonts.gstatic.com; "  ;; Google Fonts
                              "connect-src 'self'; "
                              "frame-ancestors 'none';")
                         "X-Frame-Options" "DENY"
@@ -108,7 +109,7 @@
    2. X-Real-IP (nginx)
    3. :remote-addr (direct connection)"
   [request]
-  (or (first (clojure.string/split (get-in request [:headers "x-forwarded-for"] "") #","))
+  (or (first (str/split (get-in request [:headers "x-forwarded-for"] "") #","))
       (get-in request [:headers "x-real-ip"])
       (:remote-addr request)
       "unknown"))

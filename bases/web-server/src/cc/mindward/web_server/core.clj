@@ -3,6 +3,7 @@
             [cc.mindward.game.interface :as game]
             [cc.mindward.web-server.security :as security]
             [clojure.data.json :as json]
+            [clojure.string :as str]
             [clojure.tools.logging :as log]
             [reitit.ring :as ring]
             [ring.adapter.jetty :as jetty]
@@ -25,7 +26,7 @@
 (defn handle-signup [{:keys [params session]}]
   (let [username (:username params)
         password (:password params)
-        name (:name params)
+        display-name (:name params)
         ;; Validate inputs (∀ Vigilance - validate at boundaries)
         username-check (security/validate-username username)
         password-check (security/validate-password password)]
@@ -102,11 +103,11 @@
            :headers {"Content-Type" "application/json"}
            :body (str "{\"error\": \"" (:error score-validation) "\"}")})))))
 
-(defn handle-logout [{:keys [_session]}]
+(defn handle-logout [_]
   (-> (res/redirect "/login")
       (assoc :session nil)))
 
-(defn game-api [{:keys [session params headers]}]
+(defn game-api [{:keys [session params]}]
   (let [game-id (keyword (str "user-" (:username session "anonymous") "-game"))]
     (case (:action params)
       "create" (let [cells (into #{} (map (fn [[x y]] [(int x) (int y)])) 
@@ -164,7 +165,7 @@
         response
         (do
           (log/info (format "%s %s -> %s (%dms)"
-                           (clojure.string/upper-case (name request-method))
+                           (str/upper-case (name request-method))
                            uri
                            status
                            duration))
@@ -189,9 +190,10 @@
 ;; Health Check Endpoint (Production Monitoring)
 ;; ------------------------------------------------------------
 
-(defn health-check [_]
+(defn health-check 
   "Health check endpoint for load balancers and monitoring.
    Verifies database connectivity and returns system status."
+  [_]
   (try
     (let [start-time (System/currentTimeMillis)
           ;; Test database connectivity by running a simple query

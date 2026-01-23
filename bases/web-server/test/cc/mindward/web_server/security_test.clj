@@ -9,6 +9,7 @@
    - Session security
    - XSS prevention"
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
+            [clojure.string :as str]
             [cc.mindward.web-server.core :as server]
             [cc.mindward.web-server.security :as security]
             [cc.mindward.user.impl :as user-impl]
@@ -32,8 +33,9 @@
 ;; Test Fixtures
 ;; ------------------------------------------------------------
 
-(defn temp-db-fixture [f]
+(defn temp-db-fixture 
   "Create a temporary SQLite database for testing."
+  [f]
   (let [temp-file (java.io.File/createTempFile "test-db-" ".db")
         temp-path (.getAbsolutePath temp-file)
         ds (user-impl/make-datasource temp-path)]
@@ -57,7 +59,7 @@
       ;; Check for CSP header
       (is (contains? (:headers response) "Content-Security-Policy")
           "CSP header should be present")
-      (is (clojure.string/includes? (get (:headers response) "Content-Security-Policy") "default-src 'self'")
+      (is (str/includes? (get (:headers response) "Content-Security-Policy") "default-src 'self'")
           "CSP should restrict to same origin")
       
       ;; Check for X-Frame-Options

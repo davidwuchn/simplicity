@@ -4,11 +4,11 @@ const ctx = canvas.getContext('2d');
 const highScoreEl = document.getElementById('high-score');
 
 // === CONFIGURATION (Hard Limits) ===
-const MAX_ENEMIES = 20;
+const MAX_ENEMIES = 35;
 const MAX_BULLETS = 50;
 const MAX_MISSILES = 12;
 const MAX_PARTICLES = 80;
-const MAX_ENEMY_BULLETS = 25;
+const MAX_ENEMY_BULLETS = 40;
 const MAX_POWERUPS = 5;
 
 // === Global State ===
@@ -19,6 +19,20 @@ let powerUpActive = false;
 let powerUpTimer = 0;
 let weaponLevel = 1; 
 let lastBossSpawnScore = 0;
+let invincible = false;
+let invincibilityEnd = 0;
+let invincibilityCooldown = 0;
+const INVINCIBILITY_DURATION = 3000; // 3 seconds
+const INVINCIBILITY_COOLDOWN = 10000; // 10 seconds cooldown
+
+// === Piano Particles ===
+let pianoParticles = [];
+const MAX_PIANO_PARTICLES = 20;
+let lastPianoSpawn = 0;
+const pianoNotes = [
+    261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25,  // C4-C5
+    587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50, 1174.66  // D5-D6
+];
 
 // === Audio State ===
 let audioCtx = null;
@@ -47,25 +61,44 @@ let delayFilter = null;
 let crackleSource = null;
 let crackleGain = null;
 
-// === Music Styles (Enhanced with hi-hat patterns and arpeggios) ===
+// === Music Styles (Expanded & Enhanced) ===
 const musicStyles = [
+    { 
+        name: 'NEON WARFARE', bpm: 132, 
+        kick: [0, 2, 4, 6], snare: [2, 6], 
+        hat: [0,1,2,3,4,5,6,7], hatAccent: [1,3,5,7],
+        bass: [55, 65, 55, 73], // Dynamic bass progression
+        scale: [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33], // Full C major scale
+        arp: [0, 2, 4, 5, 4, 2], // Hotline Miami-inspired ascending/descending arp
+        vibe: 'ultimate',
+        kickDecay: 0.28, snareDecay: 0.09, bassType: 'sawtooth',
+        // Ultimate style: Combines Hotline Miami + Furi + Geometry Dash
+        // - 132 BPM: Perfect balance between drive and groove
+        // - 4/4 kicks: Relentless energy (Geometry Dash)
+        // - Sawtooth bass: Aggressive synthwave (Hotline Miami)
+        // - Fast continuous hats: Modern EDM intensity
+        // - 6-note arpeggio: Melodic complexity (Furi)
+        // - Extended scale: Rich harmonic palette
+    },
     { 
         name: 'HIP-HOP', bpm: 90, 
         kick: [0, 6], snare: [4], 
-        hat: [0,1,2,3,4,5,6,7], hatAccent: [2, 6], // continuous hats, accents on offbeats
+        hat: [0,1,2,3,4,5,6,7], hatAccent: [2, 6],
         bass: [55, 55, 65, 55], 
         scale: [261.63, 293.66, 329.63, 392.00, 440.00],
-        arp: [0, 2, 4, 2], // scale indices for arpeggio
-        vibe: 'chill'
+        arp: [0, 2, 4, 2],
+        vibe: 'chill',
+        kickDecay: 0.5, snareDecay: 0.15, bassType: 'sine'
     },
     { 
         name: 'TECHNO', bpm: 128, 
         kick: [0, 2, 4, 6], snare: [4], 
-        hat: [1, 3, 5, 7], hatAccent: [3, 7], // offbeat hats
+        hat: [1, 3, 5, 7], hatAccent: [3, 7],
         bass: [55, 55, 110, 110], 
         scale: [220.00, 261.63, 293.66, 329.63, 392.00],
         arp: [0, 0, 2, 4],
-        vibe: 'drive'
+        vibe: 'drive',
+        kickDecay: 0.3, snareDecay: 0.1, bassType: 'sawtooth'
     },
     { 
         name: 'D&B', bpm: 174, 
@@ -74,7 +107,8 @@ const musicStyles = [
         bass: [55, 55, 82, 65], 
         scale: [174.61, 196.00, 220.00, 261.63, 293.66],
         arp: [0, 2, 0, 3],
-        vibe: 'intense'
+        vibe: 'intense',
+        kickDecay: 0.25, snareDecay: 0.08, bassType: 'square'
     },
     { 
         name: 'SYNTHWAVE', bpm: 105, 
@@ -83,7 +117,8 @@ const musicStyles = [
         bass: [65, 65, 82, 98], 
         scale: [261.63, 293.66, 329.63, 392.00, 523.25],
         arp: [0, 2, 4, 3],
-        vibe: 'retro'
+        vibe: 'retro',
+        kickDecay: 0.4, snareDecay: 0.12, bassType: 'sawtooth'
     },
     { 
         name: 'INDUSTRIAL', bpm: 125, 
@@ -92,7 +127,8 @@ const musicStyles = [
         bass: [41, 41, 41, 44], 
         scale: [146.83, 155.56, 174.61, 196.00, 207.65],
         arp: [0, 1, 0, 1],
-        vibe: 'dark'
+        vibe: 'dark',
+        kickDecay: 0.35, snareDecay: 0.2, bassType: 'square'
     },
     { 
         name: 'TRANCE', bpm: 138, 
@@ -101,10 +137,111 @@ const musicStyles = [
         bass: [110, 98, 82, 98], 
         scale: [329.63, 392.00, 440.00, 523.25, 587.33],
         arp: [0, 2, 4, 2],
-        vibe: 'euphoric'
+        vibe: 'euphoric',
+        kickDecay: 0.4, snareDecay: 0.1, bassType: 'sawtooth'
+    },
+    { 
+        name: 'DUBSTEP', bpm: 140, 
+        kick: [0, 4], snare: [2, 6], 
+        hat: [1,3,5,7], hatAccent: [3, 7],
+        bass: [55, 41, 55, 46], 
+        scale: [146.83, 174.61, 196.00, 220.00, 261.63],
+        arp: [0, 0, 2, 0],
+        vibe: 'wobble',
+        kickDecay: 0.5, snareDecay: 0.15, bassType: 'square'
+    },
+    { 
+        name: 'BREAKBEAT', bpm: 135, 
+        kick: [0, 3, 6], snare: [2, 5, 7], 
+        hat: [0,1,2,3,4,5,6,7], hatAccent: [1,3,5,7],
+        bass: [65, 65, 73, 65], 
+        scale: [220.00, 246.94, 261.63, 293.66, 329.63],
+        arp: [0, 1, 2, 1],
+        vibe: 'funky',
+        kickDecay: 0.3, snareDecay: 0.12, bassType: 'sine'
+    },
+    { 
+        name: 'HARDSTYLE', bpm: 150, 
+        kick: [0, 2, 4, 6], snare: [4], 
+        hat: [1,3,5,7], hatAccent: [1,5],
+        bass: [65, 65, 65, 65], 
+        scale: [261.63, 329.63, 392.00, 523.25, 659.25],
+        arp: [0, 2, 4, 2],
+        vibe: 'hard',
+        kickDecay: 0.2, snareDecay: 0.08, bassType: 'square'
+    },
+    { 
+        name: 'ELECTRO', bpm: 128, 
+        kick: [0, 2, 4, 6], snare: [2, 6], 
+        hat: [0,1,2,3,4,5,6,7], hatAccent: [2,4,6],
+        bass: [82, 98, 110, 98], 
+        scale: [261.63, 329.63, 392.00, 440.00, 523.25],
+        arp: [0, 2, 1, 3],
+        vibe: 'electric',
+        kickDecay: 0.3, snareDecay: 0.1, bassType: 'square'
+    },
+    { 
+        name: 'TRAP', bpm: 140, 
+        kick: [0, 4], snare: [2, 5, 6], 
+        hat: [0,1,2,3,4,5,6,7], hatAccent: [1,2,3,5,7],
+        bass: [41, 46, 49, 46], 
+        scale: [174.61, 196.00, 207.65, 246.94, 261.63],
+        arp: [0, 1, 0, 2],
+        vibe: 'trap',
+        kickDecay: 0.6, snareDecay: 0.2, bassType: 'sine'
+    },
+    { 
+        name: 'PSYTRANCE', bpm: 145, 
+        kick: [0, 2, 4, 6], snare: [], 
+        hat: [1,3,5,7], hatAccent: [1,3,5,7],
+        bass: [98, 110, 98, 110], 
+        scale: [293.66, 329.63, 392.00, 440.00, 523.25],
+        arp: [0, 1, 2, 3, 4, 3, 2, 1],
+        vibe: 'psychedelic',
+        kickDecay: 0.25, snareDecay: 0.1, bassType: 'sawtooth'
+    },
+    { 
+        name: 'JUNGLE', bpm: 165, 
+        kick: [0, 4], snare: [1, 3, 5, 7], 
+        hat: [0,1,2,3,4,5,6,7], hatAccent: [0,2,4,6],
+        bass: [55, 65, 73, 55], 
+        scale: [196.00, 220.00, 246.94, 293.66, 329.63],
+        arp: [0, 2, 1, 3],
+        vibe: 'jungle',
+        kickDecay: 0.3, snareDecay: 0.08, bassType: 'sine'
+    },
+    { 
+        name: 'HOUSE', bpm: 125, 
+        kick: [0, 2, 4, 6], snare: [2, 6], 
+        hat: [0,1,2,3,4,5,6,7], hatAccent: [2,6],
+        bass: [65, 65, 82, 65], 
+        scale: [261.63, 293.66, 329.63, 392.00, 440.00],
+        arp: [0, 2, 3, 2],
+        vibe: 'groove',
+        kickDecay: 0.35, snareDecay: 0.12, bassType: 'sine'
+    },
+    { 
+        name: 'AMBIENT', bpm: 80, 
+        kick: [0], snare: [], 
+        hat: [2, 6], hatAccent: [],
+        bass: [55, 65, 73, 65], 
+        scale: [261.63, 293.66, 329.63, 392.00, 440.00, 523.25],
+        arp: [0, 1, 2, 3, 4, 3, 2, 1],
+        vibe: 'atmospheric',
+        kickDecay: 0.8, snareDecay: 0.3, bassType: 'sine'
+    },
+    { 
+        name: 'GABBER', bpm: 180, 
+        kick: [0, 1, 2, 3, 4, 5, 6, 7], snare: [2, 6], 
+        hat: [1,3,5,7], hatAccent: [1,5],
+        bass: [55, 55, 55, 55], 
+        scale: [220.00, 246.94, 293.66, 329.63, 440.00],
+        arp: [0, 0, 0, 2],
+        vibe: 'hardcore',
+        kickDecay: 0.15, snareDecay: 0.08, bassType: 'square'
     }
 ];
-currentStyle = Math.floor(Math.random() * musicStyles.length);
+currentStyle = 0; // Start with NEON WARFARE (index 0)
 
 // === Entities ===
 const player = { x: 400, y: 500, size: 30, speed: 5, missileCooldown: 0, lastShotTime: 0 };
@@ -430,6 +567,41 @@ function playSound(type) {
     } catch (e) {}
 }
 
+// Play piano note based on Y position (for particles)
+function playPianoNote(yPosition, intensity = 0.03) {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    
+    try {
+        const t = audioCtx.currentTime;
+        
+        // Map Y position to piano note (top = high notes, bottom = low notes)
+        const noteIndex = Math.floor((1 - yPosition / canvas.height) * (pianoNotes.length - 1));
+        const freq = pianoNotes[Math.max(0, Math.min(noteIndex, pianoNotes.length - 1))];
+        
+        // Piano-like sound: triangle wave with quick attack and natural decay
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const filter = audioCtx.createBiquadFilter();
+        
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, t);
+        
+        // Gentle lowpass filter for warmth
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(freq * 4, t);
+        filter.Q.value = 1;
+        
+        // Piano envelope: quick attack, natural decay
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(intensity, t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+        
+        osc.connect(filter).connect(gain).connect(reverbGain); // Send to reverb for space
+        osc.start(t);
+        osc.stop(t + 0.8);
+    } catch (e) {}
+}
+
 // BGM tick - called from game loop with full drum machine + melody
 function tickBGM() {
     if (!audioCtx || audioCtx.state !== 'running') return;
@@ -454,13 +626,13 @@ function tickBGM() {
         const t = audioCtx.currentTime;
         const step = beatStep % 8;
         
-        // === BASS LINE with filter sweep ===
+        // === BASS LINE with filter sweep (style-specific waveform) ===
         const bassOsc = audioCtx.createOscillator();
         const bassGain = audioCtx.createGain();
         const bassFilter = audioCtx.createBiquadFilter();
         const bassNote = style.bass[Math.floor(beatStep / 2) % 4];
         
-        bassOsc.type = 'sawtooth';
+        bassOsc.type = style.bassType || 'sawtooth'; // Use style-specific bass type
         bassOsc.frequency.setValueAtTime(bassNote, t);
         bassFilter.type = 'lowpass';
         // Filter sweeps based on LFO and intensity (enhanced automation)
@@ -468,10 +640,10 @@ function tickBGM() {
         const filterFreq = 150 + filterLFO * 300 + (enemies.length * 10) + intensity * 200;
         bassFilter.frequency.setValueAtTime(filterFreq, t);
         bassFilter.Q.value = 4 + intensity * 4; // More resonance as intensity grows
-        bassGain.gain.setValueAtTime(0.12, t);
-        bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        bassGain.gain.setValueAtTime(0.14, t);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
         bassOsc.connect(bassFilter).connect(bassGain).connect(compressor);
-        bassOsc.start(t); bassOsc.stop(t + 0.12);
+        bassOsc.start(t); bassOsc.stop(t + 0.14);
         
         // === SUB-BASS LAYER (pure sine, one octave below) ===
         const subOsc = audioCtx.createOscillator();
@@ -522,21 +694,22 @@ function tickBGM() {
             // Pitch envelope - kick goes direct to masterGain (bypasses sidechain)
             const kickOsc = audioCtx.createOscillator();
             const kickGain = audioCtx.createGain();
+            const kickDecay = style.kickDecay || 0.35; // Use style-specific decay
             kickOsc.type = 'sine';
             kickOsc.frequency.setValueAtTime(160, t);
-            kickOsc.frequency.exponentialRampToValueAtTime(35, t + 0.15);
-            kickGain.gain.setValueAtTime(0.6, t);
-            kickGain.gain.setValueAtTime(0.5, t + 0.01);
-            kickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+            kickOsc.frequency.exponentialRampToValueAtTime(35, t + kickDecay * 0.5);
+            kickGain.gain.setValueAtTime(0.65, t);
+            kickGain.gain.setValueAtTime(0.55, t + 0.01);
+            kickGain.gain.exponentialRampToValueAtTime(0.001, t + kickDecay);
             kickOsc.connect(kickGain).connect(masterGain); // Direct to master (no duck)
-            kickOsc.start(t); kickOsc.stop(t + 0.35);
+            kickOsc.start(t); kickOsc.stop(t + kickDecay);
             
-            // Click transient
+            // Click transient (tighter for faster genres)
             const click = audioCtx.createOscillator();
             const clickGain = audioCtx.createGain();
             click.type = 'square';
             click.frequency.value = 1200;
-            clickGain.gain.setValueAtTime(0.1, t);
+            clickGain.gain.setValueAtTime(0.12, t);
             clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
             click.connect(clickGain).connect(masterGain); // Direct to master
             click.start(t); click.stop(t + 0.015);
@@ -545,6 +718,7 @@ function tickBGM() {
         // === SNARE DRUM ===
         if (style.snare.includes(step) && noiseBuffer) {
             beatSnare = 1.0;
+            const snareDecay = style.snareDecay || 0.15; // Use style-specific decay
             
             // Noise body
             const snare = audioCtx.createBufferSource();
@@ -554,21 +728,21 @@ function tickBGM() {
             snareFilter.type = 'bandpass';
             snareFilter.frequency.value = 3000;
             snareFilter.Q.value = 1;
-            snareGain.gain.setValueAtTime(0.18, t);
-            snareGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+            snareGain.gain.setValueAtTime(0.2, t);
+            snareGain.gain.exponentialRampToValueAtTime(0.001, t + snareDecay);
             snare.connect(snareFilter).connect(snareGain).connect(compressor);
-            snare.start(t); snare.stop(t + 0.15);
+            snare.start(t); snare.stop(t + snareDecay);
             
-            // Tone body
+            // Tone body (punchier for tight snares)
             const snareOsc = audioCtx.createOscillator();
             const snareOscGain = audioCtx.createGain();
             snareOsc.type = 'triangle';
             snareOsc.frequency.setValueAtTime(200, t);
-            snareOsc.frequency.exponentialRampToValueAtTime(120, t + 0.05);
-            snareOscGain.gain.setValueAtTime(0.12, t);
-            snareOscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+            snareOsc.frequency.exponentialRampToValueAtTime(120, t + snareDecay * 0.4);
+            snareOscGain.gain.setValueAtTime(0.14, t);
+            snareOscGain.gain.exponentialRampToValueAtTime(0.001, t + snareDecay * 0.6);
             snareOsc.connect(snareOscGain).connect(compressor);
-            snareOsc.start(t); snareOsc.stop(t + 0.08);
+            snareOsc.start(t); snareOsc.stop(t + snareDecay * 0.6);
         }
         
         // === HI-HATS ===
@@ -638,10 +812,22 @@ window.addEventListener('keydown', e => {
     keys[e.code] = true;
     
     if (e.code === 'Space' && !e.repeat) {
+        // Change weapon level and music style (original functionality)
         weaponLevel = (weaponLevel % 3) + 1;
         currentStyle = (currentStyle + 1) % musicStyles.length;
         playSound('transition');
         beatStep = 0; // Reset beat for clean transition
+    }
+    
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        // Activate invincibility shield if available (not on cooldown)
+        const now = Date.now();
+        if (!invincible && now >= invincibilityCooldown && !e.repeat) {
+            invincible = true;
+            invincibilityEnd = now + INVINCIBILITY_DURATION;
+            invincibilityCooldown = now + INVINCIBILITY_DURATION + INVINCIBILITY_COOLDOWN;
+            playSound('powerup');
+        }
     }
     
     if (e.code === 'KeyR' && gameOver) {
@@ -649,6 +835,7 @@ window.addEventListener('keydown', e => {
         gameOver = false; lastBossSpawnScore = 0;
         player.x = canvas.width / 2; player.y = canvas.height - 60;
         weaponLevel = 1; powerUpActive = false; player.missileCooldown = 0;
+        invincible = false; invincibilityEnd = 0; invincibilityCooldown = 0;
     }
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
@@ -664,15 +851,16 @@ function spawnEnemy(isBoss = false) {
     
     if (isBoss) {
         enemies.push({
-            x: canvas.width / 2, y: -100, vx: 0, vy: 1, size: 80, color: '#fcee0a',
-            hp: 20, isBoss: true, faction, behavior: 'boss', lastShot: 0, hitFlash: 0, rotation: 0
+            x: canvas.width / 2, y: -100, vx: 0, vy: 1, size: 120, color: '#fcee0a',
+            hp: 50, isBoss: true, faction, behavior: 'boss', lastShot: 0, hitFlash: 0, rotation: 0
         });
     } else {
         const rand = Math.random();
         let hp = 1, size = 25, color = '#a855f7', behavior = 'strafing';
         
-        if (rand < 0.25) { hp = 1; size = 18; color = faction === 'zerg' ? '#d97706' : '#facc15'; behavior = 'kamikaze'; }
-        else if (rand < 0.4) { hp = 3; size = 35; color = faction === 'zerg' ? '#7f1d1d' : '#0ea5e9'; behavior = 'hover'; }
+        if (rand < 0.15) { hp = 1; size = 18; color = faction === 'zerg' ? '#d97706' : '#facc15'; behavior = 'kamikaze'; }
+        else if (rand < 0.30) { hp = 3; size = 35; color = faction === 'zerg' ? '#7f1d1d' : '#0ea5e9'; behavior = 'hover'; }
+        else if (rand < 0.50) { hp = 5; size = 65; color = faction === 'zerg' ? '#991b1b' : '#0c4a6e'; behavior = 'tank'; }
         else { color = faction === 'zerg' ? '#a855f7' : '#eab308'; }
         
         enemies.push({
@@ -685,10 +873,10 @@ function spawnEnemy(isBoss = false) {
 function killEnemy(e) {
     e.dead = true;
     playSound('explosion');
-    score += e.isBoss ? 100 : (e.hp >= 3 ? 30 : 10);
+    score += e.isBoss ? 500 : (e.hp >= 5 ? 50 : (e.hp >= 3 ? 30 : 10));
     
     // Limited particles
-    const count = Math.min(Math.floor(e.size / 5), 6);
+    const count = e.isBoss ? 20 : Math.min(Math.floor(e.size / 5), 6);
     for (let i = 0; i < count && particles.length < MAX_PARTICLES; i++) {
         particles.push({
             x: e.x + (Math.random() - 0.5) * e.size,
@@ -711,9 +899,91 @@ function update() {
     
     const now = Date.now();
     
+    // Check invincibility timer
+    if (invincible && now >= invincibilityEnd) {
+        invincible = false;
+    }
+    
     // Background
     for (let s of stars) { s.y += s.speed; if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; } }
     for (let d of debris) { d.y += d.speed; d.rotation += d.rotSpeed; if (d.y > canvas.height + 50) { d.y = -50; d.x = Math.random() * canvas.width; } }
+    
+    // Piano Particles - spawn new ones periodically
+    if (now - lastPianoSpawn > 500 && pianoParticles.length < MAX_PIANO_PARTICLES) {
+        const newParticle = {
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 2,
+            vy: (Math.random() - 0.5) * 2,
+            size: 3 + Math.random() * 4,
+            color: `hsl(${Math.random() * 60 + 180}, 70%, 60%)`, // Cyan to blue
+            life: 200 + Math.random() * 100,
+            lastNote: 0,
+            trail: []
+        };
+        pianoParticles.push(newParticle);
+        playPianoNote(newParticle.y, 0.02); // Spawn sound
+        lastPianoSpawn = now;
+    }
+    
+    // Update piano particles
+    pianoParticles = pianoParticles.filter(p => {
+        // Move particle
+        p.x += p.vx;
+        p.y += p.vy;
+        
+        // Bounce off edges (with piano note on bounce)
+        if (p.x < 0 || p.x > canvas.width) {
+            p.vx *= -1;
+            if (now - p.lastNote > 200) {
+                playPianoNote(p.y, 0.025);
+                p.lastNote = now;
+            }
+        }
+        if (p.y < 0 || p.y > canvas.height) {
+            p.vy *= -1;
+            if (now - p.lastNote > 200) {
+                playPianoNote(p.y, 0.025);
+                p.lastNote = now;
+            }
+        }
+        
+        // Keep in bounds
+        p.x = Math.max(0, Math.min(canvas.width, p.x));
+        p.y = Math.max(0, Math.min(canvas.height, p.y));
+        
+        // Add trail
+        p.trail.push({ x: p.x, y: p.y, alpha: 1 });
+        if (p.trail.length > 8) p.trail.shift();
+        
+        // Fade trail
+        p.trail.forEach(t => t.alpha *= 0.9);
+        
+        // Particle interactions - play note when particles get close
+        for (let other of pianoParticles) {
+            if (other === p) continue;
+            const dx = other.x - p.x;
+            const dy = other.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 30 && dist > 0 && now - p.lastNote > 300) {
+                // Play chord when particles collide
+                playPianoNote(p.y, 0.015);
+                playPianoNote(other.y, 0.015);
+                p.lastNote = now;
+                other.lastNote = now;
+                
+                // Gentle repulsion
+                const force = 0.5;
+                p.vx -= (dx / dist) * force;
+                p.vy -= (dy / dist) * force;
+                other.vx += (dx / dist) * force;
+                other.vy += (dy / dist) * force;
+            }
+        }
+        
+        p.life--;
+        return p.life > 0;
+    });
     
     // Player movement
     if (keys['ArrowUp'] && player.y > 0) player.y -= player.speed;
@@ -784,10 +1054,14 @@ function update() {
     // Update enemy bullets
     enemyBullets = enemyBullets.filter(b => {
         b.x += b.vx; b.y += b.vy;
-        const dx = b.x - player.x - player.size / 2;
-        const dy = b.y - player.y - player.size / 2;
-        if (Math.sqrt(dx * dx + dy * dy) < player.size / 2 + 5) {
-            gameOver = true; saveScore(); return false;
+        // Only check collision if not invincible
+        if (!invincible) {
+            const dx = b.x - player.x - player.size / 2;
+            const dy = b.y - player.y - player.size / 2;
+            const bulletRadius = b.isExplosive ? (b.size || 8) : 5;
+            if (Math.sqrt(dx * dx + dy * dy) < player.size / 2 + bulletRadius) {
+                gameOver = true; saveScore(); return false;
+            }
         }
         return b.y > 0 && b.y < canvas.height && b.x > 0 && b.x < canvas.width;
     });
@@ -813,13 +1087,22 @@ function update() {
         if (e.hitFlash > 0) e.hitFlash--;
         
         if (e.isBoss) {
-            const rage = 1 + (20 - e.hp) / 10;
-            if (e.y < 100) e.y += 1;
-            else e.x += Math.sin(now / (600 / rage)) * 2 * rage;
+            const rage = 1 + (50 - e.hp) / 20;
+            if (e.y < 120) e.y += 1.5;
+            else e.x += Math.sin(now / (500 / rage)) * 3 * rage;
             
-            if (now - e.lastShot > 2000 / rage && enemyBullets.length < MAX_ENEMY_BULLETS) {
+            if (now - e.lastShot > 1000 / rage && enemyBullets.length < MAX_ENEMY_BULLETS - 5) {
                 const angle = Math.atan2(player.y - e.y, player.x - e.x);
-                enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(angle) * 4 * rage, vy: Math.sin(angle) * 4 * rage });
+                // Shoot 5 bullets in a spread pattern
+                for (let i = -2; i <= 2; i++) {
+                    const spreadAngle = angle + (i * 0.15);
+                    enemyBullets.push({ 
+                        x: e.x, 
+                        y: e.y, 
+                        vx: Math.cos(spreadAngle) * 5 * rage, 
+                        vy: Math.sin(spreadAngle) * 5 * rage 
+                    });
+                }
                 e.lastShot = now;
                 playSound('boss-shoot');
             }
@@ -834,6 +1117,10 @@ function update() {
                 } else if (e.behavior === 'hover') {
                     e.vy = 0.4;
                     e.vx = Math.sin(now / 800) * 2;
+                } else if (e.behavior === 'tank') {
+                    // Slow moving tank - moves straight down
+                    e.vx = 0;
+                    e.vy = 0.8;
                 } else {
                     if (now - e.lastTurn > 1200) { e.targetX = Math.random() * canvas.width; e.lastTurn = now; }
                     e.vx = (e.targetX - e.x) * 0.02;
@@ -842,8 +1129,26 @@ function update() {
                 e.x += e.vx; e.y += e.vy;
             }
             
-            // Enemy shooting (Protoss only, Zerg don't shoot)
-            if (e.faction === 'protoss' && now - e.lastShot > 2500 && enemyBullets.length < MAX_ENEMY_BULLETS && e.y < player.y - 80) {
+            // Enemy shooting - Tanks shoot explosive projectiles, others shoot regular bullets
+            if (e.behavior === 'tank' && now - e.lastShot > 1500 && enemyBullets.length < MAX_ENEMY_BULLETS - 1 && e.y < player.y - 80) {
+                // Tank shoots large explosive projectile from bottom cannon
+                // Cannon muzzle position (at bottom of tank, accounting for turret + barrel length)
+                const cannonLength = e.size * 0.65;
+                const turretHeight = e.size * 0.25;
+                const muzzleY = e.y + e.size / 2 + turretHeight + cannonLength;
+                
+                const angle = Math.atan2(player.y - muzzleY, player.x - e.x);
+                enemyBullets.push({ 
+                    x: e.x, 
+                    y: muzzleY, 
+                    vx: Math.cos(angle) * 2.5, 
+                    vy: Math.sin(angle) * 2.5,
+                    isExplosive: true,
+                    size: 8
+                });
+                e.lastShot = now;
+                playSound('explosion');
+            } else if (e.faction === 'protoss' && e.behavior !== 'tank' && now - e.lastShot > 2500 && enemyBullets.length < MAX_ENEMY_BULLETS && e.y < player.y - 80) {
                 const angle = Math.atan2(player.y - e.y, player.x - e.x);
                 enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(angle) * 3, vy: Math.sin(angle) * 3 });
                 e.lastShot = now;
@@ -851,10 +1156,12 @@ function update() {
         }
         
         // Enemy collision with player
-        const dx = e.x - player.x - player.size / 2;
-        const dy = e.y - player.y - player.size / 2;
-        if (Math.sqrt(dx * dx + dy * dy) < e.size / 2 + player.size / 2) {
-            gameOver = true; saveScore();
+        if (!invincible) {
+            const dx = e.x - player.x - player.size / 2;
+            const dy = e.y - player.y - player.size / 2;
+            if (Math.sqrt(dx * dx + dy * dy) < e.size / 2 + player.size / 2) {
+                gameOver = true; saveScore();
+            }
         }
     }
     
@@ -899,7 +1206,7 @@ function update() {
     });
     
     // Spawn enemies
-    if (Math.random() < 0.018 && enemies.length < MAX_ENEMIES - 2) spawnEnemy();
+    if (Math.random() < 0.035 && enemies.length < MAX_ENEMIES - 2) spawnEnemy();
     if (score >= lastBossSpawnScore + 500 && !enemies.some(e => e.isBoss)) {
         spawnEnemy(true);
         lastBossSpawnScore = score;
@@ -922,36 +1229,379 @@ function drawDrone(x, y, size, color, rotation, faction) {
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(rotation || 0);
-    ctx.fillStyle = color;
     
     if (faction === 'zerg') {
-        // Organic zerg shape
+        // SCARY ORGANIC ZERG - Grotesque bio-horror
+        
+        // Pulsating outer membrane (breathing effect)
+        const pulse = Math.sin(Date.now() / 200) * 0.1;
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.6;
         ctx.beginPath();
-        ctx.arc(0, -size / 4, size / 3, Math.PI, 0);
-        ctx.quadraticCurveTo(size / 2, size / 4, 0, size / 2);
-        ctx.quadraticCurveTo(-size / 2, size / 4, -size / 3, -size / 4);
+        ctx.arc(0, 0, size / 2 * (1 + pulse), 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = '#facc15';
+        ctx.globalAlpha = 1.0;
+        
+        // Main grotesque body
+        ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.arc(-size / 5, -size / 5, 2, 0, Math.PI * 2);
-        ctx.arc(size / 5, -size / 5, 2, 0, Math.PI * 2);
-        ctx.fill();
-    } else {
-        // Angular protoss shape
-        ctx.beginPath();
-        ctx.moveTo(0, -size / 2);
-        ctx.lineTo(size / 2, size / 4);
-        ctx.lineTo(0, size / 2);
-        ctx.lineTo(-size / 2, size / 4);
+        // Irregular organic shape with tentacle-like appendages
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const radius = size / 2 + (i % 2 ? size / 6 : -size / 8);
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = '#38bdf8';
+        
+        // Disgusting veins/tendrils
+        ctx.strokeStyle = '#7c2d12';
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(0, 0, size / 5, 0, Math.PI * 2);
+        ctx.moveTo(-size / 3, -size / 4);
+        ctx.quadraticCurveTo(0, 0, size / 3, size / 4);
+        ctx.moveTo(size / 3, -size / 4);
+        ctx.quadraticCurveTo(0, 0, -size / 3, size / 4);
+        ctx.stroke();
+        
+        // Multiple creepy glowing eyes (irregular placement)
+        const eyePositions = [
+            [-size / 4, -size / 6],
+            [size / 4, -size / 6],
+            [0, size / 8],
+            [-size / 5, size / 5],
+            [size / 5, size / 5]
+        ];
+        
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#fef08a';
+        for (let [ex, ey] of eyePositions.slice(0, 3 + Math.floor(Math.random() * 3))) {
+            // Eye socket (dark)
+            ctx.fillStyle = '#1c0a00';
+            ctx.beginPath();
+            ctx.arc(ex, ey, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Glowing yellow eye
+            ctx.fillStyle = '#fef08a';
+            ctx.beginPath();
+            ctx.arc(ex + 1, ey, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+        
+        // Grotesque mouth/maw
+        ctx.fillStyle = '#450a0a';
+        ctx.beginPath();
+        ctx.arc(0, size / 4, size / 6, 0, Math.PI);
         ctx.fill();
+        
+        // Teeth/spines
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < 5; i++) {
+            const tx = -size / 6 + (i * size / 15);
+            ctx.beginPath();
+            ctx.moveTo(tx, size / 4);
+            ctx.lineTo(tx, size / 4 - 4);
+            ctx.stroke();
+        }
+        
+    } else {
+        // SCARY PROTOSS - Alien biomechanical horror
+        
+        // Ominous dark core
+        ctx.fillStyle = '#0a0a0a';
+        ctx.beginPath();
+        ctx.arc(0, 0, size / 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Sharp angular crystalline body
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(0, -size / 2);
+        ctx.lineTo(size / 2.2, -size / 6);
+        ctx.lineTo(size / 2, size / 3);
+        ctx.lineTo(size / 6, size / 2);
+        ctx.lineTo(0, size / 3);
+        ctx.lineTo(-size / 6, size / 2);
+        ctx.lineTo(-size / 2, size / 3);
+        ctx.lineTo(-size / 2.2, -size / 6);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Energy veins (pulsing)
+        const energyPulse = Math.sin(Date.now() / 150) * 0.5 + 0.5;
+        ctx.strokeStyle = `rgba(56, 189, 248, ${0.6 + energyPulse * 0.4})`;
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#38bdf8';
+        ctx.beginPath();
+        ctx.moveTo(0, -size / 2);
+        ctx.lineTo(0, size / 3);
+        ctx.moveTo(-size / 3, 0);
+        ctx.lineTo(size / 3, 0);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        
+        // Menacing glowing core (pulsing)
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size / 4);
+        gradient.addColorStop(0, '#38bdf8');
+        gradient.addColorStop(0.5, '#0ea5e9');
+        gradient.addColorStop(1, '#0c4a6e');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, size / 4 * (0.8 + energyPulse * 0.3), 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Sharp blade-like protrusions
+        ctx.fillStyle = '#0369a1';
+        const blades = 6;
+        for (let i = 0; i < blades; i++) {
+            const angle = (i / blades) * Math.PI * 2;
+            ctx.save();
+            ctx.rotate(angle);
+            ctx.beginPath();
+            ctx.moveTo(0, -size / 2.5);
+            ctx.lineTo(size / 8, -size / 2 - 6);
+            ctx.lineTo(0, -size / 2 - 10);
+            ctx.lineTo(-size / 8, -size / 2 - 6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        // Alien eye-like sensors (menacing red glow)
+        ctx.fillStyle = '#dc2626';
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#dc2626';
+        ctx.beginPath();
+        ctx.arc(-size / 6, -size / 8, 3, 0, Math.PI * 2);
+        ctx.arc(size / 6, -size / 8, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
     }
     ctx.restore();
 }
+
+function drawTank(x, y, size, color, faction) {
+    ctx.save();
+    ctx.translate(x, y);
+    
+    // StarCraft 2 Siege Tank - UPSIDE DOWN (cannon pointing down)
+    const baseWidth = size * 0.85;
+    const baseHeight = size * 0.4;
+    
+    if (faction === 'zerg') {
+        // === INFESTED TERRAN SIEGE TANK (Zerg) - UPSIDE DOWN ===
+        
+        // Deployed stabilizer legs extending upward (tank is flipped)
+        ctx.fillStyle = '#451a03';
+        ctx.strokeStyle = '#7c2d12';
+        ctx.lineWidth = 2;
+        // Left leg (extending up)
+        ctx.beginPath();
+        ctx.moveTo(-baseWidth / 2, -baseHeight / 2);
+        ctx.lineTo(-baseWidth / 1.5, -baseHeight);
+        ctx.lineTo(-baseWidth / 1.8, -baseHeight - 4);
+        ctx.stroke();
+        // Right leg (extending up)
+        ctx.beginPath();
+        ctx.moveTo(baseWidth / 2, -baseHeight / 2);
+        ctx.lineTo(baseWidth / 1.5, -baseHeight);
+        ctx.lineTo(baseWidth / 1.8, -baseHeight - 4);
+        ctx.stroke();
+        
+        // Main tank base/chassis (flipped)
+        ctx.fillStyle = color;
+        ctx.strokeStyle = '#7c2d12';
+        ctx.lineWidth = 2;
+        ctx.fillRect(-baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight);
+        ctx.strokeRect(-baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight);
+        
+        // Organic infestation details
+        ctx.fillStyle = '#78350f';
+        for (let i = 0; i < 4; i++) {
+            const blobX = -baseWidth / 3 + (i * baseWidth / 5);
+            const blobY = -baseHeight / 4 + (Math.random() - 0.5) * baseHeight / 3;
+            ctx.beginPath();
+            ctx.arc(blobX, blobY, 3 + Math.random() * 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Turret base (infested) - now on bottom
+        const turretBaseWidth = size * 0.45;
+        const turretBaseHeight = size * 0.25;
+        ctx.fillStyle = '#7f1d1d';
+        ctx.strokeStyle = '#7c2d12';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.rect(-turretBaseWidth / 2, baseHeight / 2, turretBaseWidth, turretBaseHeight);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Organic spines on turret
+        ctx.fillStyle = '#fef08a';
+        for (let i = 0; i < 6; i++) {
+            const spineX = -turretBaseWidth / 3 + (i * turretBaseWidth / 7);
+            ctx.beginPath();
+            ctx.moveTo(spineX, baseHeight / 2 + turretBaseHeight);
+            ctx.lineTo(spineX - 1.5, baseHeight / 2 + turretBaseHeight + 4);
+            ctx.lineTo(spineX + 1.5, baseHeight / 2 + turretBaseHeight + 4);
+            ctx.fill();
+        }
+        
+        // SINGLE CANNON pointing DOWN (center bottom)
+        const cannonWidth = size * 0.18;
+        const cannonLength = size * 0.65;
+        
+        // Cannon barrel
+        ctx.fillStyle = '#991b1b';
+        ctx.strokeStyle = '#450a0a';
+        ctx.lineWidth = 2;
+        ctx.fillRect(-cannonWidth / 2, baseHeight / 2 + turretBaseHeight, cannonWidth, cannonLength);
+        ctx.strokeRect(-cannonWidth / 2, baseHeight / 2 + turretBaseHeight, cannonWidth, cannonLength);
+        
+        // Cannon muzzle (glowing at bottom)
+        ctx.fillStyle = '#fbbf24';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(0, baseHeight / 2 + turretBaseHeight + cannonLength, cannonWidth / 2 + 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // Infested biomass details
+        ctx.fillStyle = '#a16207';
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        ctx.arc(-baseWidth / 4, 0, 4, 0, Math.PI * 2);
+        ctx.arc(baseWidth / 4, 0, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+        
+    } else {
+        // === TERRAN SIEGE TANK (Protoss - Advanced Tech) - UPSIDE DOWN ===
+        
+        // Deployed stabilizer legs extending upward
+        ctx.strokeStyle = '#0c4a6e';
+        ctx.lineWidth = 2.5;
+        // Left leg (extending up)
+        ctx.beginPath();
+        ctx.moveTo(-baseWidth / 2, -baseHeight / 2);
+        ctx.lineTo(-baseWidth / 1.5, -baseHeight);
+        ctx.lineTo(-baseWidth / 1.8, -baseHeight - 5);
+        ctx.stroke();
+        // Right leg (extending up)
+        ctx.beginPath();
+        ctx.moveTo(baseWidth / 2, -baseHeight / 2);
+        ctx.lineTo(baseWidth / 1.5, -baseHeight);
+        ctx.lineTo(baseWidth / 1.8, -baseHeight - 5);
+        ctx.stroke();
+        
+        // Main tank base/chassis with angular design
+        ctx.fillStyle = color;
+        ctx.strokeStyle = '#0c4a6e';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        // Angular chassis
+        ctx.moveTo(-baseWidth / 2, -baseHeight / 2);
+        ctx.lineTo(baseWidth / 2, -baseHeight / 2);
+        ctx.lineTo(baseWidth / 2 + baseWidth / 10, 0);
+        ctx.lineTo(baseWidth / 2, baseHeight / 2);
+        ctx.lineTo(-baseWidth / 2, baseHeight / 2);
+        ctx.lineTo(-baseWidth / 2 - baseWidth / 10, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        // Tech panels/plating details
+        ctx.strokeStyle = '#075985';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-baseWidth / 3, -baseHeight / 2);
+        ctx.lineTo(-baseWidth / 3, baseHeight / 2);
+        ctx.moveTo(baseWidth / 3, -baseHeight / 2);
+        ctx.lineTo(baseWidth / 3, baseHeight / 2);
+        ctx.stroke();
+        
+        // Turret base (armored and angular) - now on bottom
+        const turretBaseWidth = size * 0.5;
+        const turretBaseHeight = size * 0.28;
+        ctx.fillStyle = '#075985';
+        ctx.strokeStyle = '#0c4a6e';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        // Hexagonal turret base (flipped)
+        ctx.moveTo(-turretBaseWidth / 2, baseHeight / 2);
+        ctx.lineTo(-turretBaseWidth / 3, baseHeight / 2 + turretBaseHeight / 2);
+        ctx.lineTo(turretBaseWidth / 3, baseHeight / 2 + turretBaseHeight / 2);
+        ctx.lineTo(turretBaseWidth / 2, baseHeight / 2);
+        ctx.lineTo(turretBaseWidth / 2, baseHeight / 2 + turretBaseHeight);
+        ctx.lineTo(-turretBaseWidth / 2, baseHeight / 2 + turretBaseHeight);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        // Energy core (glowing blue) in turret
+        ctx.fillStyle = '#38bdf8';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(0, baseHeight / 2 + turretBaseHeight / 2, size / 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // SINGLE CANNON pointing DOWN - pristine tech
+        const cannonWidth = size * 0.2;
+        const cannonLength = size * 0.7;
+        
+        ctx.fillStyle = '#0c4a6e';
+        ctx.strokeStyle = '#075985';
+        ctx.lineWidth = 2;
+        
+        // Cannon barrel segments (3 sections pointing down)
+        const segments = 3;
+        for (let s = 0; s < segments; s++) {
+            const segmentLength = cannonLength / segments;
+            const segmentY = baseHeight / 2 + turretBaseHeight + (s * segmentLength);
+            ctx.fillRect(-cannonWidth / 2, segmentY, cannonWidth, segmentLength - 2);
+            ctx.strokeRect(-cannonWidth / 2, segmentY, cannonWidth, segmentLength - 2);
+        }
+        
+        // Cannon muzzle (glowing cyan energy at bottom)
+        ctx.fillStyle = '#06b6d4';
+        ctx.shadowBlur = 14;
+        ctx.shadowColor = '#06b6d4';
+        ctx.beginPath();
+        ctx.arc(0, baseHeight / 2 + turretBaseHeight + cannonLength, cannonWidth / 2 + 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner glow
+        ctx.fillStyle = '#67e8f9';
+        ctx.beginPath();
+        ctx.arc(0, baseHeight / 2 + turretBaseHeight + cannonLength, cannonWidth / 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // Energy conduit from core to cannon
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = '#38bdf8';
+        ctx.beginPath();
+        ctx.moveTo(0, baseHeight / 2 + turretBaseHeight / 2);
+        ctx.lineTo(0, baseHeight / 2 + turretBaseHeight);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+    
+    ctx.restore();
+}
+
 
 function draw() {
     // Clear
@@ -998,37 +1648,136 @@ function draw() {
         ctx.fillRect(s.x, s.y, starSize, starSize);
     }
     
+    // Piano Particles (musical background layer)
+    for (let p of pianoParticles) {
+        // Draw trail
+        for (let i = 0; i < p.trail.length; i++) {
+            const t = p.trail[i];
+            const trailAlpha = t.alpha * 0.3;
+            ctx.fillStyle = p.color.replace('60%', `60%, ${trailAlpha}`).replace(')', ', ' + trailAlpha + ')');
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, p.size * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Draw particle with glow
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = p.color;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // Inner bright core
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
     // Particles
     for (let p of particles) {
         ctx.fillStyle = p.color;
         ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
     }
     
-    // Player
+    // Player (F-35 Lightning II)
     ctx.save();
     ctx.translate(player.x + player.size / 2, player.y + player.size / 2);
+    
+    // Invincibility shield effect (pulsing cyan shield)
+    if (invincible) {
+        const pulseSize = Math.sin(Date.now() / 100) * 5 + player.size * 0.8;
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#00f0ff';
+        ctx.beginPath();
+        ctx.arc(0, 0, pulseSize, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Inner shield glow
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(0, 0, pulseSize - 5, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+    
+    // Main fuselage (body)
     ctx.fillStyle = powerUpActive ? '#fbbf24' : '#64748b';
     ctx.beginPath();
-    ctx.moveTo(0, -player.size);
-    ctx.lineTo(player.size / 2, 0);
-    ctx.lineTo(player.size / 3, player.size);
-    ctx.lineTo(-player.size / 3, player.size);
-    ctx.lineTo(-player.size / 2, 0);
+    ctx.moveTo(0, -player.size);  // Nose
+    ctx.lineTo(player.size / 4, -player.size / 3);  // Right side of cockpit
+    ctx.lineTo(player.size / 4, player.size / 2);   // Right side tail
+    ctx.lineTo(0, player.size / 3);                  // Tail center
+    ctx.lineTo(-player.size / 4, player.size / 2);  // Left side tail
+    ctx.lineTo(-player.size / 4, -player.size / 3); // Left side of cockpit
     ctx.closePath();
     ctx.fill();
+    
+    // Delta wings (swept back)
+    ctx.fillStyle = powerUpActive ? '#fcd34d' : '#475569';
+    ctx.beginPath();
+    // Right wing
+    ctx.moveTo(player.size / 5, -player.size / 4);
+    ctx.lineTo(player.size / 1.3, player.size / 8);
+    ctx.lineTo(player.size / 2, player.size / 4);
+    ctx.lineTo(player.size / 4, player.size / 6);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.beginPath();
+    // Left wing
+    ctx.moveTo(-player.size / 5, -player.size / 4);
+    ctx.lineTo(-player.size / 1.3, player.size / 8);
+    ctx.lineTo(-player.size / 2, player.size / 4);
+    ctx.lineTo(-player.size / 4, player.size / 6);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Cockpit canopy (glowing blue)
     ctx.fillStyle = '#00f0ff';
     ctx.beginPath();
-    ctx.moveTo(0, -player.size / 2);
-    ctx.lineTo(5, -10);
-    ctx.lineTo(0, 0);
-    ctx.lineTo(-5, -10);
+    ctx.ellipse(0, -player.size / 2, player.size / 6, player.size / 4, 0, 0, Math.PI * 2);
     ctx.fill();
-    // Engine glow (beat reactive)
-    ctx.fillStyle = '#f59e0b';
+    
+    // Cockpit detail (highlight)
+    ctx.fillStyle = '#38bdf8';
     ctx.beginPath();
-    ctx.arc(-5, player.size, 3 + beatKick * 3, 0, Math.PI * 2);
-    ctx.arc(5, player.size, 3 + beatKick * 3, 0, Math.PI * 2);
+    ctx.ellipse(0, -player.size / 1.8, player.size / 10, player.size / 8, 0, 0, Math.PI * 2);
     ctx.fill();
+    
+    // Twin vertical stabilizers (tail fins)
+    ctx.fillStyle = powerUpActive ? '#fbbf24' : '#334155';
+    // Right stabilizer
+    ctx.beginPath();
+    ctx.moveTo(player.size / 6, player.size / 4);
+    ctx.lineTo(player.size / 5, player.size / 2);
+    ctx.lineTo(player.size / 8, player.size / 2);
+    ctx.fill();
+    
+    // Left stabilizer
+    ctx.beginPath();
+    ctx.moveTo(-player.size / 6, player.size / 4);
+    ctx.lineTo(-player.size / 5, player.size / 2);
+    ctx.lineTo(-player.size / 8, player.size / 2);
+    ctx.fill();
+    
+    // Engine exhaust glow (beat reactive)
+    ctx.fillStyle = '#f59e0b';
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = '#f59e0b';
+    ctx.beginPath();
+    ctx.arc(-player.size / 8, player.size / 2.5, 3 + beatKick * 3, 0, Math.PI * 2);
+    ctx.arc(player.size / 8, player.size / 2.5, 3 + beatKick * 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
     ctx.restore();
     
     // Bullets
@@ -1051,43 +1800,150 @@ function draw() {
     }
     
     // Enemy bullets
-    ctx.fillStyle = '#f87171';
     for (let b of enemyBullets) {
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
-        ctx.fill();
+        if (b.isExplosive) {
+            // Tank explosive projectiles - larger, glowing, yellow
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, b.size || 8, 0, Math.PI * 2);
+            ctx.fill();
+            // Glow effect
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        } else {
+            // Regular enemy bullets - small, red
+            ctx.fillStyle = '#f87171';
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
     
     // Enemies
     for (let e of enemies) {
         if (e.dead) continue;
         if (e.isBoss) {
+            // TERRIFYING BOSS - Ultimate Bio-Mechanical Horror
             ctx.save();
             ctx.translate(e.x, e.y);
             ctx.scale(1 + beatKick * 0.03, 1 + beatKick * 0.03);
-            ctx.fillStyle = (e.hp < 10 && Math.floor(Date.now() / 100) % 2 === 0) ? '#ff003c' : '#2a2a2a';
-            ctx.strokeStyle = '#fcee0a';
-            ctx.lineWidth = 3;
+            
+            // Ominous pulsating aura
+            const bossPulse = Math.sin(Date.now() / 100) * 0.15;
+            ctx.fillStyle = 'rgba(252, 238, 10, 0.15)';
             ctx.beginPath();
-            ctx.moveTo(0, e.size / 2);
-            ctx.lineTo(e.size / 2, -e.size / 4);
-            ctx.lineTo(e.size / 1.5, -e.size / 2);
-            ctx.lineTo(0, -e.size / 2 + 10);
-            ctx.lineTo(-e.size / 1.5, -e.size / 2);
-            ctx.lineTo(-e.size / 2, -e.size / 4);
+            ctx.arc(0, 0, e.size / 1.5 * (1 + bossPulse), 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Dark menacing core
+            ctx.fillStyle = (e.hp < 15 && Math.floor(Date.now() / 100) % 2 === 0) ? '#ff003c' : '#0a0a0a';
+            ctx.beginPath();
+            ctx.arc(0, 0, e.size / 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Main grotesque body - sharp skull-like shape
+            ctx.fillStyle = (e.hp < 15 && Math.floor(Date.now() / 100) % 2 === 0) ? '#dc2626' : '#1a1a1a';
+            ctx.strokeStyle = '#fcee0a';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            // Skull-like shape with horns
+            ctx.moveTo(0, e.size / 2);  // Bottom jaw
+            ctx.lineTo(e.size / 2.5, e.size / 4);
+            ctx.lineTo(e.size / 1.8, -e.size / 6);  // Right horn
+            ctx.lineTo(e.size / 1.4, -e.size / 2.2);
+            ctx.lineTo(e.size / 2, -e.size / 1.8);  // Horn tip
+            ctx.lineTo(e.size / 3, -e.size / 2.5);
+            ctx.lineTo(0, -e.size / 2 + 5);  // Top of skull
+            ctx.lineTo(-e.size / 3, -e.size / 2.5);
+            ctx.lineTo(-e.size / 2, -e.size / 1.8);  // Left horn tip
+            ctx.lineTo(-e.size / 1.4, -e.size / 2.2);
+            ctx.lineTo(-e.size / 1.8, -e.size / 6);  // Left horn
+            ctx.lineTo(-e.size / 2.5, e.size / 4);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
-            ctx.fillStyle = '#ff003c';
+            
+            // Multiple demonic eyes (glowing red)
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#dc2626';
+            ctx.fillStyle = '#dc2626';
+            const eyeGlow = 0.7 + Math.sin(Date.now() / 120) * 0.3;
+            ctx.globalAlpha = eyeGlow;
+            
+            // Main eyes
             ctx.beginPath();
-            ctx.arc(0, 0, e.size / 4, 0, Math.PI * 2);
+            ctx.arc(-e.size / 6, -e.size / 8, 8, 0, Math.PI * 2);
+            ctx.arc(e.size / 6, -e.size / 8, 8, 0, Math.PI * 2);
             ctx.fill();
-            ctx.restore();
+            
+            // Third eye (forehead)
+            ctx.beginPath();
+            ctx.arc(0, -e.size / 3, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.globalAlpha = 1.0;
+            ctx.shadowBlur = 0;
+            
+            // Terrifying mouth/maw
+            ctx.fillStyle = '#450a0a';
+            ctx.beginPath();
+            ctx.ellipse(0, e.size / 6, e.size / 4, e.size / 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Sharp teeth
+            ctx.fillStyle = '#fef08a';
+            for (let i = 0; i < 8; i++) {
+                const tx = -e.size / 5 + (i * e.size / 20);
+                ctx.beginPath();
+                ctx.moveTo(tx, e.size / 6 - e.size / 8);
+                ctx.lineTo(tx - 2, e.size / 6);
+                ctx.lineTo(tx + 2, e.size / 6);
+                ctx.fill();
+            }
+            
+            // Energy core (pulsating)
+            const coreGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, e.size / 5);
+            coreGradient.addColorStop(0, '#ff003c');
+            coreGradient.addColorStop(0.5, '#fcee0a');
+            coreGradient.addColorStop(1, 'rgba(252, 238, 10, 0)');
+            ctx.fillStyle = coreGradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, e.size / 5 * (0.9 + bossPulse), 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Spikes/protrusions around body
             ctx.fillStyle = '#fcee0a';
-            ctx.font = 'bold 14px Arial';
-            ctx.fillText('BOSS HP: ' + e.hp, e.x - 40, e.y - e.size / 2 - 10);
+            const spikes = 12;
+            for (let i = 0; i < spikes; i++) {
+                const angle = (i / spikes) * Math.PI * 2;
+                ctx.save();
+                ctx.rotate(angle);
+                ctx.beginPath();
+                ctx.moveTo(0, -e.size / 2.2);
+                ctx.lineTo(e.size / 12, -e.size / 2 - 8);
+                ctx.lineTo(0, -e.size / 2 - 15);
+                ctx.lineTo(-e.size / 12, -e.size / 2 - 8);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+            
+            ctx.restore();
+            
+            // Boss HP bar (menacing)
+            ctx.fillStyle = '#fcee0a';
+            ctx.font = 'bold 16px Arial';
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = '#fcee0a';
+            ctx.fillText('☠ BOSS HP: ' + e.hp + ' ☠', e.x - 60, e.y - e.size / 2 - 15);
+            ctx.shadowBlur = 0;
         } else {
-            drawDrone(e.x, e.y, e.size, e.hitFlash > 0 ? 'white' : e.color, e.rotation, e.faction);
+            if (e.behavior === 'tank') {
+                drawTank(e.x, e.y, e.size, e.hitFlash > 0 ? 'white' : e.color, e.faction);
+            } else {
+                drawDrone(e.x, e.y, e.size, e.hitFlash > 0 ? 'white' : e.color, e.rotation, e.faction);
+            }
         }
     }
     
@@ -1132,6 +1988,27 @@ function draw() {
     ctx.font = '14px Arial';
     ctx.fillText(missileReady ? 'MISSILE: READY' : 'MISSILE: RELOADING', 20, 125);
     
+    // Invincibility status
+    const now = Date.now();
+    if (invincible) {
+        const timeLeft = Math.ceil((invincibilityEnd - now) / 1000);
+        ctx.fillStyle = '#00f0ff';
+        ctx.font = 'bold 16px Arial';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#00f0ff';
+        ctx.fillText('⚡ INVINCIBLE: ' + timeLeft + 's ⚡', 20, 150);
+        ctx.shadowBlur = 0;
+    } else if (now < invincibilityCooldown) {
+        const cooldownLeft = Math.ceil((invincibilityCooldown - now) / 1000);
+        ctx.fillStyle = '#475569';
+        ctx.font = '14px Arial';
+        ctx.fillText('SHIELD COOLDOWN: ' + cooldownLeft + 's', 20, 150);
+    } else {
+        ctx.fillStyle = '#00f0ff';
+        ctx.font = '14px Arial';
+        ctx.fillText('SHIELD: READY [SHIFT]', 20, 150);
+    }
+    
     // Debug info
     ctx.fillStyle = '#555';
     ctx.font = '11px monospace';
@@ -1153,8 +2030,40 @@ function draw() {
 }
 
 function saveScore() {
-    if (highScoreEl && score > parseInt(highScoreEl.innerText || '0')) {
-        highScoreEl.innerText = score;
+    const currentHighScore = parseInt(highScoreEl?.innerText || '0');
+    
+    if (score > currentHighScore) {
+        // Update display immediately
+        if (highScoreEl) {
+            highScoreEl.innerText = score;
+        }
+        
+        // Save to server
+        const csrfToken = document.getElementById('csrf-token')?.value;
+        if (!csrfToken) {
+            console.error('CSRF token not found');
+            return;
+        }
+        
+        fetch('/api/save-score', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'x-csrf-token': csrfToken
+            },
+            body: `score=${score}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('High score saved:', data.highScore);
+            // Update with server's confirmed high score
+            if (highScoreEl && data.highScore) {
+                highScoreEl.innerText = data.highScore;
+            }
+        })
+        .catch(error => {
+            console.error('Failed to save score:', error);
+        });
     }
 }
 

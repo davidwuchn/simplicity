@@ -7,9 +7,9 @@
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [cc.mindward.web-server.core :as web]
             [cc.mindward.user.interface :as user]
-            [cc.mindward.auth.interface :as auth]
             [cc.mindward.game.interface :as game]
-            [clojure.data.json :as json]))
+            [clojure.data.json :as json]
+            [clojure.string :as str]))
 
 (use-fixtures :each
   (fn [test-fn]
@@ -77,7 +77,7 @@
                                :session {})
           response (web/handle-login request)]
       (is (= 302 (:status response)))
-      (is (clojure.string/includes? (get-in response [:headers "Location"]) "/login?error=")
+      (is (str/includes? (get-in response [:headers "Location"]) "/login?error=")
           "redirects with error flag")
       (is (nil? (get-in response [:session :username])) "no session created"))))
 

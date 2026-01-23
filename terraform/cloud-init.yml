@@ -1,0 +1,179 @@
+#cloud-config
+
+# Cloud-init configuration for Simplicity deployment
+# This script runs on first boot to configure the server
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - docker.io
+  - docker-compose
+  - curl
+  - jq
+  - bc
+  - git
+  - ufw
+  - fail2ban
+  - unattended-upgrades
+
+write_files:
+  # Docker Compose configuration
+  - path: /opt/simplicity/docker-compose.yml
+    content: |
+      version: '3.8'
+      
+      services:
+        app:
+          image: ghcr.io/OWNER/REPO:latest
+          container_name: simplicity
+          restart: unless-stopped
+          ports:
+            - "3000:3000"
+          environment:
+            - PORT=3000
+            - DB_PATH=/app/data/simplicity.db
+            - LOG_PATH=/app/logs
+            - LOG_LEVEL=${environment == "production" ? "WARN" : "INFO"}
+            - ENABLE_HSTS=${environment == "production" ? "true" : "false"}
+          volumes:
+            - /mnt/simplicity-data/db:/app/data
+            - /mnt/simplicity-data/logs:/app/logs
+          healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
+  
+  # Environment file
+  - path: /opt/simplicity/.env
+    content: |
+      ENVIRONMENT=${environment}
+      DOMAIN=${domain}
+  
+  # Deployment script wrapper
+  - path: /opt/simplicity/deploy-wrapper.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+      cd /opt/simplicity
+      git pull origin main
+      ARTIFACT_TYPE=docker ./scripts/deploy.sh deploy ghcr.io/OWNER/REPO:latest
+  
+  # Health monitoring systemd service
+  - path: /etc/systemd/system/simplicity-monitor.service
+    content: |
+      [Unit]
+      Description=Simplicity Health Monitor
+      After=docker.service
+      Requires=docker.service
+      
+      [Service]
+      Type=simple
+      User=root
+      WorkingDirectory=/opt/simplicity
+      Environment="HEALTH_URL=http://localhost:3000/health"
+      Environment="CHECK_INTERVAL=60"
+      ExecStart=/opt/simplicity/scripts/health-monitor.sh monitor
+      Restart=always
+      RestartSec=10
+      
+      [Install]
+      WantedBy=multi-user.target
+  
+  # Automated backup script
+  - path: /opt/simplicity/backup.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+      
+      BACKUP_DIR=/mnt/simplicity-data/backups
+      DATE=$(date +%Y%m%d-%H%M%S)
+      
+      mkdir -p "$BACKUP_DIR"
+      
+      # Backup database
+      docker exec simplicity sqlite3 /app/data/simplicity.db ".backup /tmp/backup.db"
+      docker cp simplicity:/tmp/backup.db "$BACKUP_DIR/simplicity-$DATE.db"
+      
+      # Compress
+      gzip "$BACKUP_DIR/simplicity-$DATE.db"
+      
+      # Keep last 30 days
+      find "$BACKUP_DIR" -name "simplicity-*.db.gz" -mtime +30 -delete
+      
+      echo "Backup completed: $BACKUP_DIR/simplicity-$DATE.db.gz"
+  
+  # Backup cron job
+  - path: /etc/cron.d/simplicity-backup
+    content: |
+      # Daily backup at 2 AM
+      0 2 * * * root /opt/simplicity/backup.sh >> /var/log/simplicity-backup.log 2>&1
+
+runcmd:
+  # Mount persistent volume
+  - mkdir -p /mnt/simplicity-data
+  - |
+    DEVICE=$(lsblk -o NAME,SERIAL | grep -i 'volume-' | awk '{print $1}' | head -n1)
+    if [ -n "$DEVICE" ]; then
+      if ! grep -qs "/mnt/simplicity-data" /proc/mounts; then
+        mount -o discard,defaults,noatime /dev/$DEVICE /mnt/simplicity-data
+      fi
+      echo "/dev/$DEVICE /mnt/simplicity-data ext4 defaults,nofail,discard 0 0" >> /etc/fstab
+    fi
+  
+  # Create directories
+  - mkdir -p /mnt/simplicity-data/{db,logs,backups}
+  - mkdir -p /opt/simplicity
+  
+  # Configure Docker
+  - systemctl enable docker
+  - systemctl start docker
+  - usermod -aG docker ubuntu || true
+  
+  # Clone repository (update with your repo URL)
+  - cd /opt/simplicity
+  - git clone https://github.com/OWNER/REPO.git . || true
+  
+  # Pull Docker image
+  - docker login ghcr.io -u USERNAME -p TOKEN || true
+  - docker-compose pull || true
+  
+  # Start application
+  - docker-compose up -d
+  
+  # Configure firewall
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw --force enable
+  
+  # Configure fail2ban
+  - systemctl enable fail2ban
+  - systemctl start fail2ban
+  
+  # Enable automatic security updates
+  - echo 'Unattended-Upgrade::Automatic-Reboot "false";' >> /etc/apt/apt.conf.d/50unattended-upgrades
+  - systemctl enable unattended-upgrades
+  
+  # Start health monitoring
+  - systemctl daemon-reload
+  - systemctl enable simplicity-monitor
+  - systemctl start simplicity-monitor
+
+final_message: |
+  Simplicity server provisioned successfully!
+  Environment: ${environment}
+  Domain: ${domain}
+  
+  Next steps:
+  1. Update git repository URL in /opt/simplicity
+  2. Configure Docker registry credentials
+  3. Run initial deployment: /opt/simplicity/deploy-wrapper.sh
+  4. Verify health: curl http://localhost:3000/health
+  5. Configure Cloudflare SSL settings

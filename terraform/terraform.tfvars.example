@@ -1,0 +1,35 @@
+# Terraform Variables Configuration
+# Copy this file to terraform.tfvars and fill in your values
+
+# DigitalOcean API token
+# Get from: https://cloud.digitalocean.com/account/api/tokens
+do_token = "YOUR_DO_TOKEN"
+
+# Cloudflare API token
+# Get from: https://dash.cloudflare.com/profile/api-tokens
+# Required permissions: Zone.DNS, Zone.Page Rules, Zone.Rate Limits
+cf_api_token = "YOUR_CF_API_TOKEN"
+
+# Cloudflare Zone ID
+# Found in Cloudflare dashboard for your domain
+cf_zone_id = "YOUR_CF_ZONE_ID"
+
+# Your domain
+domain = "app.example.com"
+
+# SSH key fingerprints (DigitalOcean)
+# Get from: https://cloud.digitalocean.com/account/security
+ssh_keys = [
+  "YOUR_SSH_KEY_FINGERPRINT"
+]
+
+# Environment
+environment = "production"
+
+# Droplet configuration
+droplet_size = "s-1vcpu-2gb"  # $12/month, good for small apps
+region       = "nyc3"          # New York
+
+# Enable monitoring and backups
+enable_monitoring = true
+enable_backups    = true  # +20% cost, highly recommended

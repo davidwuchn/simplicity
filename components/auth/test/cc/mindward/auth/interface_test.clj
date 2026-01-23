@@ -46,5 +46,5 @@
 
 (deftest authenticate-edge-cases
   (testing "User component errors propagate correctly"
-    (with-redefs [user/find-by-username (fn [& args] (throw (ex-info "DB connection failed" {:reason :connection})))]
+    (with-redefs [user/find-by-username (fn [_] (throw (ex-info "DB connection failed" {:reason :connection})))]
        (is (thrown? Exception (auth/authenticate "testuser" "secret"))))))

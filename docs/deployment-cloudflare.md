@@ -12,9 +12,68 @@ Since Simplicity is a JVM-based Clojure application, it cannot run directly on C
 4. **DNS Management** - Fast, secure DNS
 5. **Web Application Firewall (WAF)** - Security rules
 
+## Quick Start
+
+**Automated Deployment (Recommended)**:
+- **Terraform + GitHub Actions**: Full automation with IaC → See [terraform/README.md](../terraform/README.md)
+- **Cost**: ~$13-15/month (DigitalOcean + Cloudflare Free)
+- **Time**: 5 minutes to production
+
+**Manual Deployment**:
+- Follow Option 1 below for step-by-step VPS setup
+
+## Deployment Automation
+
+### GitHub Actions CI/CD
+
+Continuous integration and deployment pipeline automatically:
+- ✅ Runs tests on every push/PR
+- ✅ Builds Docker images (multi-arch: amd64/arm64)
+- ✅ Deploys to staging (on `develop` branch push)
+- ✅ Deploys to production (on release)
+- ✅ Zero-downtime blue/green deployments
+- ✅ Security scanning with Trivy
+
+**Setup**: See `.github/workflows/ci-cd.yml`
+
+**Required Secrets** (in GitHub repo settings):
+- `STAGING_SSH_KEY` / `PRODUCTION_SSH_KEY`: SSH private key
+- `STAGING_HOST` / `PRODUCTION_HOST`: Server IP address
+- `STAGING_USER` / `PRODUCTION_USER`: SSH username (usually `root`)
+
+**Usage**:
+```bash
+# Auto-deploy to staging
+git push origin develop
+
+# Auto-deploy to production
+gh release create v1.0.0 --generate-notes
+```
+
+### Infrastructure as Code (Terraform)
+
+Provision complete infrastructure in one command:
+
+```bash
+cd terraform
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your credentials
+terraform init
+terraform apply
+```
+
+**Provisions**:
+- DigitalOcean Droplet (VPS) with Docker
+- Persistent volume for data/logs
+- Firewall (Cloudflare IPs only)
+- Cloudflare DNS + SSL + WAF + Rate Limiting
+- Automated backups + health monitoring
+
+**See**: [terraform/README.md](../terraform/README.md) for full guide
+
 ## Deployment Options
 
-### Option 1: Cloudflare Pages + VPS (Recommended)
+### Option 1: Cloudflare Pages + VPS (Recommended for Manual Setup)
 
 Deploy the backend to a VPS and use Cloudflare as a reverse proxy.
 
@@ -37,7 +96,18 @@ docker-compose build
 - Vultr
 - AWS Lightsail
 
-**Deployment Steps:**
+**Deployment Steps (Automated)**:
+
+```bash
+# Use the zero-downtime deployment script
+scp scripts/deploy.sh user@your-vps-ip:/opt/simplicity/
+ssh user@your-vps-ip
+
+cd /opt/simplicity
+./deploy.sh deploy simplicity:latest
+```
+
+**Deployment Steps (Manual)**:
 
 ```bash
 # 1. Save Docker image
@@ -52,7 +122,11 @@ ssh user@your-vps-ip
 # 4. Load image
 docker load < /tmp/simplicity-latest.tar.gz
 
-# 5. Run container
+# 5. Run container with zero-downtime script (recommended)
+cd /opt/simplicity
+ARTIFACT_TYPE=docker ./scripts/deploy.sh deploy simplicity:latest
+
+# OR: Manual Docker run (not recommended, causes downtime)
 docker run -d \
   --name simplicity \
   -p 3000:3000 \
@@ -337,6 +411,50 @@ Cross-Origin-Opener-Policy: same-origin
 
 ## Monitoring & Analytics
 
+### Automated Health Monitoring
+
+Use the built-in health monitoring script with multi-channel alerting:
+
+```bash
+# On VPS
+cd /opt/simplicity
+
+# Continuous monitoring with Slack alerts
+ALERT_SLACK_WEBHOOK=https://hooks.slack.com/... \
+  ./scripts/health-monitor.sh monitor
+
+# Or as systemd service (recommended)
+sudo systemctl enable simplicity-monitor
+sudo systemctl start simplicity-monitor
+
+# One-shot health check (for cron)
+HEALTH_URL=https://app.example.com/health \
+ALERT_EMAIL=admin@example.com \
+  ./scripts/health-monitor.sh check
+```
+
+**Features**:
+- ✅ Automatic retries with exponential backoff
+- ✅ Multi-channel alerts (Email, Slack, Discord, Webhook)
+- ✅ Prometheus-compatible metrics export
+- ✅ State tracking (alerts only on state change)
+
+**Alert Channels** (via environment variables):
+- `ALERT_EMAIL` - Email notifications
+- `ALERT_SLACK_WEBHOOK` - Slack incoming webhook
+- `ALERT_DISCORD_WEBHOOK` - Discord webhook
+- `ALERT_CUSTOM_WEBHOOK` - Custom JSON webhook
+
+**Prometheus Integration**:
+```bash
+# Expose metrics for Prometheus scraping
+./scripts/health-monitor.sh metrics
+
+# Output:
+# simplicity_health_status 1
+# simplicity_response_time_seconds 0.123
+```
+
 ### Cloudflare Analytics
 
 1. **Traffic Analytics**: View requests, bandwidth, threats blocked
@@ -368,11 +486,8 @@ Cross-Origin-Opener-Policy: same-origin
    - High error rates
    - Origin unreachable
 
-**Application Health:**
-```bash
-# Setup simple health check cron
-*/5 * * * * curl -f https://app.yourdomain.com/health || echo "App down!" | mail -s "Alert" admin@email.com
-```
+**Application Health (Automated)**:
+See "Automated Health Monitoring" section above for multi-channel alerting.
 
 ## Scaling Considerations
 
@@ -483,6 +598,10 @@ echo "0 2 * * * /opt/simplicity/backup.sh" | crontab -
 # Restore from backup
 docker cp /opt/simplicity/backups/simplicity-20260122.db simplicity:/app/data/simplicity.db
 docker restart simplicity
+
+# Or use zero-downtime rollback
+cd /opt/simplicity
+./scripts/deploy.sh rollback
 ```
 
 ## Next Steps

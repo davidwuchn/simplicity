@@ -1,7 +1,8 @@
 (ns cc.mindward.ui.helpers
   "Helper functions for UI rendering.
    
-   Contains pure utility functions for common UI patterns.")
+   Contains pure utility functions for common UI patterns."
+  (:require [clojure.string :as str]))
 
 ;; === Class Name Helpers ===
 
@@ -16,7 +17,7 @@
   (->> class-names
        (filter some?)
        (filter (complement empty?))
-       (clojure.string/join " ")))
+       (str/join " ")))
 
 (defn conditional-class
   "Add a class name conditionally.

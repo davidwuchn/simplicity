@@ -6,6 +6,7 @@
    - Input validation
    - Password security"
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
+            [clojure.string :as str]
             [cc.mindward.user.impl :as user-impl]
             [next.jdbc :as jdbc]))
 
@@ -13,8 +14,9 @@
 ;; Test Fixtures (τ Wisdom - stateful testing with temp DB)
 ;; ------------------------------------------------------------
 
-(defn temp-db-fixture [f]
+(defn temp-db-fixture
   "Create a temporary SQLite database for testing."
+  [f]
   (let [temp-file (java.io.File/createTempFile "test-db-" ".db")
         temp-path (.getAbsolutePath temp-file)
         ds (user-impl/make-datasource temp-path)]
@@ -185,7 +187,7 @@
             "Password should be hashed, not stored in plain text")
         
         ;; Password hash should be in buddy-hashers format (bcrypt+sha512)
-        (is (clojure.string/starts-with? (:password_hash user) "bcrypt+sha512$")
+        (is (str/starts-with? (:password_hash user) "bcrypt+sha512$")
             "Password should use buddy-hashers bcrypt+sha512 format")
         
         ;; Password verification should work
