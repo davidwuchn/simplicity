@@ -318,8 +318,8 @@ function handleKeydown(e) {
     initAudio();
 
     // Prevent default browser behavior for our keys
-    const handledKeys = ['1', '2', '3', '4', '5', '6', ' ', 'r', 'R', 'c', 'C', 's', 'S'];
-    if (handledKeys.includes(e.key)) {
+    const handledKeys = ['1', '2', '3', '4', '5', '6', 'Space', 'r', 'R', 'c', 'C', 's', 'S'];
+    if (handledKeys.includes(e.code)) {
         e.preventDefault();
     }
 
