@@ -2970,7 +2970,6 @@ function saveScore() {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('High score saved:', data.highScore);
             // Update with server's confirmed high score
             if (highScoreEl && data.highScore) {
                 highScoreEl.innerText = data.highScore;
