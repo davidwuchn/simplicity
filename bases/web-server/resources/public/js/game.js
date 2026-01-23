@@ -1,5 +1,5 @@
 const canvas = document.getElementById('gameCanvas');
-canvas.style.cursor = 'none'; 
+canvas.style.cursor = 'default'; // Show cursor initially
 const ctx = canvas.getContext('2d');
 const highScoreEl = document.getElementById('high-score');
 
@@ -74,197 +74,239 @@ let engineOsc = null;
 let engineGain = null;
 let engineFilter = null;
 
-// === Music Styles (Expanded & Enhanced) ===
+// === Music Styles (Japanese Game-Inspired) ===
 const musicStyles = [
     { 
-        name: 'NEON WARFARE', bpm: 132, 
+        name: 'MEGA BUSTER', bpm: 145, // Mega Man style
         kick: [0, 2, 4, 6], snare: [2, 6], 
         hat: [0,1,2,3,4,5,6,7], hatAccent: [1,3,5,7],
-        bass: [55, 65, 55, 73], // Dynamic bass progression
-        scale: [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33], // Full C major scale
-        arp: [0, 2, 4, 5, 4, 2], // Hotline Miami-inspired ascending/descending arp
-        vibe: 'ultimate',
-        kickDecay: 0.28, snareDecay: 0.09, bassType: 'sawtooth',
-        // Ultimate style: Combines Hotline Miami + Furi + Geometry Dash
-        // - 132 BPM: Perfect balance between drive and groove
-        // - 4/4 kicks: Relentless energy (Geometry Dash)
-        // - Sawtooth bass: Aggressive synthwave (Hotline Miami)
-        // - Fast continuous hats: Modern EDM intensity
-        // - 6-note arpeggio: Melodic complexity (Furi)
-        // - Extended scale: Rich harmonic palette
+        bass: [65.41, 82.41, 73.42, 82.41], // E2-F#2-D#2-F#2 (energetic)
+        scale: [329.63, 369.99, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25], // E4 Phrygian
+        arp: [0, 2, 4, 7, 4, 2], // Fast rising arpeggio (Capcom style)
+        melody: [0, 2, 4, 2, 0, 4, 7, 4], // Catchy hook
+        chords: [[0,2,4], [1,3,5], [2,4,6], [0,2,4]], // Power chords
+        vibe: 'heroic',
+        kickDecay: 0.25, snareDecay: 0.08, bassType: 'square',
+        melodyOct: 1, // Melody octave multiplier
+        // MEGA MAN / CAPCOM: Fast, energetic, memorable melodies
+        // - Square wave bass (NES/Famicom sound)
+        // - Fast arpeggios (technical, energetic)
+        // - Driving 4/4 beat
+        // - Catchy melodic hooks
     },
     { 
-        name: 'HIP-HOP', bpm: 90, 
-        kick: [0, 6], snare: [4], 
-        hat: [0,1,2,3,4,5,6,7], hatAccent: [2, 6],
-        bass: [55, 55, 65, 55], 
-        scale: [261.63, 293.66, 329.63, 392.00, 440.00],
-        arp: [0, 2, 4, 2],
-        vibe: 'chill',
-        kickDecay: 0.5, snareDecay: 0.15, bassType: 'sine'
-    },
-    { 
-        name: 'TECHNO', bpm: 128, 
-        kick: [0, 2, 4, 6], snare: [4], 
-        hat: [1, 3, 5, 7], hatAccent: [3, 7],
-        bass: [55, 55, 110, 110], 
-        scale: [220.00, 261.63, 293.66, 329.63, 392.00],
-        arp: [0, 0, 2, 4],
-        vibe: 'drive',
-        kickDecay: 0.3, snareDecay: 0.1, bassType: 'sawtooth'
-    },
-    { 
-        name: 'D&B', bpm: 174, 
-        kick: [0, 5], snare: [2, 6], 
-        hat: [0,1,2,3,4,5,6,7], hatAccent: [1, 3, 5, 7],
-        bass: [55, 55, 82, 65], 
-        scale: [174.61, 196.00, 220.00, 261.63, 293.66],
-        arp: [0, 2, 0, 3],
+        name: 'GRADIUS CORE', bpm: 160, // Gradius/Konami style
+        kick: [0, 2, 4, 6], snare: [2, 6], 
+        hat: [0,1,2,3,4,5,6,7], hatAccent: [0,2,4,6],
+        bass: [55.00, 73.42, 82.41, 73.42], // A1-D#2-F#2-D#2
+        scale: [220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25], // A Minor
+        arp: [0, 4, 7, 4, 0, 4, 7, 4], // Octave jumps (intense)
+        melody: [7, 5, 4, 2, 4, 5, 7, 0], // Descending heroic
+        chords: [[0,4,7], [2,5,0], [4,7,2], [0,4,7]], // Minor triads
         vibe: 'intense',
-        kickDecay: 0.25, snareDecay: 0.08, bassType: 'square'
+        kickDecay: 0.22, snareDecay: 0.07, bassType: 'square',
+        melodyOct: 2,
+        // GRADIUS / KONAMI: Intense, technical, fast-paced
+        // - High-energy driving rhythm
+        // - Dramatic octave jumps
+        // - Minor key intensity
+        // - Relentless forward motion
     },
     { 
-        name: 'SYNTHWAVE', bpm: 105, 
+        name: 'BUBBLE SYSTEM', bpm: 130, // Bubble Bobble/Taito style
         kick: [0, 4], snare: [2, 6], 
-        hat: [0,2,4,6], hatAccent: [2, 6],
-        bass: [65, 65, 82, 98], 
-        scale: [261.63, 293.66, 329.63, 392.00, 523.25],
-        arp: [0, 2, 4, 3],
-        vibe: 'retro',
-        kickDecay: 0.4, snareDecay: 0.12, bassType: 'sawtooth'
+        hat: [0,2,4,6], hatAccent: [2,6],
+        bass: [130.81, 146.83, 164.81, 130.81], // C3-D3-E3-C3
+        scale: [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25], // C Major
+        arp: [0, 2, 4, 5, 4, 2], // Bouncy arpeggio
+        melody: [0, 2, 4, 5, 4, 2, 0, 4], // Cheerful melody
+        chords: [[0,2,4], [3,5,7], [0,2,4], [1,3,5]], // Major progressions
+        vibe: 'cheerful',
+        kickDecay: 0.35, snareDecay: 0.12, bassType: 'sine',
+        melodyOct: 1,
+        // BUBBLE BOBBLE / TAITO: Cute, bouncy, catchy
+        // - Major key brightness
+        // - Cheerful melodies
+        // - Moderate tempo
+        // - Playful atmosphere
     },
     { 
-        name: 'INDUSTRIAL', bpm: 125, 
-        kick: [0, 2, 3, 5, 6], snare: [4], 
-        hat: [1, 3, 5, 7], hatAccent: [1, 5],
-        bass: [41, 41, 41, 44], 
-        scale: [146.83, 155.56, 174.61, 196.00, 207.65],
-        arp: [0, 1, 0, 1],
-        vibe: 'dark',
-        kickDecay: 0.35, snareDecay: 0.2, bassType: 'square'
+        name: 'CASTLEVANIA', bpm: 140, // Castlevania style
+        kick: [0, 2, 4, 6], snare: [2, 6], 
+        hat: [1,3,5,7], hatAccent: [3,7],
+        bass: [55.00, 61.74, 65.41, 55.00], // A1-B1-C2-A1
+        scale: [220.00, 246.94, 261.63, 293.66, 329.63, 349.23, 415.30], // A Harmonic Minor
+        arp: [0, 2, 4, 6, 4, 2], // Gothic arpeggio
+        melody: [0, 6, 5, 4, 2, 0, 4, 2], // Dramatic descending
+        chords: [[0,2,4], [5,0,2], [4,6,1], [0,2,4]], // Harmonic minor
+        vibe: 'gothic',
+        kickDecay: 0.3, snareDecay: 0.1, bassType: 'sawtooth',
+        melodyOct: 1,
+        // CASTLEVANIA / KONAMI: Dark, dramatic, epic
+        // - Harmonic minor scale (gothic feel)
+        // - Dramatic melodies
+        // - Heavy rhythm
+        // - Epic atmosphere
     },
     { 
-        name: 'TRANCE', bpm: 138, 
+        name: 'STREET FIGHTER', bpm: 155, // Street Fighter style
+        kick: [0, 3, 4, 7], snare: [2, 6], 
+        hat: [0,1,2,3,4,5,6,7], hatAccent: [1,5],
+        bass: [82.41, 98.00, 82.41, 73.42], // F#2-G2-F#2-D#2
+        scale: [329.63, 369.99, 392.00, 440.00, 493.88, 523.25, 587.33], // E Phrygian Dominant
+        arp: [0, 3, 5, 7, 5, 3], // Fighting spirit
+        melody: [7, 5, 3, 0, 3, 5, 7, 0], // Battle cry
+        chords: [[0,3,5], [2,5,0], [4,7,2], [0,3,5]], // Power progressions
+        vibe: 'battle',
+        kickDecay: 0.28, snareDecay: 0.09, bassType: 'square',
+        melodyOct: 1,
+        // STREET FIGHTER / CAPCOM: Energetic, fighting spirit
+        // - Syncopated rhythms
+        // - Phrygian dominant (exotic/intense)
+        // - Powerful driving beat
+        // - Competitive energy
+    },
+    { 
+        name: 'SONIC SPEED', bpm: 170, // Sonic the Hedgehog style
         kick: [0, 2, 4, 6], snare: [2, 6], 
         hat: [0,1,2,3,4,5,6,7], hatAccent: [0,2,4,6],
-        bass: [110, 98, 82, 98], 
-        scale: [329.63, 392.00, 440.00, 523.25, 587.33],
-        arp: [0, 2, 4, 2],
-        vibe: 'euphoric',
-        kickDecay: 0.4, snareDecay: 0.1, bassType: 'sawtooth'
+        bass: [110.00, 123.47, 130.81, 110.00], // A2-B2-C3-A2
+        scale: [220.00, 246.94, 261.63, 293.66, 329.63, 392.00, 440.00], // A Natural Minor
+        arp: [0, 2, 4, 5, 7, 5, 4, 2], // Fast runs (Sonic speed)
+        melody: [0, 4, 7, 5, 4, 2, 0, 7], // Uplifting
+        chords: [[0,2,4], [3,5,7], [5,0,2], [0,2,4]], // Natural minor
+        vibe: 'speed',
+        kickDecay: 0.2, snareDecay: 0.06, bassType: 'sawtooth',
+        melodyOct: 2,
+        // SONIC / SEGA: Fast, upbeat, adventurous
+        // - Very fast tempo (170 BPM)
+        // - Continuous hi-hats (speed sensation)
+        // - Uplifting melodies
+        // - Natural minor (adventurous)
     },
     { 
-        name: 'DUBSTEP', bpm: 140, 
-        kick: [0, 4], snare: [2, 6], 
-        hat: [1,3,5,7], hatAccent: [3, 7],
-        bass: [55, 41, 55, 46], 
-        scale: [146.83, 174.61, 196.00, 220.00, 261.63],
-        arp: [0, 0, 2, 0],
-        vibe: 'wobble',
-        kickDecay: 0.5, snareDecay: 0.15, bassType: 'square'
-    },
-    { 
-        name: 'BREAKBEAT', bpm: 135, 
-        kick: [0, 3, 6], snare: [2, 5, 7], 
+        name: 'R-TYPE FORCE', bpm: 148, // R-Type style
+        kick: [0, 2, 4, 6], snare: [2, 6], 
         hat: [0,1,2,3,4,5,6,7], hatAccent: [1,3,5,7],
-        bass: [65, 65, 73, 65], 
-        scale: [220.00, 246.94, 261.63, 293.66, 329.63],
-        arp: [0, 1, 2, 1],
-        vibe: 'funky',
-        kickDecay: 0.3, snareDecay: 0.12, bassType: 'sine'
+        bass: [55.00, 65.41, 73.42, 65.41], // A1-C2-D#2-C2
+        scale: [220.00, 246.94, 293.66, 329.63, 369.99, 415.30, 440.00], // A Aeolian
+        arp: [0, 4, 7, 4, 0, 2, 5, 2], // Sci-fi arpeggio
+        melody: [0, 2, 4, 7, 5, 4, 2, 0], // Space opera
+        chords: [[0,4,7], [2,5,0], [4,7,2], [5,0,4]], // Sci-fi progression
+        vibe: 'scifi',
+        kickDecay: 0.25, snareDecay: 0.08, bassType: 'square',
+        melodyOct: 1,
+        // R-TYPE / IREM: Sci-fi, atmospheric, technical
+        // - Space shooter intensity
+        // - Technical precision
+        // - Sci-fi atmosphere
+        // - Relentless energy
     },
     { 
-        name: 'HARDSTYLE', bpm: 150, 
-        kick: [0, 2, 4, 6], snare: [4], 
-        hat: [1,3,5,7], hatAccent: [1,5],
-        bass: [65, 65, 65, 65], 
-        scale: [261.63, 329.63, 392.00, 523.25, 659.25],
-        arp: [0, 2, 4, 2],
-        vibe: 'hard',
-        kickDecay: 0.2, snareDecay: 0.08, bassType: 'square'
-    },
-    { 
-        name: 'ELECTRO', bpm: 128, 
+        name: 'TOUHOU PROJECT', bpm: 165, // Touhou/ZUN style
         kick: [0, 2, 4, 6], snare: [2, 6], 
-        hat: [0,1,2,3,4,5,6,7], hatAccent: [2,4,6],
-        bass: [82, 98, 110, 98], 
-        scale: [261.63, 329.63, 392.00, 440.00, 523.25],
-        arp: [0, 2, 1, 3],
-        vibe: 'electric',
-        kickDecay: 0.3, snareDecay: 0.1, bassType: 'square'
+        hat: [0,1,2,3,4,5,6,7], hatAccent: [0,4],
+        bass: [65.41, 73.42, 82.41, 73.42], // C2-D#2-F#2-D#2
+        scale: [261.63, 293.66, 329.63, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25], // C Major extended
+        arp: [0, 2, 4, 7, 8, 7, 4, 2], // Dense arpeggio runs
+        melody: [0, 4, 7, 8, 7, 4, 2, 0], // Intricate melody
+        chords: [[0,2,4], [2,4,6], [4,6,8], [0,2,4]], // Dense progressions
+        vibe: 'bullet-hell',
+        kickDecay: 0.23, snareDecay: 0.07, bassType: 'square',
+        melodyOct: 2,
+        // TOUHOU / ZUN: Dense, intricate, bullet-hell intensity
+        // - Very fast melodic runs
+        // - Dense harmonic layering
+        // - High energy
+        // - Extended scales
     },
     { 
-        name: 'TRAP', bpm: 140, 
-        kick: [0, 4], snare: [2, 5, 6], 
-        hat: [0,1,2,3,4,5,6,7], hatAccent: [1,2,3,5,7],
-        bass: [41, 46, 49, 46], 
-        scale: [174.61, 196.00, 207.65, 246.94, 261.63],
-        arp: [0, 1, 0, 2],
-        vibe: 'trap',
-        kickDecay: 0.6, snareDecay: 0.2, bassType: 'sine'
+        name: 'FINAL FANTASY', bpm: 125, // Final Fantasy battle style
+        kick: [0, 4], snare: [2, 6], 
+        hat: [0,2,4,6], hatAccent: [2,6],
+        bass: [110.00, 130.81, 146.83, 110.00], // A2-C3-D3-A2
+        scale: [220.00, 246.94, 261.63, 293.66, 329.63, 392.00, 440.00, 493.88], // A Minor
+        arp: [0, 2, 4, 5, 7, 5, 4, 2], // Epic arpeggio
+        melody: [7, 5, 4, 2, 0, 2, 4, 5], // Heroic theme
+        chords: [[0,2,4], [5,7,2], [4,6,0], [0,2,4]], // Epic progressions
+        vibe: 'epic',
+        kickDecay: 0.4, snareDecay: 0.15, bassType: 'sawtooth',
+        melodyOct: 1,
+        // FINAL FANTASY / SQUARE: Epic, orchestral-inspired, heroic
+        // - Moderate tempo (battle feel)
+        // - Epic melodic themes
+        // - Rich harmonic progressions
+        // - Heroic atmosphere
     },
     { 
-        name: 'PSYTRANCE', bpm: 145, 
-        kick: [0, 2, 4, 6], snare: [], 
-        hat: [1,3,5,7], hatAccent: [1,3,5,7],
-        bass: [98, 110, 98, 110], 
-        scale: [293.66, 329.63, 392.00, 440.00, 523.25],
-        arp: [0, 1, 2, 3, 4, 3, 2, 1],
-        vibe: 'psychedelic',
-        kickDecay: 0.25, snareDecay: 0.1, bassType: 'sawtooth'
-    },
-    { 
-        name: 'JUNGLE', bpm: 165, 
-        kick: [0, 4], snare: [1, 3, 5, 7], 
-        hat: [0,1,2,3,4,5,6,7], hatAccent: [0,2,4,6],
-        bass: [55, 65, 73, 55], 
-        scale: [196.00, 220.00, 246.94, 293.66, 329.63],
-        arp: [0, 2, 1, 3],
-        vibe: 'jungle',
-        kickDecay: 0.3, snareDecay: 0.08, bassType: 'sine'
-    },
-    { 
-        name: 'HOUSE', bpm: 125, 
+        name: 'METAL SLUG', bpm: 152, // Metal Slug style
         kick: [0, 2, 4, 6], snare: [2, 6], 
-        hat: [0,1,2,3,4,5,6,7], hatAccent: [2,6],
-        bass: [65, 65, 82, 65], 
-        scale: [261.63, 293.66, 329.63, 392.00, 440.00],
-        arp: [0, 2, 3, 2],
-        vibe: 'groove',
-        kickDecay: 0.35, snareDecay: 0.12, bassType: 'sine'
+        hat: [0,1,2,3,4,5,6,7], hatAccent: [1,3,5,7],
+        bass: [82.41, 98.00, 110.00, 82.41], // F#2-G2-A2-F#2
+        scale: [329.63, 369.99, 392.00, 440.00, 493.88, 587.33], // E Mixolydian
+        arp: [0, 2, 4, 5, 4, 2], // Military march
+        melody: [0, 2, 4, 0, 5, 4, 2, 0], // Action theme
+        chords: [[0,2,4], [3,5,0], [0,2,4], [1,3,5]], // Rock progressions
+        vibe: 'military',
+        kickDecay: 0.27, snareDecay: 0.09, bassType: 'square',
+        melodyOct: 1,
+        // METAL SLUG / SNK: Action-packed, military, energetic
+        // - Fast military rhythm
+        // - Mixolydian mode (heroic/bright)
+        // - Action-oriented
+        // - Arcade intensity
     },
-    { 
-        name: 'AMBIENT', bpm: 80, 
-        kick: [0], snare: [], 
-        hat: [2, 6], hatAccent: [],
-        bass: [55, 65, 73, 65], 
-        scale: [261.63, 293.66, 329.63, 392.00, 440.00, 523.25],
-        arp: [0, 1, 2, 3, 4, 3, 2, 1],
-        vibe: 'atmospheric',
-        kickDecay: 0.8, snareDecay: 0.3, bassType: 'sine'
-    },
-    { 
-        name: 'GABBER', bpm: 180, 
-        kick: [0, 1, 2, 3, 4, 5, 6, 7], snare: [2, 6], 
-        hat: [1,3,5,7], hatAccent: [1,5],
-        bass: [55, 55, 55, 55], 
-        scale: [220.00, 246.94, 293.66, 329.63, 440.00],
-        arp: [0, 0, 0, 2],
-        vibe: 'hardcore',
-        kickDecay: 0.15, snareDecay: 0.08, bassType: 'square'
-    }
 ];
-currentStyle = 0; // Start with NEON WARFARE (index 0)
+currentStyle = 0; // Start with MEGA BUSTER (index 0)
 
 // === Entities ===
-const player = { x: 400, y: 500, size: 30, speed: 5, missileCooldown: 0, lastShotTime: 0 };
+const player = { x: 400, y: 500, size: 30, speed: 5, missileCooldown: 0, lastShotTime: 0, trail: [] };
 let bullets = [], enemies = [], enemyBullets = [], powerUps = [], missiles = [], particles = [];
 let stars = [], debris = [];
+// Parallax background layers
+let nebulaClouds = [], distantStars = [], spaceDust = [];
 const keys = {};
 
 // === Initialize Background ===
 function initBackground() {
     stars = []; debris = [];
+    nebulaClouds = []; distantStars = []; spaceDust = [];
+    
+    // Layer 1: Nebula clouds (slowest, farthest - large glowing blobs)
+    for (let i = 0; i < 8; i++) {
+        nebulaClouds.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            speed: 0.05 + Math.random() * 0.1, // Very slow
+            size: 80 + Math.random() * 120, // Large
+            color: ['#1e3a8a', '#312e81', '#581c87', '#701a75'][Math.floor(Math.random() * 4)], // Deep blue/purple
+            alpha: 0.15 + Math.random() * 0.15 // Semi-transparent
+        });
+    }
+    
+    // Layer 2: Distant stars (medium speed - tiny bright dots)
+    for (let i = 0; i < 120; i++) {
+        distantStars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            speed: 0.2 + Math.random() * 0.3,
+            size: 0.5 + Math.random() * 1, // Tiny
+            twinkle: Math.random() * Math.PI * 2 // For twinkling effect
+        });
+    }
+    
+    // Layer 3: Space dust (fastest, closest - medium particles)
+    for (let i = 0; i < 30; i++) {
+        spaceDust.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            speed: 1.0 + Math.random() * 2.0, // Fast
+            size: 1 + Math.random() * 2,
+            alpha: 0.3 + Math.random() * 0.4
+        });
+    }
+    
+    // Existing stars (keep for compatibility)
     for (let i = 0; i < 50; i++) {
         stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, speed: 0.5 + Math.random() * 1.5, size: Math.random() * 2 });
     }
@@ -416,7 +458,10 @@ function playSound(type) {
     if (!audioCtx || audioCtx.state !== 'running') return;
     
     const now = Date.now();
-    const minInterval = { shoot: 80, missile: 150, explosion: 120, powerup: 100, 'boss-shoot': 180, hit: 50 }[type] || 100;
+    const minInterval = { 
+        shoot: 80, missile: 150, explosion: 120, powerup: 100, 'boss-shoot': 180, hit: 50,
+        'zerg-death': 100, 'protoss-death': 100, 'tank-explosion': 120, 'boss-death': 500
+    }[type] || 100;
     if (lastSoundTime[type] && now - lastSoundTime[type] < minInterval) return;
     lastSoundTime[type] = now;
     
@@ -834,6 +879,146 @@ function playSound(type) {
                 whoosh.stop(t + 0.2);
             }
         }
+        else if (type === 'zerg-death' && noiseBuffer) {
+            // Zerg death: Wet splatter + organic squelch
+            const splat = audioCtx.createBufferSource();
+            const splatGain = audioCtx.createGain();
+            const splatFilter = audioCtx.createBiquadFilter();
+            
+            splat.buffer = noiseBuffer;
+            splatFilter.type = 'lowpass';
+            splatFilter.frequency.setValueAtTime(800, t);
+            splatFilter.frequency.exponentialRampToValueAtTime(150, t + 0.25);
+            splatFilter.Q.value = 5;
+            splatGain.gain.setValueAtTime(0.25, t);
+            splatGain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+            splat.connect(splatFilter).connect(splatGain).connect(compressor);
+            splat.start(t); splat.stop(t + 0.25);
+            
+            // Organic squelch (low frequency wobble)
+            const squelch = audioCtx.createOscillator();
+            const squelchGain = audioCtx.createGain();
+            squelch.type = 'sawtooth';
+            squelch.frequency.setValueAtTime(180, t);
+            squelch.frequency.exponentialRampToValueAtTime(40, t + 0.3);
+            squelchGain.gain.setValueAtTime(0.2, t);
+            squelchGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+            squelch.connect(squelchGain).connect(compressor);
+            squelch.start(t); squelch.stop(t + 0.3);
+        }
+        else if (type === 'protoss-death') {
+            // Protoss death: Crystalline shatter + energy dissipation
+            // Crystal shatter (high-frequency burst)
+            for (let i = 0; i < 5; i++) {
+                const crystal = audioCtx.createOscillator();
+                const crystalGain = audioCtx.createGain();
+                const freq = 800 + Math.random() * 1200;
+                crystal.type = 'sine';
+                crystal.frequency.setValueAtTime(freq, t + i * 0.02);
+                crystal.frequency.exponentialRampToValueAtTime(freq * 0.5, t + i * 0.02 + 0.15);
+                crystalGain.gain.setValueAtTime(0.08, t + i * 0.02);
+                crystalGain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.02 + 0.15);
+                crystal.connect(crystalGain).connect(compressor);
+                crystal.start(t + i * 0.02);
+                crystal.stop(t + i * 0.02 + 0.15);
+            }
+            
+            // Energy dissipation (descending harmonic)
+            const energy = audioCtx.createOscillator();
+            const energyGain = audioCtx.createGain();
+            energy.type = 'triangle';
+            energy.frequency.setValueAtTime(440, t);
+            energy.frequency.exponentialRampToValueAtTime(110, t + 0.4);
+            energyGain.gain.setValueAtTime(0.15, t);
+            energyGain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+            energy.connect(energyGain).connect(compressor);
+            energy.start(t); energy.stop(t + 0.4);
+        }
+        else if (type === 'tank-explosion' && noiseBuffer) {
+            // Tank explosion: Massive metallic crash + low boom
+            const crash = audioCtx.createBufferSource();
+            const crashGain = audioCtx.createGain();
+            const crashFilter = audioCtx.createBiquadFilter();
+            
+            crash.buffer = noiseBuffer;
+            crashFilter.type = 'lowpass';
+            crashFilter.frequency.setValueAtTime(4000, t);
+            crashFilter.frequency.exponentialRampToValueAtTime(100, t + 0.6);
+            crashGain.gain.setValueAtTime(0.35, t);
+            crashGain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+            crash.connect(crashFilter).connect(crashGain).connect(compressor);
+            crash.start(t); crash.stop(t + 0.6);
+            
+            // Deep boom (sub bass)
+            const boom = audioCtx.createOscillator();
+            const boomGain = audioCtx.createGain();
+            boom.type = 'sine';
+            boom.frequency.setValueAtTime(80, t);
+            boom.frequency.exponentialRampToValueAtTime(20, t + 0.5);
+            boomGain.gain.setValueAtTime(0.5, t);
+            boomGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+            boom.connect(boomGain).connect(masterGain);
+            boom.start(t); boom.stop(t + 0.5);
+            
+            // Metallic ring
+            const ring = audioCtx.createOscillator();
+            const ringGain = audioCtx.createGain();
+            ring.type = 'sine';
+            ring.frequency.value = 300;
+            ringGain.gain.setValueAtTime(0.15, t);
+            ringGain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+            ring.connect(ringGain).connect(compressor);
+            ring.start(t); ring.stop(t + 0.4);
+        }
+        else if (type === 'boss-death' && noiseBuffer) {
+            // Boss death: ULTIMATE multi-layered explosion sequence
+            // Massive noise burst
+            const noise = audioCtx.createBufferSource();
+            const noiseGain = audioCtx.createGain();
+            const noiseFilter = audioCtx.createBiquadFilter();
+            
+            noise.buffer = noiseBuffer;
+            noiseFilter.type = 'lowpass';
+            noiseFilter.frequency.setValueAtTime(5000, t);
+            noiseFilter.frequency.exponentialRampToValueAtTime(50, t + 1.0);
+            noiseGain.gain.setValueAtTime(0.4, t);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 1.0);
+            noise.connect(noiseFilter).connect(noiseGain).connect(compressor);
+            noise.start(t); noise.stop(t + 1.0);
+            
+            // Massive sub bass impact
+            const subBass = audioCtx.createOscillator();
+            const subGain = audioCtx.createGain();
+            subBass.type = 'sine';
+            subBass.frequency.setValueAtTime(120, t);
+            subBass.frequency.exponentialRampToValueAtTime(15, t + 0.8);
+            subGain.gain.setValueAtTime(0.6, t);
+            subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+            subBass.connect(subGain).connect(masterGain);
+            subBass.start(t); subBass.stop(t + 0.8);
+            
+            // Distorted mid-range crunch
+            const distortion = audioCtx.createOscillator();
+            const distGain = audioCtx.createGain();
+            distortion.type = 'square';
+            distortion.frequency.setValueAtTime(400, t);
+            distortion.frequency.exponentialRampToValueAtTime(80, t + 0.6);
+            distGain.gain.setValueAtTime(0.3, t);
+            distGain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+            distortion.connect(distGain).connect(compressor);
+            distortion.start(t); distortion.stop(t + 0.6);
+            
+            // Descending energy wail (demonic)
+            const wail = audioCtx.createOscillator();
+            const wailGain = audioCtx.createGain();
+            wail.type = 'sawtooth';
+            wail.frequency.setValueAtTime(660, t + 0.2);
+            wail.frequency.exponentialRampToValueAtTime(110, t + 1.2);
+            wailGain.gain.setValueAtTime(0.25, t + 0.2);
+            wailGain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+            wail.connect(wailGain).connect(compressor);
+            wail.start(t + 0.2); wail.stop(t + 1.2);
+        }
     } catch (e) {}
 }
 
@@ -925,27 +1110,61 @@ function tickBGM() {
         subOsc.connect(subGain).connect(compressor); // Goes through sidechain
         subOsc.start(t); subOsc.stop(t + 0.15);
         
-        // === CHORD STAB on beat 1 (every 8 steps) ===
-        if (step === 0) {
-            const chordNotes = [style.scale[0], style.scale[2], style.scale[4]]; // Root, third, fifth
-            for (let i = 0; i < chordNotes.length; i++) {
+        // === MELODY SYSTEM (Japanese game-style catchy hooks) ===
+        // Play melody on every 2 beats for catchiness (step % 4 === 0)
+        if (step % 4 === 0 && style.melody) {
+            const melodyIndex = Math.floor(beatStep / 4) % style.melody.length;
+            const melodyNote = style.melody[melodyIndex];
+            const freq = style.scale[melodyNote] * (style.melodyOct || 1);
+            
+            const melody = audioCtx.createOscillator();
+            const melodyGain = audioCtx.createGain();
+            const melodyFilter = audioCtx.createBiquadFilter();
+            
+            // Square wave for authentic retro Japanese game sound
+            melody.type = 'square';
+            melody.frequency.setValueAtTime(freq, t);
+            
+            melodyFilter.type = 'lowpass';
+            melodyFilter.frequency.setValueAtTime(freq * 4, t);
+            melodyFilter.frequency.exponentialRampToValueAtTime(freq * 2, t + 0.2);
+            melodyFilter.Q.value = 2;
+            
+            melodyGain.gain.setValueAtTime(0.12, t);
+            melodyGain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+            
+            melody.connect(melodyFilter).connect(melodyGain).connect(compressor);
+            melody.start(t);
+            melody.stop(t + 0.25);
+        }
+        
+        // === CHORD PROGRESSION SYSTEM (Japanese game harmony) ===
+        // Play chords on beat 1 (every 8 steps) - uses custom chord arrays
+        if (step === 0 && style.chords) {
+            const chordIndex = Math.floor(beatStep / 8) % style.chords.length;
+            const chord = style.chords[chordIndex];
+            
+            for (let i = 0; i < chord.length; i++) {
                 const chordOsc = audioCtx.createOscillator();
                 const chordGain = audioCtx.createGain();
                 const chordFilter = audioCtx.createBiquadFilter();
                 
-                chordOsc.type = style.vibe === 'retro' ? 'square' : 'sawtooth';
-                chordOsc.frequency.setValueAtTime(chordNotes[i], t);
+                const freq = style.scale[chord[i]];
+                
+                // Sawtooth for rich harmonic content (Japanese game style)
+                chordOsc.type = 'sawtooth';
+                chordOsc.frequency.setValueAtTime(freq, t);
                 
                 chordFilter.type = 'lowpass';
                 chordFilter.frequency.setValueAtTime(2000 + intensity * 1000, t);
                 chordFilter.frequency.exponentialRampToValueAtTime(400, t + 0.4);
                 
-                chordGain.gain.setValueAtTime(0.05, t);
-                chordGain.gain.linearRampToValueAtTime(0.04, t + 0.05);
-                chordGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+                chordGain.gain.setValueAtTime(0.08, t);
+                chordGain.gain.linearRampToValueAtTime(0.06, t + 0.05);
+                chordGain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
                 
                 chordOsc.connect(chordFilter).connect(chordGain).connect(compressor);
-                chordOsc.start(t); chordOsc.stop(t + 0.5);
+                chordOsc.start(t); chordOsc.stop(t + 0.4);
             }
         }
         
@@ -1073,6 +1292,7 @@ function tickBGM() {
 function startGame() {
     if (gameStarted) return;
     gameStarted = true;
+    canvas.style.cursor = 'none'; // Hide cursor when game starts
     initAudio();
 }
 
@@ -1107,6 +1327,7 @@ window.addEventListener('keydown', e => {
         weaponLevel = 1; powerUpActive = false; player.missileCooldown = 0;
         invincible = false; invincibilityEnd = 0; invincibilityCooldown = 0;
         combo = 0; lastKillTime = 0; comboDisplay = 0; lastComboMilestone = 0;
+        canvas.style.cursor = 'none'; // Hide cursor when restarting
     }
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
@@ -1123,7 +1344,7 @@ function spawnEnemy(isBoss = false) {
     if (isBoss) {
         enemies.push({
             x: canvas.width / 2, y: -100, vx: 0, vy: 1, size: 120, color: '#fcee0a',
-            hp: 50, isBoss: true, faction, behavior: 'boss', lastShot: 0, hitFlash: 0, rotation: 0
+            hp: 50, isBoss: true, faction, behavior: 'boss', lastShot: 0, hitFlash: 0, rotation: 0, trail: []
         });
     } else {
         const rand = Math.random();
@@ -1136,14 +1357,24 @@ function spawnEnemy(isBoss = false) {
         
         enemies.push({
             x, y: -50, vx: 0, vy: 0, size, color, hp, isBoss: false, faction, behavior,
-            lastShot: 0, hitFlash: 0, rotation: 0, targetX: x, lastTurn: Date.now()
+            lastShot: 0, hitFlash: 0, rotation: 0, targetX: x, lastTurn: Date.now(), trail: []
         });
     }
 }
 
 function killEnemy(e) {
     e.dead = true;
-    playSound('explosion');
+    
+    // Faction-specific explosion sounds
+    if (e.isBoss) {
+        playSound('boss-death');
+    } else if (e.behavior === 'tank') {
+        playSound('tank-explosion');
+    } else if (e.faction === 'zerg') {
+        playSound('zerg-death');
+    } else {
+        playSound('protoss-death');
+    }
     
     // Combo system
     const now = Date.now();
@@ -1186,58 +1417,197 @@ function killEnemy(e) {
     
     score += baseScore + comboBonus;
     
-    // Enhanced explosion particles with multiple types
-    const count = e.isBoss ? 30 : Math.min(Math.floor(e.size / 3), 15);
-    for (let i = 0; i < count && particles.length < MAX_PARTICLES; i++) {
-        const angle = (Math.PI * 2 * i) / count;
-        const speed = 2 + Math.random() * 3;
-        const particleType = Math.random();
-        
-        let particleConfig;
-        if (particleType < 0.4) {
-            // Fire particles (orange/yellow)
-            particleConfig = {
-                x: e.x,
-                y: e.y,
-                vx: Math.cos(angle) * speed,
-                vy: Math.sin(angle) * speed,
-                life: 30 + Math.random() * 30,
-                maxLife: 60,
-                size: 3 + Math.random() * 4,
-                color: Math.random() < 0.5 ? '#ff6600' : '#ffaa00',
-                type: 'fire'
-            };
-        } else if (particleType < 0.7) {
-            // Debris particles (faction colored)
-            particleConfig = {
-                x: e.x,
-                y: e.y,
-                vx: Math.cos(angle) * speed * 1.5,
-                vy: Math.sin(angle) * speed * 1.5,
-                life: 40 + Math.random() * 40,
-                maxLife: 80,
-                size: 2 + Math.random() * 3,
-                color: e.color,
-                type: 'debris',
-                rotation: Math.random() * Math.PI * 2,
-                rotSpeed: (Math.random() - 0.5) * 0.3
-            };
-        } else {
-            // Smoke particles (gray/white)
-            particleConfig = {
-                x: e.x,
-                y: e.y,
-                vx: Math.cos(angle) * speed * 0.5,
-                vy: Math.sin(angle) * speed * 0.5 - 1,
-                life: 50 + Math.random() * 50,
-                maxLife: 100,
-                size: 4 + Math.random() * 6,
-                color: '#888888',
-                type: 'smoke'
-            };
+    // === FACTION-SPECIFIC DEATH EFFECTS ===
+    const count = e.isBoss ? 50 : Math.min(Math.floor(e.size / 2.5), 20);
+    
+    if (e.isBoss) {
+        // BOSS DEATH: Ultimate explosion sequence
+        for (let i = 0; i < count && particles.length < MAX_PARTICLES; i++) {
+            const angle = (Math.PI * 2 * i) / count;
+            const speed = 3 + Math.random() * 5;
+            const particleType = Math.random();
+            
+            if (particleType < 0.3) {
+                // Massive fire burst
+                particles.push({
+                    x: e.x, y: e.y,
+                    vx: Math.cos(angle) * speed * 1.5,
+                    vy: Math.sin(angle) * speed * 1.5,
+                    life: 60 + Math.random() * 40,
+                    maxLife: 100,
+                    size: 8 + Math.random() * 8,
+                    color: ['#ff0000', '#ff6600', '#ffaa00', '#fef08a'][Math.floor(Math.random() * 4)],
+                    type: 'fire'
+                });
+            } else if (particleType < 0.6) {
+                // Yellow/gold energy shards (boss aura color)
+                particles.push({
+                    x: e.x, y: e.y,
+                    vx: Math.cos(angle) * speed * 2,
+                    vy: Math.sin(angle) * speed * 2,
+                    life: 50 + Math.random() * 50,
+                    maxLife: 100,
+                    size: 4 + Math.random() * 6,
+                    color: '#fcee0a',
+                    type: 'debris',
+                    rotation: Math.random() * Math.PI * 2,
+                    rotSpeed: (Math.random() - 0.5) * 0.4
+                });
+            } else {
+                // Dark smoke (demonic essence)
+                particles.push({
+                    x: e.x, y: e.y,
+                    vx: Math.cos(angle) * speed * 0.8,
+                    vy: Math.sin(angle) * speed * 0.8,
+                    life: 70 + Math.random() * 60,
+                    maxLife: 130,
+                    size: 10 + Math.random() * 12,
+                    color: ['#0a0a0a', '#1a1a1a', '#450a0a'][Math.floor(Math.random() * 3)],
+                    type: 'smoke'
+                });
+            }
         }
-        
-        particles.push(particleConfig);
+    } else if (e.behavior === 'tank') {
+        // TANK DEATH: Metal debris and explosive shockwave
+        for (let i = 0; i < count && particles.length < MAX_PARTICLES; i++) {
+            const angle = (Math.PI * 2 * i) / count;
+            const speed = 2 + Math.random() * 4;
+            const particleType = Math.random();
+            
+            if (particleType < 0.5) {
+                // Metal debris (angular chunks)
+                particles.push({
+                    x: e.x, y: e.y,
+                    vx: Math.cos(angle) * speed * 1.5,
+                    vy: Math.sin(angle) * speed * 1.5,
+                    life: 50 + Math.random() * 40,
+                    maxLife: 90,
+                    size: 3 + Math.random() * 5,
+                    color: e.faction === 'zerg' ? '#7f1d1d' : '#0c4a6e', // Tank colors
+                    type: 'debris',
+                    rotation: Math.random() * Math.PI * 2,
+                    rotSpeed: (Math.random() - 0.5) * 0.5
+                });
+            } else if (particleType < 0.8) {
+                // Explosive fire
+                particles.push({
+                    x: e.x, y: e.y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 35 + Math.random() * 35,
+                    maxLife: 70,
+                    size: 5 + Math.random() * 6,
+                    color: ['#ff6600', '#fbbf24', '#f59e0b'][Math.floor(Math.random() * 3)],
+                    type: 'fire'
+                });
+            } else {
+                // Black smoke (burning metal)
+                particles.push({
+                    x: e.x, y: e.y,
+                    vx: Math.cos(angle) * speed * 0.6,
+                    vy: Math.sin(angle) * speed * 0.6,
+                    life: 60 + Math.random() * 50,
+                    maxLife: 110,
+                    size: 6 + Math.random() * 8,
+                    color: '#1f2937',
+                    type: 'smoke'
+                });
+            }
+        }
+    } else if (e.faction === 'zerg') {
+        // ZERG DEATH: Bio splatter, organic particles
+        for (let i = 0; i < count && particles.length < MAX_PARTICLES; i++) {
+            const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+            const speed = 1.5 + Math.random() * 3;
+            const particleType = Math.random();
+            
+            if (particleType < 0.6) {
+                // Bio matter (purple/red organic goo)
+                particles.push({
+                    x: e.x, y: e.y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed + 0.5, // Slight downward (gravity effect)
+                    life: 40 + Math.random() * 40,
+                    maxLife: 80,
+                    size: 3 + Math.random() * 5,
+                    color: ['#a855f7', '#9333ea', '#7c3aed', '#d97706', '#dc2626'][Math.floor(Math.random() * 5)],
+                    type: 'fire' // Use fire for glow effect
+                });
+            } else if (particleType < 0.85) {
+                // Organic chunks (darker, angular)
+                particles.push({
+                    x: e.x, y: e.y,
+                    vx: Math.cos(angle) * speed * 1.3,
+                    vy: Math.sin(angle) * speed * 1.3,
+                    life: 45 + Math.random() * 45,
+                    maxLife: 90,
+                    size: 2 + Math.random() * 4,
+                    color: ['#581c87', '#7f1d1d', '#450a0a'][Math.floor(Math.random() * 3)],
+                    type: 'debris',
+                    rotation: Math.random() * Math.PI * 2,
+                    rotSpeed: (Math.random() - 0.5) * 0.4
+                });
+            } else {
+                // Green toxic gas
+                particles.push({
+                    x: e.x, y: e.y,
+                    vx: Math.cos(angle) * speed * 0.5,
+                    vy: Math.sin(angle) * speed * 0.5 - 0.3, // Float upward
+                    life: 50 + Math.random() * 50,
+                    maxLife: 100,
+                    size: 5 + Math.random() * 7,
+                    color: ['#16a34a', '#15803d', '#166534'][Math.floor(Math.random() * 3)],
+                    type: 'smoke'
+                });
+            }
+        }
+    } else {
+        // PROTOSS DEATH: Energy burst, crystalline shards
+        for (let i = 0; i < count && particles.length < MAX_PARTICLES; i++) {
+            const angle = (Math.PI * 2 * i) / count;
+            const speed = 2.5 + Math.random() * 4;
+            const particleType = Math.random();
+            
+            if (particleType < 0.5) {
+                // Crystalline shards (angular, bright)
+                particles.push({
+                    x: e.x, y: e.y,
+                    vx: Math.cos(angle) * speed * 1.5,
+                    vy: Math.sin(angle) * speed * 1.5,
+                    life: 45 + Math.random() * 45,
+                    maxLife: 90,
+                    size: 3 + Math.random() * 5,
+                    color: ['#38bdf8', '#0ea5e9', '#06b6d4', '#67e8f9'][Math.floor(Math.random() * 4)],
+                    type: 'debris',
+                    rotation: Math.random() * Math.PI * 2,
+                    rotSpeed: (Math.random() - 0.5) * 0.6
+                });
+            } else if (particleType < 0.8) {
+                // Energy burst (glowing cyan/blue)
+                particles.push({
+                    x: e.x, y: e.y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 35 + Math.random() * 35,
+                    maxLife: 70,
+                    size: 4 + Math.random() * 6,
+                    color: ['#0ea5e9', '#38bdf8', '#7dd3fc'][Math.floor(Math.random() * 3)],
+                    type: 'fire' // Use fire for glow
+                });
+            } else {
+                // Blue plasma vapor
+                particles.push({
+                    x: e.x, y: e.y,
+                    vx: Math.cos(angle) * speed * 0.7,
+                    vy: Math.sin(angle) * speed * 0.7,
+                    life: 55 + Math.random() * 55,
+                    maxLife: 110,
+                    size: 6 + Math.random() * 8,
+                    color: ['#0c4a6e', '#075985', '#0369a1'][Math.floor(Math.random() * 3)],
+                    type: 'smoke'
+                });
+            }
+        }
     }
     
     // PowerUp drop
@@ -1269,8 +1639,37 @@ function update() {
     }
     
     // Background
+    // Update background layers (parallax scrolling)
     for (let s of stars) { s.y += s.speed; if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; } }
     for (let d of debris) { d.y += d.speed; d.rotation += d.rotSpeed; if (d.y > canvas.height + 50) { d.y = -50; d.x = Math.random() * canvas.width; } }
+    
+    // Parallax layer 1: Nebula clouds (slowest)
+    for (let n of nebulaClouds) {
+        n.y += n.speed;
+        if (n.y > canvas.height + n.size) {
+            n.y = -n.size;
+            n.x = Math.random() * canvas.width;
+        }
+    }
+    
+    // Parallax layer 2: Distant stars (medium speed with twinkling)
+    for (let s of distantStars) {
+        s.y += s.speed;
+        s.twinkle += 0.05; // Twinkle animation
+        if (s.y > canvas.height) {
+            s.y = 0;
+            s.x = Math.random() * canvas.width;
+        }
+    }
+    
+    // Parallax layer 3: Space dust (fastest)
+    for (let d of spaceDust) {
+        d.y += d.speed;
+        if (d.y > canvas.height) {
+            d.y = 0;
+            d.x = Math.random() * canvas.width;
+        }
+    }
     
     // Piano Particles - spawn new ones periodically
     if (now - lastPianoSpawn > 500 && pianoParticles.length < MAX_PIANO_PARTICLES) {
@@ -1355,6 +1754,24 @@ function update() {
     if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
     if (keys['ArrowRight'] && player.x < canvas.width - player.size) player.x += player.speed;
     
+    // Update player trail (twin engine exhaust from back of ship)
+    const playerCenterX = player.x + player.size / 2;
+    const playerBackY = player.y + player.size / 3; // Back of ship
+    const engineOffset = player.size / 5; // Distance between twin engines
+    player.trail.push(
+        { x: playerCenterX - engineOffset, y: playerBackY, alpha: 1.0, age: 0 },  // Left engine
+        { x: playerCenterX + engineOffset, y: playerBackY, alpha: 1.0, age: 0 }   // Right engine
+    );
+    // Keep last 16 trail points (8 frames of twin trails, since we add 2 per frame)
+    while (player.trail.length > 16) {
+        player.trail.shift();
+    }
+    // Age and fade trails
+    for (let t of player.trail) {
+        t.age++;
+        t.alpha = Math.max(0, 1.0 - (t.age / 8)); // Clamp alpha to >= 0
+    }
+    
     // Engine sound modulation (based on movement)
     if (engineGain && audioCtx) {
         const isMoving = keys['ArrowUp'] || keys['ArrowDown'] || keys['ArrowLeft'] || keys['ArrowRight'];
@@ -1370,14 +1787,14 @@ function update() {
     const cooldown = powerUpActive ? 120 : 200;
     if (now - player.lastShotTime > cooldown && bullets.length < MAX_BULLETS) {
         playSound('shoot');
-        bullets.push({ x: player.x + player.size / 2, y: player.y, vx: 0, vy: -12, damage: 2 });
+        bullets.push({ x: player.x + player.size / 2, y: player.y, vx: 0, vy: -12, damage: 2, trail: [] });
         if (weaponLevel >= 2) {
-            bullets.push({ x: player.x, y: player.y + 10, vx: -1.5, vy: -10, damage: 1.5 });
-            bullets.push({ x: player.x + player.size, y: player.y + 10, vx: 1.5, vy: -10, damage: 1.5 });
+            bullets.push({ x: player.x, y: player.y + 10, vx: -1.5, vy: -10, damage: 1.5, trail: [] });
+            bullets.push({ x: player.x + player.size, y: player.y + 10, vx: 1.5, vy: -10, damage: 1.5, trail: [] });
         }
         if (weaponLevel >= 3) {
-            bullets.push({ x: player.x - 10, y: player.y + 15, vx: -3, vy: -9, damage: 1 });
-            bullets.push({ x: player.x + player.size + 10, y: player.y + 15, vx: 3, vy: -9, damage: 1 });
+            bullets.push({ x: player.x - 10, y: player.y + 15, vx: -3, vy: -9, damage: 1, trail: [] });
+            bullets.push({ x: player.x + player.size + 10, y: player.y + 15, vx: 3, vy: -9, damage: 1, trail: [] });
         }
         player.lastShotTime = now;
     }
@@ -1390,7 +1807,8 @@ function update() {
             for (let i = 0; i < 2; i++) {
                 missiles.push({
                     x: player.x + player.size / 2, y: player.y,
-                    target, damage: 5, speed: 7, angle: -Math.PI / 2 + (Math.random() - 0.5) * 0.4
+                    target, damage: 5, speed: 7, angle: -Math.PI / 2 + (Math.random() - 0.5) * 0.4,
+                    trail: []
                 });
             }
             player.missileCooldown = now + 1500;
@@ -1404,6 +1822,15 @@ function update() {
     bullets = bullets.filter(b => {
         if (b.dead) return false;
         b.x += b.vx; b.y += b.vy;
+        
+        // Update bullet trail (fading projectile trail)
+        b.trail.push({ x: b.x, y: b.y, alpha: 1.0, age: 0 });
+        if (b.trail.length > 5) b.trail.shift(); // Keep last 5 positions
+        for (let t of b.trail) {
+            t.age++;
+            t.alpha = Math.max(0, 1.0 - (t.age / 5)); // Clamp alpha to >= 0
+        }
+        
         return b.y > -20 && b.y < canvas.height + 20 && b.x > -20 && b.x < canvas.width + 20;
     });
     
@@ -1420,6 +1847,15 @@ function update() {
         }
         m.x += Math.cos(m.angle) * m.speed;
         m.y += Math.sin(m.angle) * m.speed;
+        
+        // Update missile trail (smoke/fire trail)
+        m.trail.push({ x: m.x, y: m.y, alpha: 1.0, age: 0 });
+        if (m.trail.length > 10) m.trail.shift(); // Longer trail for missiles
+        for (let t of m.trail) {
+            t.age++;
+            t.alpha = Math.max(0, 1.0 - (t.age / 10)); // Clamp alpha to >= 0
+        }
+        
         return m.y > -50 && m.y < canvas.height + 50 && m.x > -50 && m.x < canvas.width + 50;
     });
     
@@ -1455,7 +1891,10 @@ function update() {
             const bulletRadius = b.isExplosive ? (b.size || 8) : 5;
             if (Math.sqrt(dx * dx + dy * dy) < player.size / 2 + bulletRadius) {
                 playSound('game-over');
-                gameOver = true; saveScore(); return false;
+                gameOver = true;
+                canvas.style.cursor = 'default'; // Show cursor on game over
+                saveScore();
+                return false;
             }
         }
         return b.y > 0 && b.y < canvas.height && b.x > 0 && b.x < canvas.width;
@@ -1522,6 +1961,16 @@ function update() {
                     e.vy = 1.2;
                 }
                 e.x += e.vx; e.y += e.vy;
+                
+                // Update enemy trail (only for fast-moving kamikazes)
+                if (e.behavior === 'kamikaze') {
+                    e.trail.push({ x: e.x, y: e.y, alpha: 1.0, age: 0 });
+                    if (e.trail.length > 8) e.trail.shift();
+                    for (let t of e.trail) {
+                        t.age++;
+                        t.alpha = Math.max(0, 1.0 - (t.age / 8)); // Clamp alpha to >= 0
+                    }
+                }
             }
             
             // Enemy shooting - Tanks shoot explosive projectiles, others shoot regular bullets
@@ -1556,7 +2005,9 @@ function update() {
             const dy = e.y - player.y - player.size / 2;
             if (Math.sqrt(dx * dx + dy * dy) < e.size / 2 + player.size / 2) {
                 playSound('game-over');
-                gameOver = true; saveScore();
+                gameOver = true;
+                canvas.style.cursor = 'default'; // Show cursor on game over
+                saveScore();
             }
         }
     }
@@ -2046,6 +2497,46 @@ function draw() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     
+    // === PARALLAX BACKGROUND LAYERS (farthest to closest) ===
+    
+    // Layer 1: Nebula clouds (slowest, farthest - glowing fog)
+    for (let n of nebulaClouds) {
+        ctx.globalAlpha = n.alpha;
+        
+        // Create radial gradient for nebula glow
+        const gradient = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.size);
+        gradient.addColorStop(0, n.color.replace(')', ', 0.4)').replace('rgb', 'rgba'));
+        gradient.addColorStop(0.5, n.color.replace(')', ', 0.2)').replace('rgb', 'rgba'));
+        gradient.addColorStop(1, n.color.replace(')', ', 0)').replace('rgb', 'rgba'));
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1.0;
+    
+    // Layer 2: Distant stars (medium speed - twinkling tiny dots)
+    for (let s of distantStars) {
+        // Twinkling effect using sine wave
+        const twinkleAlpha = 0.3 + Math.sin(s.twinkle) * 0.3;
+        ctx.globalAlpha = twinkleAlpha;
+        
+        // Beat-reactive brightness
+        const brightness = 180 + beatHat * 40;
+        ctx.fillStyle = `rgb(${brightness},${brightness},${brightness})`;
+        ctx.fillRect(s.x, s.y, s.size, s.size);
+    }
+    ctx.globalAlpha = 1.0;
+    
+    // Layer 3: Space dust (fastest, closest - visible particles)
+    for (let d of spaceDust) {
+        ctx.globalAlpha = d.alpha;
+        ctx.fillStyle = '#64748b';
+        ctx.fillRect(d.x - d.size / 2, d.y - d.size / 2, d.size, d.size);
+    }
+    ctx.globalAlpha = 1.0;
+    
     // Debris
     ctx.fillStyle = '#334155';
     for (let d of debris) {
@@ -2128,6 +2619,73 @@ function draw() {
         }
     }
     ctx.globalAlpha = 1.0;
+    
+    // === TRAILS (render before entities so they appear behind) ===
+    
+    // Player engine trails (twin cyan/white exhaust)
+    for (let i = 0; i < player.trail.length; i++) {
+        const t = player.trail[i];
+        if (t.alpha <= 0) continue; // Skip invisible trails
+        ctx.globalAlpha = t.alpha * 0.7;
+        
+        // Outer glow (cyan)
+        ctx.fillStyle = '#38bdf8';
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, 3 * t.alpha, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner core (white)
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, 1.5 * t.alpha, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1.0;
+    ctx.shadowBlur = 0;
+    
+    // Bullet trails (fading blue streaks)
+    for (let b of bullets) {
+        if (b.dead || !b.trail) continue;
+        for (let i = 0; i < b.trail.length; i++) {
+            const t = b.trail[i];
+            if (t.alpha <= 0) continue; // Skip invisible trails
+            ctx.globalAlpha = t.alpha * 0.5;
+            ctx.fillStyle = '#60a5fa';
+            ctx.fillRect(t.x - 1, t.y - 2, 2, 4);
+        }
+    }
+    ctx.globalAlpha = 1.0;
+    
+    // Missile trails (smoke/fire)
+    for (let m of missiles) {
+        if (m.dead || !m.trail) continue;
+        for (let i = 0; i < m.trail.length; i++) {
+            const t = m.trail[i];
+            if (t.alpha <= 0) continue; // Skip invisible trails
+            ctx.globalAlpha = t.alpha * 0.6;
+            
+            // Smoke (gray)
+            ctx.fillStyle = i % 2 === 0 ? '#6b7280' : '#9ca3af';
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, 2.5 * t.alpha, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Fire core (orange/red) for fresh trails
+            if (i >= m.trail.length - 3) {
+                ctx.fillStyle = '#fb923c';
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = '#fb923c';
+                ctx.beginPath();
+                ctx.arc(t.x, t.y, 1.5 * t.alpha, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    }
+    ctx.globalAlpha = 1.0;
+    ctx.shadowBlur = 0;
     
     // Player (F-35 Lightning II)
     ctx.save();
@@ -2266,6 +2824,27 @@ function draw() {
             ctx.fill();
         }
     }
+    
+    // Enemy trails (for kamikazes)
+    for (let e of enemies) {
+        if (e.dead || !e.trail || e.behavior !== 'kamikaze') continue;
+        for (let i = 0; i < e.trail.length; i++) {
+            const t = e.trail[i];
+            if (t.alpha <= 0) continue; // Skip invisible trails
+            ctx.globalAlpha = t.alpha * 0.4;
+            
+            // Faction-colored trail
+            const trailColor = e.faction === 'zerg' ? '#d97706' : '#facc15';
+            ctx.fillStyle = trailColor;
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = trailColor;
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, e.size / 3 * t.alpha, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    ctx.globalAlpha = 1.0;
+    ctx.shadowBlur = 0;
     
     // Enemies
     for (let e of enemies) {
