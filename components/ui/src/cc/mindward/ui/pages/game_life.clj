@@ -9,8 +9,7 @@
    Options:
    - :session - Ring session map"
   [{:keys [session]}]
-  (let [cdn-links (layout/cdn-links-map)
-        app-version (layout/app-version-string)]
+  (let [cdn-links (layout/cdn-links-map)]
     {:status 200
      :headers {"Content-Type" "text/html"}
      :body (str
@@ -25,7 +24,7 @@
                [:link {:href (:font cdn-links) :rel "stylesheet"}]
                [:style "
               body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #050505; }
-              #lifeCanvas { display: block; width: 100%; height: 100%; }
+              #bgCanvas { display: block; width: 100%; height: 100%; }
 
               /* Controls */
               .life-controls {
@@ -55,7 +54,7 @@
               [:input {:type "hidden" :id "csrf-token" :value (:csrf-token session "")}]
 
                ;; Canvas
-              [:canvas {:id "lifeCanvas" :aria-label "Conway's Game of Life canvas"}]
+              [:canvas {:id "bgCanvas" :aria-label "Conway's Game of Life canvas"}]
 
                ;; HUD
               [:div {:class "life-hud"}
@@ -83,7 +82,7 @@
 
                ;; Controls and Game initialization script
               [:script (h/raw "
-              const canvas = document.getElementById('lifeCanvas');
+              const canvas = document.getElementById('bgCanvas');
               const ctx = canvas.getContext('2d');
               const cellSize = 8;
               let cols, rows;
@@ -215,6 +214,4 @@
               window.addEventListener('resize', resize);
               resize();
               randomize();
-             ")]]
-
-             [:script {:src (str "/js/life.js?v=" app-version)}]))}))
+             ")]]))}))
