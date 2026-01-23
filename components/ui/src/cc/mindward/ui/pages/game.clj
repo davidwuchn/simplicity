@@ -200,5 +200,9 @@
                ;; Current user info for leaderboard highlighting
                [:script (h/raw (str "const CURRENT_USERNAME = " (pr-str username) ";"))]
                
-               [:script {:type "module" :src (str "/js/game.js?v=" app-version)}]]]))})
+               ;; Load game modules in order
+               [:script {:src (str "/js/game-config.js?v=" app-version)}]
+               [:script {:src (str "/js/music-config.js?v=" app-version)}]
+               [:script {:src (str "/js/audio-utils.js?v=" app-version)}]
+               [:script {:src (str "/js/game.js?v=" app-version)}]]]))})
 )

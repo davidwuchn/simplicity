@@ -1,15 +1,35 @@
+/**
+ * Simplicity - Cyberpunk Space Shooter Game
+ * Version: 1.4.1 (Refactored for Maintainability)
+ * 
+ * Modular Architecture:
+ * - game-config.js: Game constants and configuration
+ * - music-config.js: Music styles and audio data
+ * - audio-utils.js: Audio synthesis utilities
+ * - game.js: Main game loop and logic (this file)
+ */
+
 const canvas = document.getElementById('gameCanvas');
 canvas.style.cursor = 'default'; // Show cursor initially
 const ctx = canvas.getContext('2d');
 const highScoreEl = document.getElementById('high-score');
 
+// Import configurations from external modules
+const musicStyles = MUSIC_STYLES;
+const pianoNotes = PIANO_NOTES;
+
 // === CONFIGURATION (Hard Limits) ===
-const MAX_ENEMIES = 35;
-const MAX_BULLETS = 50;
-const MAX_MISSILES = 12;
-const MAX_PARTICLES = 80;
-const MAX_ENEMY_BULLETS = 40;
-const MAX_POWERUPS = 5;
+const MAX_ENEMIES = LIMITS.MAX_ENEMIES;
+const MAX_BULLETS = LIMITS.MAX_BULLETS;
+const MAX_MISSILES = LIMITS.MAX_MISSILES;
+const MAX_PARTICLES = LIMITS.MAX_PARTICLES;
+const MAX_ENEMY_BULLETS = LIMITS.MAX_ENEMY_BULLETS;
+const MAX_POWERUPS = LIMITS.MAX_POWERUPS;
+const MAX_PIANO_PARTICLES = LIMITS.MAX_PIANO_PARTICLES;
+
+// === Shield Configuration ===
+const INVINCIBILITY_DURATION = SHIELD.DURATION;
+const INVINCIBILITY_COOLDOWN = SHIELD.COOLDOWN;
 
 // === Global State ===
 let gameStarted = false;
@@ -22,26 +42,19 @@ let lastBossSpawnScore = 0;
 let invincible = false;
 let invincibilityEnd = 0;
 let invincibilityCooldown = 0;
-const INVINCIBILITY_DURATION = 3000; // 3 seconds
-const INVINCIBILITY_COOLDOWN = 10000; // 10 seconds cooldown
 let screenShake = 0; // Screen shake intensity
 let shakeX = 0;
 let shakeY = 0;
 let combo = 0; // Current combo count
 let lastKillTime = 0; // Time of last kill
-const COMBO_WINDOW = 2000; // 2 seconds to maintain combo
+const COMBO_WINDOW = COMBO.WINDOW; // From config
 let comboDisplay = 0; // For fade animation
 let topScores = []; // Top 10 scores from leaderboard
 let lastComboMilestone = 0; // Track last milestone for sound
 
 // === Piano Particles ===
 let pianoParticles = [];
-const MAX_PIANO_PARTICLES = 20;
 let lastPianoSpawn = 0;
-const pianoNotes = [
-    261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25,  // C4-C5
-    587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50, 1174.66  // D5-D6
-];
 
 // === Audio State ===
 let audioCtx = null;
@@ -73,191 +86,6 @@ let crackleGain = null;
 let engineOsc = null;
 let engineGain = null;
 let engineFilter = null;
-
-// === Music Styles (Japanese Game-Inspired) ===
-const musicStyles = [
-    { 
-        name: 'MEGA BUSTER', bpm: 145, // Mega Man style
-        kick: [0, 2, 4, 6], snare: [2, 6], 
-        hat: [0,1,2,3,4,5,6,7], hatAccent: [1,3,5,7],
-        bass: [65.41, 82.41, 73.42, 82.41], // E2-F#2-D#2-F#2 (energetic)
-        scale: [329.63, 369.99, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25], // E4 Phrygian
-        arp: [0, 2, 4, 7, 4, 2], // Fast rising arpeggio (Capcom style)
-        melody: [0, 2, 4, 2, 0, 4, 7, 4], // Catchy hook
-        chords: [[0,2,4], [1,3,5], [2,4,6], [0,2,4]], // Power chords
-        vibe: 'heroic',
-        kickDecay: 0.25, snareDecay: 0.08, bassType: 'square',
-        melodyOct: 1, // Melody octave multiplier
-        // MEGA MAN / CAPCOM: Fast, energetic, memorable melodies
-        // - Square wave bass (NES/Famicom sound)
-        // - Fast arpeggios (technical, energetic)
-        // - Driving 4/4 beat
-        // - Catchy melodic hooks
-    },
-    { 
-        name: 'GRADIUS CORE', bpm: 160, // Gradius/Konami style
-        kick: [0, 2, 4, 6], snare: [2, 6], 
-        hat: [0,1,2,3,4,5,6,7], hatAccent: [0,2,4,6],
-        bass: [55.00, 73.42, 82.41, 73.42], // A1-D#2-F#2-D#2
-        scale: [220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25], // A Minor
-        arp: [0, 4, 7, 4, 0, 4, 7, 4], // Octave jumps (intense)
-        melody: [7, 5, 4, 2, 4, 5, 7, 0], // Descending heroic
-        chords: [[0,4,7], [2,5,0], [4,7,2], [0,4,7]], // Minor triads
-        vibe: 'intense',
-        kickDecay: 0.22, snareDecay: 0.07, bassType: 'square',
-        melodyOct: 2,
-        // GRADIUS / KONAMI: Intense, technical, fast-paced
-        // - High-energy driving rhythm
-        // - Dramatic octave jumps
-        // - Minor key intensity
-        // - Relentless forward motion
-    },
-    { 
-        name: 'BUBBLE SYSTEM', bpm: 130, // Bubble Bobble/Taito style
-        kick: [0, 4], snare: [2, 6], 
-        hat: [0,2,4,6], hatAccent: [2,6],
-        bass: [130.81, 146.83, 164.81, 130.81], // C3-D3-E3-C3
-        scale: [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25], // C Major
-        arp: [0, 2, 4, 5, 4, 2], // Bouncy arpeggio
-        melody: [0, 2, 4, 5, 4, 2, 0, 4], // Cheerful melody
-        chords: [[0,2,4], [3,5,7], [0,2,4], [1,3,5]], // Major progressions
-        vibe: 'cheerful',
-        kickDecay: 0.35, snareDecay: 0.12, bassType: 'sine',
-        melodyOct: 1,
-        // BUBBLE BOBBLE / TAITO: Cute, bouncy, catchy
-        // - Major key brightness
-        // - Cheerful melodies
-        // - Moderate tempo
-        // - Playful atmosphere
-    },
-    { 
-        name: 'CASTLEVANIA', bpm: 140, // Castlevania style
-        kick: [0, 2, 4, 6], snare: [2, 6], 
-        hat: [1,3,5,7], hatAccent: [3,7],
-        bass: [55.00, 61.74, 65.41, 55.00], // A1-B1-C2-A1
-        scale: [220.00, 246.94, 261.63, 293.66, 329.63, 349.23, 415.30], // A Harmonic Minor
-        arp: [0, 2, 4, 6, 4, 2], // Gothic arpeggio
-        melody: [0, 6, 5, 4, 2, 0, 4, 2], // Dramatic descending
-        chords: [[0,2,4], [5,0,2], [4,6,1], [0,2,4]], // Harmonic minor
-        vibe: 'gothic',
-        kickDecay: 0.3, snareDecay: 0.1, bassType: 'sawtooth',
-        melodyOct: 1,
-        // CASTLEVANIA / KONAMI: Dark, dramatic, epic
-        // - Harmonic minor scale (gothic feel)
-        // - Dramatic melodies
-        // - Heavy rhythm
-        // - Epic atmosphere
-    },
-    { 
-        name: 'STREET FIGHTER', bpm: 155, // Street Fighter style
-        kick: [0, 3, 4, 7], snare: [2, 6], 
-        hat: [0,1,2,3,4,5,6,7], hatAccent: [1,5],
-        bass: [82.41, 98.00, 82.41, 73.42], // F#2-G2-F#2-D#2
-        scale: [329.63, 369.99, 392.00, 440.00, 493.88, 523.25, 587.33], // E Phrygian Dominant
-        arp: [0, 3, 5, 7, 5, 3], // Fighting spirit
-        melody: [7, 5, 3, 0, 3, 5, 7, 0], // Battle cry
-        chords: [[0,3,5], [2,5,0], [4,7,2], [0,3,5]], // Power progressions
-        vibe: 'battle',
-        kickDecay: 0.28, snareDecay: 0.09, bassType: 'square',
-        melodyOct: 1,
-        // STREET FIGHTER / CAPCOM: Energetic, fighting spirit
-        // - Syncopated rhythms
-        // - Phrygian dominant (exotic/intense)
-        // - Powerful driving beat
-        // - Competitive energy
-    },
-    { 
-        name: 'SONIC SPEED', bpm: 170, // Sonic the Hedgehog style
-        kick: [0, 2, 4, 6], snare: [2, 6], 
-        hat: [0,1,2,3,4,5,6,7], hatAccent: [0,2,4,6],
-        bass: [110.00, 123.47, 130.81, 110.00], // A2-B2-C3-A2
-        scale: [220.00, 246.94, 261.63, 293.66, 329.63, 392.00, 440.00], // A Natural Minor
-        arp: [0, 2, 4, 5, 7, 5, 4, 2], // Fast runs (Sonic speed)
-        melody: [0, 4, 7, 5, 4, 2, 0, 7], // Uplifting
-        chords: [[0,2,4], [3,5,7], [5,0,2], [0,2,4]], // Natural minor
-        vibe: 'speed',
-        kickDecay: 0.2, snareDecay: 0.06, bassType: 'sawtooth',
-        melodyOct: 2,
-        // SONIC / SEGA: Fast, upbeat, adventurous
-        // - Very fast tempo (170 BPM)
-        // - Continuous hi-hats (speed sensation)
-        // - Uplifting melodies
-        // - Natural minor (adventurous)
-    },
-    { 
-        name: 'R-TYPE FORCE', bpm: 148, // R-Type style
-        kick: [0, 2, 4, 6], snare: [2, 6], 
-        hat: [0,1,2,3,4,5,6,7], hatAccent: [1,3,5,7],
-        bass: [55.00, 65.41, 73.42, 65.41], // A1-C2-D#2-C2
-        scale: [220.00, 246.94, 293.66, 329.63, 369.99, 415.30, 440.00], // A Aeolian
-        arp: [0, 4, 7, 4, 0, 2, 5, 2], // Sci-fi arpeggio
-        melody: [0, 2, 4, 7, 5, 4, 2, 0], // Space opera
-        chords: [[0,4,7], [2,5,0], [4,7,2], [5,0,4]], // Sci-fi progression
-        vibe: 'scifi',
-        kickDecay: 0.25, snareDecay: 0.08, bassType: 'square',
-        melodyOct: 1,
-        // R-TYPE / IREM: Sci-fi, atmospheric, technical
-        // - Space shooter intensity
-        // - Technical precision
-        // - Sci-fi atmosphere
-        // - Relentless energy
-    },
-    { 
-        name: 'TOUHOU PROJECT', bpm: 165, // Touhou/ZUN style
-        kick: [0, 2, 4, 6], snare: [2, 6], 
-        hat: [0,1,2,3,4,5,6,7], hatAccent: [0,4],
-        bass: [65.41, 73.42, 82.41, 73.42], // C2-D#2-F#2-D#2
-        scale: [261.63, 293.66, 329.63, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25], // C Major extended
-        arp: [0, 2, 4, 7, 8, 7, 4, 2], // Dense arpeggio runs
-        melody: [0, 4, 7, 8, 7, 4, 2, 0], // Intricate melody
-        chords: [[0,2,4], [2,4,6], [4,6,8], [0,2,4]], // Dense progressions
-        vibe: 'bullet-hell',
-        kickDecay: 0.23, snareDecay: 0.07, bassType: 'square',
-        melodyOct: 2,
-        // TOUHOU / ZUN: Dense, intricate, bullet-hell intensity
-        // - Very fast melodic runs
-        // - Dense harmonic layering
-        // - High energy
-        // - Extended scales
-    },
-    { 
-        name: 'FINAL FANTASY', bpm: 125, // Final Fantasy battle style
-        kick: [0, 4], snare: [2, 6], 
-        hat: [0,2,4,6], hatAccent: [2,6],
-        bass: [110.00, 130.81, 146.83, 110.00], // A2-C3-D3-A2
-        scale: [220.00, 246.94, 261.63, 293.66, 329.63, 392.00, 440.00, 493.88], // A Minor
-        arp: [0, 2, 4, 5, 7, 5, 4, 2], // Epic arpeggio
-        melody: [7, 5, 4, 2, 0, 2, 4, 5], // Heroic theme
-        chords: [[0,2,4], [5,7,2], [4,6,0], [0,2,4]], // Epic progressions
-        vibe: 'epic',
-        kickDecay: 0.4, snareDecay: 0.15, bassType: 'sawtooth',
-        melodyOct: 1,
-        // FINAL FANTASY / SQUARE: Epic, orchestral-inspired, heroic
-        // - Moderate tempo (battle feel)
-        // - Epic melodic themes
-        // - Rich harmonic progressions
-        // - Heroic atmosphere
-    },
-    { 
-        name: 'METAL SLUG', bpm: 152, // Metal Slug style
-        kick: [0, 2, 4, 6], snare: [2, 6], 
-        hat: [0,1,2,3,4,5,6,7], hatAccent: [1,3,5,7],
-        bass: [82.41, 98.00, 110.00, 82.41], // F#2-G2-A2-F#2
-        scale: [329.63, 369.99, 392.00, 440.00, 493.88, 587.33], // E Mixolydian
-        arp: [0, 2, 4, 5, 4, 2], // Military march
-        melody: [0, 2, 4, 0, 5, 4, 2, 0], // Action theme
-        chords: [[0,2,4], [3,5,0], [0,2,4], [1,3,5]], // Rock progressions
-        vibe: 'military',
-        kickDecay: 0.27, snareDecay: 0.09, bassType: 'square',
-        melodyOct: 1,
-        // METAL SLUG / SNK: Action-packed, military, energetic
-        // - Fast military rhythm
-        // - Mixolydian mode (heroic/bright)
-        // - Action-oriented
-        // - Arcade intensity
-    },
-];
-currentStyle = 0; // Start with MEGA BUSTER (index 0)
 
 // === Entities ===
 const player = { x: 400, y: 500, size: 30, speed: 5, missileCooldown: 0, lastShotTime: 0, trail: [] };
