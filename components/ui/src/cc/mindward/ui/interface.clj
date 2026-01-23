@@ -7,6 +7,7 @@
             [cc.mindward.ui.pages.auth :as auth]
             [cc.mindward.ui.pages.shooter.core :as shooter]
             [cc.mindward.ui.pages.game-life :as game-life]
+            [cc.mindward.ui.pages.select-game :as select-game]
             [cc.mindward.ui.pages.landing :as landing]))
 
 (defn leaderboard-page
@@ -28,6 +29,11 @@
   "Render Conway's Game of Life page."
   [session]
   (game-life/game-life-page {:session session}))
+
+(defn select-game-page
+  "Render the game selection page."
+  [session]
+  (select-game/select-game-page {:session session}))
 
 (defn landing-page
   "Render the landing page."

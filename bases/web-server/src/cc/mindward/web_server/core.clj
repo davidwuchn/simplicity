@@ -133,7 +133,7 @@
       (try
         (user/create-user! params)
         (log/info "User created successfully:" username)
-        (-> (res/redirect "/game/life")
+        (-> (res/redirect "/select-game")
             (assoc :session (assoc session :username username)))
         (catch Exception e
           (log/warn e "User creation failed:" username)
@@ -152,14 +152,20 @@
       (ui/game-life-page session)
       (res/redirect "/login"))))
 
+(defn select-game-page [request]
+  (let [{:keys [session]} request]
+    (if (:username session)
+      (ui/select-game-page session)
+      (res/redirect "/login"))))
+
 (defn landing-page [{:keys [session]}]
   (if (:username session)
-    (res/redirect "/game/life")
+    (res/redirect "/select-game")
     (ui/landing-page session)))
 
 (defn login-page [{:keys [session params anti-forgery-token]}]
   (if (:username session)
-    (res/redirect "/game/life")
+    (res/redirect "/select-game")
     (ui/login-page session params anti-forgery-token)))
 
 (defn handle-login [{:keys [params session]}]
@@ -175,7 +181,7 @@
         (if auth-result
           (do
             (log/info "User logged in successfully:" username)
-            (-> (res/redirect "/game/life")
+            (-> (res/redirect "/select-game")
                 (assoc :session (assoc session :username username))))
           (do
             (log/warn "Failed login attempt for user:" username)
@@ -352,6 +358,7 @@
                  :post handle-signup}]
      ["/logout" {:get handle-logout}]
      ["/leaderboard" {:get leaderboard-page}]
+     ["/select-game" {:get select-game-page}]
      ["/game/shooter" {:get shooter-page}]
      ["/game/life" {:get game-life-page}]
      ["/game/score" {:post save-score}]
