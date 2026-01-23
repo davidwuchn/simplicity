@@ -55,7 +55,7 @@
                      "BACK"]]]]
 
                  ;; Keyboard shortcuts hint
-                 [:div {:class "absolute bottom-4 left-4 z-10 pointer-events-auto"}
+                 [:div {:class "absolute top-20 left-4 z-10 pointer-events-auto"}
                   [:div {:class "bg-black/80 border border-gray-700 p-3 font-mono text-xs text-gray-400"}
                    [:div {:class "text-gray-500 mb-1 uppercase tracking-widest text-[10px]"} "Shortcuts"]
                    [:div "SPACE - Play/Pause"]
