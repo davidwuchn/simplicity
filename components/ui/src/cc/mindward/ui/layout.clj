@@ -98,7 +98,7 @@
    session - Ring session map"
   [session]
   (let [user (helpers/current-user session)]
-    [:nav {:class "bg-black border-b-2 border-cyber-cyan p-4 mb-8"
+    [:nav {:class "bg-black border-b-2 border-cyber-cyan p-4 mb-8 relative z-20"
            :role "navigation"
            :aria-label "Main navigation"}
      [:div {:class "container mx-auto flex justify-between items-center flex-wrap gap-4"}
