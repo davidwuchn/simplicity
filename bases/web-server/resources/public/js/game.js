@@ -2553,7 +2553,7 @@ function saveScore() {
             return;
         }
         
-        fetch('/api/save-score', {
+        fetch('/game/score', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
