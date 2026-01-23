@@ -181,6 +181,7 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
     EOF
     ```
 - **clojure-mcp**: AI-assisted development via Model Context Protocol.
+  - **Skill**: Load with `eca__skill name: "clojure-mcp"` for detailed workflows.
   - **Start nREPL**: `clojure -M:nrepl` (port 7888)
   - **Configuration**: See `.clojure-mcp/config.edn` and `docs/clojure-mcp-integration.md`
   - **Context Files**: `PROJECT_SUMMARY.md`, `LLM_CODE_STYLE.md`, this file
