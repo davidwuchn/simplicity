@@ -6,7 +6,6 @@
   (:require [cc.mindward.ui.pages.leaderboard :as leaderboard]
             [cc.mindward.ui.pages.auth :as auth]
             [cc.mindward.ui.pages.shooter.core :as shooter]
-            [cc.mindward.ui.pages.game-life :as game-life]
             [cc.mindward.ui.pages.select-game :as select-game]
             [cc.mindward.ui.pages.landing :as landing]))
 
@@ -25,11 +24,6 @@
   [session anti-forgery-token high-score]
   (shooter/shooter-page session anti-forgery-token high-score))
 
-(defn game-life-page
-  "Render Conway's Game of Life page."
-  [session]
-  (game-life/game-life-page {:session session}))
-
 (defn select-game-page
   "Render the game selection page."
   [session]
@@ -39,6 +33,11 @@
   "Render the landing page."
   [session]
   (landing/landing-page {:session session}))
+
+(defn game-life-page
+  "Render Conway's Game of Life page."
+  [session]
+  (landing/landing-page {:session session :game-life? true}))
 
 (defn login-page
   "Render the login page."

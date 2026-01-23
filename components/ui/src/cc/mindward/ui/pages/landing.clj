@@ -1,5 +1,6 @@
 (ns cc.mindward.ui.pages.landing
-  "Landing page - the entry point for unauthenticated users."
+  "Landing page - the entry point for unauthenticated users.
+   Also used for /game/life with interactive controls."
   (:require [cc.mindward.ui.layout :as layout]
             [cc.mindward.ui.components :as c]))
 
@@ -7,31 +8,73 @@
   "Render the landing page.
 
    Options:
-   - :session - Ring session map"
-  [{:keys [session]}]
-  {:status 200
-   :headers {"Content-Type" "text/html"}
-   :body (layout/layout
-          {:session session
-           :title "Welcome"
-           :content
-           [:div {:class "max-w-4xl mx-auto fade-in"}
-            [:h1 {:class "text-4xl md:text-7xl font-black text-cyber-yellow mb-2 glitch-text uppercase tracking-tighter text-center"}
-             "MINDWARD"]
-            [:div {:class "text-lg md:text-2xl font-bold text-cyber-cyan tracking-[0.5em] md:tracking-[1em] uppercase text-center mb-8"}
-             "Simplicity"]
+   - :session - Ring session map
+   - :game-life? - If true, show interactive Game of Life controls"
+  [{:keys [session game-life?]}]
+  (let [game-life-mode (or game-life? false)]
+    {:status 200
+     :headers {"Content-Type" "text/html"}
+     :body (layout/layout
+            {:session session
+             :title (if game-life-mode "Conway's Life" "Welcome")
+             :content
+             [:div
+              ;; Background Canvas for Game of Life
+              [:canvas {:id "lifeCanvas"
+                        :class "fixed top-0 left-0 w-full h-full z-0 pointer-events-auto"
+                        :aria-hidden "true"}]
+              [:input {:type "hidden" :id "csrf-token" :value (:csrf-token session "")}]
 
-            [:p {:class "text-base md:text-xl text-gray-400 mb-12 max-w-lg mx-auto font-mono border-l-4 border-cyber-red pl-4 md:pl-6 text-left bg-black/50 p-3 md:p-4 backdrop-blur-sm"}
-             "Connect to the grid. Engage hostile protocols. Ascend the hierarchy."]
+              (if game-life-mode
+                ;; Game of Life Controls
+                [:div {:class "relative z-10 pointer-events-none"}
+                 ;; HUD
+                 [:div {:class "absolute top-4 left-4 pointer-events-auto"}
+                  [:div {:class "hud-element text-cyan-400"}
+                   "GEN: " [:span {:id "generation"} "0"]]
+                  [:div {:class "hud-element text-cyan-400 mt-2"}
+                   "POP: " [:span {:id "population"} "0"]]]
 
-            [:div {:class "flex flex-col sm:flex-row gap-4 sm:gap-8 justify-center fade-in"}
-             (c/link-button {:href "/login"
-                             :text "Login"
-                             :type :secondary
-                             :class "min-w-[150px]"
-                             :aria-label "Login to existing account"})
-             (c/link-button {:href "/signup"
-                             :text "Initiate"
-                             :type :primary
-                             :class "min-w-[150px]"
-                             :aria-label "Create new account"})]]})})
+                 ;; Controls
+                 [:div {:class "absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto flex gap-2"}
+                  [:button {:class "cyber-btn"
+                            :onclick "toggleLifePlay()"
+                            :id "life-play-btn"}
+                   "PLAY"]
+                  [:button {:class "cyber-btn-secondary"
+                            :onclick "lifeStep()"}
+                   "STEP"]
+                  [:button {:class "cyber-btn-secondary"
+                            :onclick "lifeClear()"}
+                   "CLEAR"]
+                  [:button {:class "cyber-btn-secondary"
+                            :onclick "lifeRandom()"}
+                   "RAND"]
+                  [:a {:href "/select-game"
+                       :class "cyber-btn-secondary"}
+                   "BACK"]]]
+
+                ;; Normal Landing Page
+                [:div {:class "relative z-10 min-h-[80vh] flex flex-col justify-center items-center text-center pointer-events-none px-4"}
+                 [:div {:class "relative mb-8 md:mb-12 pointer-events-auto fade-in"}
+                  [:h1 {:class "text-4xl md:text-7xl font-black text-cyber-yellow mb-2 glitch-text uppercase tracking-tighter"}
+                   "MINDWARD"]
+                  [:div {:class "text-lg md:text-2xl font-bold text-cyber-cyan tracking-[0.5em] md:tracking-[1em] uppercase"}
+                   "Simplicity"]]
+
+                 [:p {:class "text-base md:text-xl text-gray-400 mb-12 md:mb-16 max-w-lg font-mono border-l-4 border-cyber-red pl-4 md:pl-6 text-left bg-black/50 p-3 md:p-4 pointer-events-auto backdrop-blur-sm fade-in"}
+                  "Connect to the grid. Engage hostile protocols. Ascend the hierarchy."]
+
+                 [:div {:class "flex flex-col sm:flex-row gap-4 sm:gap-8 pointer-events-auto w-full sm:w-auto fade-in"}
+                  (c/link-button {:href "/login"
+                                  :text "Login"
+                                  :type :secondary
+                                  :class "min-w-[150px]"
+                                  :aria-label "Login to existing account"})
+                  (c/link-button {:href "/signup"
+                                  :text "Initiate"
+                                  :type :primary
+                                  :class "min-w-[150px]"
+                                  :aria-label "Create new account"})]])
+
+              :extra-footer [:script {:src (str "/js/life.js?v=" (layout/app-version-string))}]]})}))
