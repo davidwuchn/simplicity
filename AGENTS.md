@@ -65,6 +65,8 @@ bb nrepl            # Start Babashka nREPL server on port 7888
 
 **Workflow**: `bb dev` → `(start)` → Edit code → `(restart)` → Test (0.5s hot reload)
 
+**MANDATORY**: Always call `(restart)` after making code changes to see them in the browser. This reloads all changed files and restarts the server.
+
 **Alternative (direct Clojure CLI)**: `clojure -M:nrepl`
 
 ### Workspace Management (Polylith) - USE bb commands
@@ -190,11 +192,13 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - **Connectivity**: Ensure all new bricks are registered in the root `deps.edn` `:dev` alias to enable cross-brick REPL access and `poly check` validation.
 
 ### 2. Implementation Loop (∃ Truth) - **HOT RELOAD WORKFLOW (BEST PRACTICE)**
+**⚠️ ALWAYS call `(restart)` after making code changes** — changes won't be visible until you restart the server.
+
 - **Step 1**: Identify the relevant Component or Base.
 - **Step 2**: Check the `interface` for existing contracts.
 - **Step 3**: Implement changes in `impl` or `core`.
-- **Step 4**: **Hot Reload**: Use `(restart)` in REPL to reload changes (0.5s vs 30s full restart).
-- **Step 5**: **Verification**: Test changes in browser or via REPL. Use `brepl` for structure validation if needed.
+- **Step 4**: **Hot Reload**: Call `(restart)` in REPL to reload changes and restart server.
+- **Step 5**: **Verification**: Hard refresh browser (Cmd+Shift+R) to see changes.
 
 **CRITICAL: Use the hot reload workflow** (see [docs/hot-reload-best-practices.md](./docs/hot-reload-best-practices.md)):
 ```clojure
@@ -302,6 +306,7 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 ## ∀ Vigilance: Anti-Patterns
 - **Using grep**: **NEVER use `grep`** for code search. Always use `rg` (ripgrep) instead - it's faster, respects `.gitignore`, and has better defaults. See Tools & Utilities section.
 - **Complexity**: If a function exceeds 20 lines, reconsider the domain model.
+- **Forgot to Restart**: Always call `(restart)` after making code changes — the server won't pick up changes automatically.
 - **Dependency Hell**: Avoid circular dependencies between components. Use `poly check` to verify.
 - **Slop**: Do not leave commented-out code or `(println ...)` in production paths. Use a logging library (logback configured).
 - **Abstraction Leak**: Never let implementation details (like DB connections or third-party client objects) escape the component interface. Use data maps or domain records.
