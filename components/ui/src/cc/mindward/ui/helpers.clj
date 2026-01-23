@@ -2,7 +2,8 @@
   "Helper functions for UI rendering.
    
    Contains pure utility functions for common UI patterns."
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [cc.mindward.user.interface :as user]))
 
 ;; === Class Name Helpers ===
 
@@ -135,41 +136,11 @@
              reverse
              (clojure.string/join ","))))))
 
-;; === Validation Helpers ===
+;; === Validation Helpers (∃ Truth - use centralized validation) ===
 
-(defn valid-username?
-  "Check if username is valid (3-20 chars, alphanumeric + - _).
-   
-   Examples:
-   (valid-username? \"user123\") => true
-   (valid-username? \"ab\") => false
-   (valid-username? \"user@123\") => false"
-  [username]
-  (and (string? username)
-       (>= (count username) 3)
-       (<= (count username) 20)
-       (re-matches #"[a-zA-Z0-9_-]+" username)))
-
-(defn valid-password?
-  "Check if password is valid (min 8 chars).
-   
-   Examples:
-   (valid-password? \"password123\") => true
-   (valid-password? \"pass\") => false"
-  [password]
-  (and (string? password)
-       (>= (count password) 8)))
-
-(defn valid-name?
-  "Check if display name is valid (3-50 chars).
-   
-   Examples:
-   (valid-name? \"John Doe\") => true
-   (valid-name? \"AB\") => false"
-  [name]
-  (and (string? name)
-       (>= (count name) 3)
-       (<= (count name) 50)))
+(def valid-username? user/valid-username?)
+(def valid-password? user/valid-password?)
+(def valid-name? user/valid-name?)
 
 ;; === Session Helpers ===
 

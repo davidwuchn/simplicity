@@ -3,7 +3,8 @@
    
    All user-related operations flow through this namespace.
    Implementation details (storage, hashing) are encapsulated."
-  (:require [cc.mindward.user.impl :as impl]))
+  (:require [cc.mindward.user.impl :as impl]
+            [cc.mindward.user.validation :as validation]))
 
 ;; ------------------------------------------------------------
 ;; Lifecycle
@@ -60,3 +61,31 @@
    Returns true if valid, false otherwise."
   [password password-hash]
   (impl/verify-password password password-hash))
+
+(defn health-check
+  "Check user database health status.
+   Returns {:healthy? true/false :details {...}}"
+  []
+  (impl/health-check))
+
+;; ------------------------------------------------------------
+;; Input Validation (∃ Truth - single source of truth)
+;; ------------------------------------------------------------
+
+;; Re-export validation functions
+(def validate-username validation/validate-username)
+(def validate-password validation/validate-password)
+(def validate-name validation/validate-name)
+(def validate-score validation/validate-score)
+(def valid-username? validation/valid-username?)
+(def valid-password? validation/valid-password?)
+(def valid-name? validation/valid-name?)
+
+;; Re-export validation constants
+(def username-min-length validation/username-min-length)
+(def username-max-length validation/username-max-length)
+(def username-pattern validation/username-pattern)
+(def password-min-length validation/password-min-length)
+(def name-min-length validation/name-min-length)
+(def name-max-length validation/name-max-length)
+(def score-max-value validation/score-max-value)

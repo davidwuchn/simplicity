@@ -4,11 +4,12 @@
    Implements:
    - Security headers (CSP, X-Frame-Options, HSTS, etc.)
    - Rate limiting for authentication endpoints
-   - Input validation helpers
+   - Input validation helpers (delegated to user component)
    
    Philosophy (∀ Vigilance): Defense in depth. Layer security controls."
   (:require [clojure.string :as str]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [cc.mindward.user.interface :as user]))
 
 ;; ------------------------------------------------------------
 ;; Security Headers Middleware (OWASP Best Practices)
@@ -146,91 +147,10 @@
       (handler request))))
 
 ;; ------------------------------------------------------------
-;; Input Validation Helpers (∃ Truth - validate at boundaries)
+;; Input Validation Helpers (∃ Truth - delegate to user component)
+;; (μ Directness): No duplication, use centralized validation
 ;; ------------------------------------------------------------
 
-(defn safe-parse-int
-  "Safely parse integer with default value.
-   
-   Returns: Integer value or default-val if parsing fails.
-   
-   Use this instead of Integer/parseInt to prevent exceptions."
-  [s default-val]
-  (try
-    (Integer/parseInt s)
-    (catch Exception _
-      default-val)))
-
-(defn validate-username
-  "Validate username format.
-   
-   Rules:
-   - Length: 3-32 characters
-   - Characters: alphanumeric, dash, underscore only
-   - No leading/trailing whitespace
-   
-   Returns: {:valid? boolean :error string}"
-  [username]
-  (cond
-    (nil? username)
-    {:valid? false :error "Username is required"}
-    
-    (not (string? username))
-    {:valid? false :error "Username must be a string"}
-    
-    (not= username (clojure.string/trim username))
-    {:valid? false :error "Username cannot have leading/trailing whitespace"}
-    
-    (< (count username) 3)
-    {:valid? false :error "Username must be at least 3 characters"}
-    
-    (> (count username) 32)
-    {:valid? false :error "Username must be at most 32 characters"}
-    
-    (not (re-matches #"^[a-zA-Z0-9_-]+$" username))
-    {:valid? false :error "Username can only contain letters, numbers, dash, and underscore"}
-    
-    :else
-    {:valid? true}))
-
-(defn validate-password
-  "Validate password strength.
-   
-   Rules:
-   - Length: minimum 8 characters
-   - No maximum (bcrypt handles long passwords)
-   
-   Returns: {:valid? boolean :error string}"
-  [password]
-  (cond
-    (nil? password)
-    {:valid? false :error "Password is required"}
-    
-    (not (string? password))
-    {:valid? false :error "Password must be a string"}
-    
-    (< (count password) 8)
-    {:valid? false :error "Password must be at least 8 characters"}
-    
-    :else
-    {:valid? true}))
-
-(defn validate-score
-  "Validate score value.
-   
-   Rules:
-   - Must be a non-negative integer
-   - Maximum: 1,000,000 (reasonable game score limit)
-   
-   Returns: {:valid? boolean :error string :value int}"
-  [score-str]
-  (let [score (safe-parse-int score-str -1)]
-    (cond
-      (< score 0)
-      {:valid? false :error "Score must be a non-negative integer" :value 0}
-      
-      (> score 1000000)
-      {:valid? false :error "Score exceeds maximum allowed value" :value 1000000}
-      
-      :else
-      {:valid? true :value score})))
+(def validate-username user/validate-username)
+(def validate-password user/validate-password)
+(def validate-score user/validate-score)

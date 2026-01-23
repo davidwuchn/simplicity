@@ -13,6 +13,7 @@
             [cc.mindward.web-server.core :as server]
             [cc.mindward.web-server.security :as security]
             [cc.mindward.user.impl :as user-impl]
+            [cc.mindward.user.validation :as validation]
             [cc.mindward.game.impl :as game-impl]))
 
 ;; ------------------------------------------------------------
@@ -335,13 +336,13 @@
 
 (deftest safe-parse-int-test
   (testing "safe-parse-int handles invalid input gracefully"
-    (is (= 123 (security/safe-parse-int "123" 0))
+    (is (= 123 (validation/safe-parse-int "123" 0))
         "Valid integer should parse correctly")
-    (is (= 0 (security/safe-parse-int "not-a-number" 0))
+    (is (= 0 (validation/safe-parse-int "not-a-number" 0))
         "Invalid input should return default")
-    (is (= -1 (security/safe-parse-int nil -1))
+    (is (= -1 (validation/safe-parse-int nil -1))
         "Nil input should return default")
-    (is (= 999 (security/safe-parse-int "" 999))
+    (is (= 999 (validation/safe-parse-int "" 999))
         "Empty string should return default")
-    (is (= 0 (security/safe-parse-int "123.45" 0))
+    (is (= 0 (validation/safe-parse-int "123.45" 0))
         "Decimal should return default (not valid int)")))

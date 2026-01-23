@@ -198,46 +198,92 @@ See [docs/security.md](./docs/security.md) for complete security documentation.
 
 ## Testing
 
-**Current Coverage**: 501 passing assertions across 71 test cases
+**Current Coverage**: 611 passing assertions across all test cases
 
 | Component | Tests | Assertions |
 |-----------|-------|-----------|
 | Auth | 2 | 14 |
-| Game | 15 | 146 |
-| UI | 42 | 149 |
+| Game | 13 | 136 |
+| UI | 70 | 267 |
 | User | 12 | 49 |
-| Web-server | 28 | 143 |
+| Web-server | 28 | 145 |
 
 **Test Strategy**:
 - Component tests use temporary SQLite files
 - Fixtures isolate test state
 - Integration tests verify API contracts
 
-## Development Workflow
-
-### Quick Start
+**Run Tests**:
 ```bash
-# Start nREPL server (for clojure-mcp)
-clojure -M:nrepl
+# Using Babashka (recommended)
+bb test            # Run all tests
+bb test:watch      # Watch mode (auto-rerun)
+bb test:game       # Specific component
 
-# Or start web server directly
-clojure -M -m cc.mindward.web-server.core
-
-# Run all tests
+# Using Clojure directly
 clojure -M:poly test :dev
-
-# Check workspace integrity
-clojure -M:poly check
 ```
 
-### REPL-Driven Development
-```bash
-# Launch REPL
-./bin/launchpad
+## Development Workflow
 
-# In REPL, reload components
-(require '[cc.mindward.game.interface :as game] :reload)
-(game/evolve-grid test-grid)
+### Quick Start (Hot Reload) - USE BABASHKA
+
+**Primary workflow:**
+
+```bash
+# Start development environment
+bb dev
+
+# In REPL, start server
+user=> (start)
+
+# Edit code in components/bases
+
+# Hot reload (1-2 seconds!)
+user=> (restart)
+
+# Test at http://localhost:3000
+```
+
+**Without Babashka:**
+```bash
+clojure -M:nrepl   # Manual REPL start
+```
+
+### Hot Reload Commands
+- **`(start)`** - Start web server on port 3000
+- **`(restart)`** - Hot reload: stop, reload code, restart ⚡ **Main workflow**
+- **`(stop)`** - Stop web server
+- **`(reset)`** - Reload code without server restart
+- **`(status)`** - Check server status + component health
+- **`(help)`** - Show all commands
+
+**Feedback Loop**: `bb dev` → Edit code → `(restart)` → Test (1-2 seconds vs 30 seconds)
+
+See [docs/hot-reload-workflow.md](./docs/hot-reload-workflow.md) for complete guide.
+
+### Babashka Tasks (Primary Development Tool)
+
+All development operations use Babashka:
+
+```bash
+bb help            # Show all 30+ tasks
+bb dev             # Start REPL (primary)
+bb test            # Run tests (primary)
+bb test:watch      # Auto-rerun tests
+bb check           # Check workspace
+bb lint            # Lint code
+bb build           # Full build
+bb docker:build    # Build Docker image
+bb stats           # Project statistics
+```
+
+### Traditional Workflow (Without Babashka)
+```bash
+# Alternative: Start server directly (no hot reload)
+clojure -M -m cc.mindward.web-server.core
+
+# Open http://localhost:3000
 ```
 
 ### Code Validation
@@ -348,14 +394,29 @@ This project is configured for use with **clojure-mcp** (Model Context Protocol)
 - `LLM_CODE_STYLE.md` - Coding standards
 - `AGENTS.md` - Operational guidelines
 
+**Development Integration**:
+```bash
+# Terminal 1: Start nREPL with hot reload
+bb dev
+user=> (start)
+
+# AI assistant edits code via clojure-mcp
+
+# Terminal 1: Hot reload changes
+user=> (restart)  # 1-2 seconds!
+
+# AI assistant tests via clojure_eval
+```
+
 **nREPL Access**:
 ```bash
 # Start nREPL server for AI assistant
 clojure -M:nrepl
-
 # Server starts on port 7888
 # AI assistant can connect and evaluate Clojure code
 ```
+
+See [docs/clojure-mcp-integration.md](./docs/clojure-mcp-integration.md) and [.clojure-mcp/QUICK_START.md](./.clojure-mcp/QUICK_START.md) for setup.
 
 ## Getting Help
 

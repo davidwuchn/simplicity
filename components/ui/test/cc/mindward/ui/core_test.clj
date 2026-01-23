@@ -318,9 +318,13 @@
       (is (contains-str? html "ABORT MISSION") "Missing abort link"))))
 
 (deftest game-page-script-loading-test
-  (testing "Game page loads game JavaScript module"
+  (testing "Game page loads game JavaScript with proper configuration"
     (let [html (extract-html-body (game-page/game-page nil "token" 0))]
-      (is (contains-str? html "type=\"module\"") "Missing module script type")
+      ;; Note: Scripts use global scope (not ES6 modules) for compatibility
+      ;; Dependencies are loaded in order: config → music → audio → game
+      (is (contains-str? html "/js/game-config.js") "Missing game-config.js")
+      (is (contains-str? html "/js/music-config.js") "Missing music-config.js")
+      (is (contains-str? html "/js/audio-utils.js") "Missing audio-utils.js")
       (is (contains-str? html "/js/game.js") "Missing game.js script src")
       (is (contains-str? html "?v=") "Missing cache-busting query param"))))
 

@@ -2,8 +2,7 @@
   "Game engine interface - Conway's Game of Life with musical integration.
    
    φ (Vitality): Game state evolves organically following cellular automata rules.
-   ∃ (Truth): Musical triggers are deterministic based on pattern emergence.
-   τ (Wisdom): Optimize for real-time performance with efficient data structures."
+   ∃ (Truth): Musical triggers are deterministic based on pattern emergence."
   (:require [cc.mindward.game.impl :as impl]))
 
 ;; ------------------------------------------------------------
@@ -115,3 +114,9 @@
   "Stop the background cleanup scheduler. Call on shutdown."
   []
   (impl/stop-cleanup-scheduler!))
+
+(defn health-check
+  "Check game engine health status.
+   Returns {:healthy? true/false :details {...}}"
+  []
+  (impl/health-check))

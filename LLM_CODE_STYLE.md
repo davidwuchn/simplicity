@@ -102,20 +102,39 @@ This document defines the coding standards for the Simplicity project when worki
 ## REPL-Driven Development
 
 - Always work from the `development` project for cross-component REPL access
+- Use the **hot reload workflow** for instant feedback:
+  ```clojure
+  user=> (start)    ; Start server
+  ;; Edit code...
+  user=> (restart)  ; Hot reload (1-2 seconds!)
+  ```
 - Use `brepl balance <file>` after every edit to ensure structural integrity
 - Use heredoc pattern for evaluation: `brepl <<'EOF' ... EOF`
 - Always use `:reload` when requiring namespaces to pick up changes
+- See [docs/hot-reload-workflow.md](../docs/hot-reload-workflow.md) for complete guide
 
 ## Verification Workflow
 
 1. **Check Structure**: Run `brepl balance <file>` after edits
-2. **Lint**: Run `clj-kondo --lint src`
-3. **Test**: Run `clojure -M:poly test :dev`
-4. **Verify Polylith**: Run `clojure -M:poly check`
+2. **Hot Reload**: Run `(restart)` in REPL to apply changes
+3. **Test**: Verify at http://localhost:3000
+4. **Lint**: Run `clj-kondo --lint src`
+5. **Test Suite**: Run `clojure -M:poly test :dev`
+6. **Verify Polylith**: Run `clojure -M:poly check`
 
 ## Quick Reference Commands
 
 ```bash
+# Start development with hot reload
+bb dev
+
+# In REPL:
+(start)       # Start server
+(restart)     # Hot reload (main workflow)
+(stop)        # Stop server
+(status)      # Check status
+(help)        # Show commands
+
 # Check workspace
 clojure -M:poly check
 

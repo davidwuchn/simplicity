@@ -79,6 +79,18 @@ Deploy the backend to a VPS and use Cloudflare as a reverse proxy.
 
 #### 1.1. Build the Docker Image
 
+**Using Babashka (Recommended):**
+
+```bash
+# Build the Docker image
+bb docker:build
+
+# Or full build with tests
+bb build && bb docker:build
+```
+
+**Using direct Docker commands:**
+
 ```bash
 # Build the Docker image
 docker build -t simplicity:latest .

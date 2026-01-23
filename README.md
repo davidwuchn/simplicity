@@ -35,40 +35,47 @@ This workspace follows the [Polylith architecture](https://polylith.gitbook.io/)
 ### Prerequisites
 - **Java 17+**
 - [Clojure CLI](https://clojure.org/guides/install_clojure) (1.11+)
-- [Babashka](https://babashka.org/) (optional, for scripts)
+- **[Babashka](https://babashka.org/)** (required for bb commands)
 
-### Running the Application
+### Development (Hot Reload Workflow)
 
-1. **Clone and setup**:
-   ```bash
-   git clone <repository-url>
-   cd simplicity
-   clojure -A:dev -P  # Download dependencies
-   ```
+**Start development environment:**
 
-2. **Initialize database**:
-   ```bash
-   # Database schema is auto-created on first run
-   # Location: ./simplicity.db (SQLite)
-   ```
+```bash
+# Start development REPL with hot reload
+bb dev
 
-3. **Start the web server**:
-   ```bash
-   clojure -M -m cc.mindward.web-server.core
-   ```
+# In REPL:
+user=> (start)     ; Start web server on port 3000
+user=> (restart)   ; Hot reload after making changes (1-2 sec!)
+user=> (stop)      ; Stop server
+user=> (help)      ; Show all commands
+```
 
-4. **Open in browser**:
-   ```
-   http://localhost:3000
-   ```
+**Without Babashka (fallback):**
 
-5. **Create an account** and start playing!
+```bash
+clojure -M:nrepl
+# Same REPL commands as above
+```
 
-### What's Running
+**Open in browser**: http://localhost:3000
 
-- **Web Server**: http://localhost:3000 (configurable via `PORT` env var)
-- **Database**: SQLite at `./simplicity.db`
-- **Static Assets**: Served from `bases/web-server/resources/public/`
+**Workflow**: Edit code → `(restart)` in REPL → Test in browser (instant feedback!)
+
+See [docs/hot-reload-workflow.md](./docs/hot-reload-workflow.md) for complete guide.
+
+### Quick Commands (Babashka)
+
+```bash
+bb help            # Show all 30+ available commands
+bb test            # Run all tests (611 assertions)
+bb test:watch      # Auto-rerun tests on file changes
+bb check           # Check Polylith workspace integrity
+bb build           # Full build: clean + test + uberjar
+bb docker:build    # Build Docker image
+bb stats           # Show project statistics
+```
 
 ## 🎮 How to Play
 
@@ -89,27 +96,56 @@ Different Game of Life patterns trigger different sounds:
 
 ## 🛠 Development Commands
 
-| Task | Command |
-| :--- | :--- |
-| **Check Workspace** | `clojure -M:poly check` |
-| **Workspace Info** | `clojure -M:poly info` |
-| **Run All Tests** | `clojure -M:poly test :dev` |
-| **Run Component Tests** | `clojure -M:poly test brick:game` |
-| **Lint Code** | `clj-kondo --lint components/*/src bases/*/src` |
-| **Launch REPL** | `./bin/launchpad` (requires Java 17) |
-| **Start nREPL** | `clojure -M:nrepl` (for clojure-mcp integration) |
-| **Format Code** | `cljfmt fix` (if configured) |
+### Using Babashka (Recommended)
+
+Babashka provides a unified task runner for all development operations:
+
+```bash
+bb help           # Show all available commands
+bb dev            # Start development REPL with hot reload
+bb test           # Run all tests (611 assertions)
+bb test:watch     # Watch mode (re-run tests on file changes)
+bb check          # Check Polylith workspace integrity
+bb lint           # Lint all source files
+bb clean          # Clean build artifacts
+bb uberjar        # Build standalone JAR
+bb build          # Full build (clean + test + uberjar)
+bb docker:build   # Build Docker image
+bb stats          # Show project statistics
+```
+
+See `bb help` for complete list of tasks.
+
+### Direct Clojure Commands (if not using Babashka)
+
+| Task | Babashka (Recommended) | Direct Clojure |
+| :--- | :--- | :--- |
+| **Check Workspace** | `bb check` | `clojure -M:poly check` |
+| **Workspace Info** | `bb info` | `clojure -M:poly info` |
+| **Run All Tests** | `bb test` | `clojure -M:poly test :dev` |
+| **Run Component Tests** | `bb test:game` | `clojure -M:poly test brick:game` |
+| **Lint Code** | `bb lint` | `clj-kondo --lint components/*/src bases/*/src` |
+| **Launch REPL** | `bb dev` | `clojure -M:nrepl` |
+| **Build Uberjar** | `bb uberjar` | `clojure -T:build uberjar` |
 
 ### Development Workflow
 
-The workspace supports **REPL-driven development** and **AI-assisted coding**:
+The workspace supports **REPL-driven development** with hot reload:
 
-1. Start REPL: `./bin/launchpad`
-2. Connect your editor (nREPL port in `.nrepl-port`)
-3. Reload components: `(require '[cc.mindward.game.interface :as game] :reload)`
-4. Test functions interactively
+1. Start REPL: `bb dev`
+2. In REPL, start server: `(start)`
+3. Edit code in your editor
+4. Hot reload: `(restart)` ← 1-2 second feedback loop!
+5. Test at http://localhost:3000
 
-Hot-reload is supported for most components.
+**Editor Integration:**
+- Connect to nREPL (port in `.nrepl-port`)
+- Reload components: `(require '[cc.mindward.game.interface :as game] :reload)`
+- Test functions interactively in REPL
+
+**AI-Assisted Development:**
+- Uses clojure-mcp for integration with Claude/LLMs
+- See `docs/clojure-mcp-integration.md` for setup
 
 ## 📁 Project Structure
 
@@ -131,27 +167,28 @@ simplicity/
 
 ## 🧪 Testing
 
-**Current test coverage**: 501 passing assertions across 71 test cases
+**Current test coverage**: 611 passing assertions across all test cases
 
 | Component | Tests | Assertions |
 | :--- | :---: | :---: |
 | Auth | 2 | 14 |
-| Game | 15 | 146 |
-| UI | 42 | 149 |
+| Game | 13 | 136 |
+| UI | 70 | 267 |
 | User | 12 | 49 |
-| Web-server | 28 | 143 |
+| Web-server | 28 | 145 |
 
 Run tests:
 ```bash
-# All tests
-clojure -M:poly test :dev
+# Using Babashka (recommended)
+bb test              # All tests
+bb test:watch        # Watch mode
+bb test:game         # Specific component
+bb test:user         # Specific component
 
-# Specific component
-clojure -M:poly test brick:game
-clojure -M:poly test brick:user
-
-# Security tests
-clojure -M:poly test brick:web-server
+# Using Clojure directly
+clojure -M:poly test :dev              # All tests
+clojure -M:poly test brick:game        # Specific component
+clojure -M:poly test brick:user        # Specific component
 ```
 
 Test files follow Polylith conventions:
@@ -170,7 +207,19 @@ See [docs/security.md](./docs/security.md) for complete security documentation.
 
 ## 🚢 Deployment
 
-### Quick Deploy
+### Quick Deploy (Babashka)
+
+```bash
+# Interactive build menu
+bb deploy:build
+
+# Or build directly
+bb build              # Full build: clean + test + uberjar
+bb docker:build       # Build Docker image
+bb docker:compose     # Start with Docker Compose
+```
+
+### Quick Deploy (Scripts)
 
 **Interactive build script:**
 ```bash
@@ -186,6 +235,8 @@ Choose from:
 
 Build standalone JAR:
 ```bash
+bb uberjar
+# or
 clojure -T:build uberjar
 ```
 
@@ -204,6 +255,8 @@ ssh user@server 'java -jar /opt/simplicity/simplicity-standalone.jar'
 
 Build image:
 ```bash
+bb docker:build
+# or
 docker build -t simplicity:latest .
 ```
 

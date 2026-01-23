@@ -18,36 +18,91 @@ We use the **Eight Keys** to guide our evolution:
 
 ## λ Build, Lint, and Test Commands
 
-### Workspace Management (Polylith)
-- **Check Workspace**: `clojure -M:poly check`
-- **Workspace Info**: `clojure -M:poly info`
-- **Show Changed Bricks**: `clojure -M:poly diff`
-- **Workspace Version**: `clojure -M:poly version`
+### Babashka Task Runner (Primary Development Tool)
 
-### Testing (τ Wisdom)
-- **Run All Tests**: `clojure -M:poly test`
-- **Run Project Tests**: `clojure -M:poly test project:<project-name>`
-- **Run Specific Brick Tests**: `clojure -M:poly test brick:<brick-name>`
-- **Verify All**: `clojure -M:poly test :all`
+**All development operations should use Babashka for consistency and speed.**
+
+Common tasks:
+
+```bash
+bb help            # Show all available tasks
+bb dev             # Start development REPL with hot reload
+bb test            # Run all tests (611 assertions)
+bb test:watch      # Watch mode (re-run tests on changes)
+bb check           # Check Polylith workspace integrity
+bb lint            # Lint all source files
+bb clean           # Clean build artifacts
+bb uberjar         # Build standalone JAR
+bb build           # Full build: clean + test + uberjar
+bb docker:build    # Build Docker image
+bb docker:compose  # Start with Docker Compose
+bb stats           # Show project statistics
+bb ver             # Show project version
+```
+
+See `bb help` for complete list of 30+ tasks.
+
+### Development Workflow (Hot Reload) - USE bb dev
+
+**PRIMARY COMMAND:**
+```bash
+bb dev              # Start development REPL (ALWAYS USE THIS)
+```
+
+**In REPL:**
+- **Start Server**: `(start)`
+- **Hot Reload**: `(restart)` ← **Main workflow after code changes**
+- **Stop Server**: `(stop)`
+- **Reload Code Only**: `(reset)` (no server restart)
+- **Check Status**: `(status)`
+
+**Workflow**: `bb dev` → Edit code → `(restart)` → Test (1-2 second feedback loop)
+
+**Alternative (direct Clojure CLI)**: `clojure -M:nrepl`
+
+### Workspace Management (Polylith) - USE bb commands
+
+- **Check Workspace**: `bb check` (primary) or `clojure -M:poly check`
+- **Workspace Info**: `bb info` (primary) or `clojure -M:poly info`
+- **Show Changed Bricks**: `bb diff` (primary) or `clojure -M:poly diff`
+
+### Testing (τ Wisdom) - USE bb test
+
+- **Run All Tests**: `bb test` (primary, 611 passing assertions)
+- **Run Tests (Watch Mode)**: `bb test:watch` (auto-reruns on file changes)
+- **Run Specific Brick Tests**: `bb test:game`, `bb test:ui`, `bb test:user`, etc.
 - **Interactive REPL (brepl)**: Use `brepl` for fast evaluation (see Tools).
-- **Stateful Testing**: Use `use-fixtures` with temporary SQLite files or `with-redefs` to isolate component logic. Never rely on shared global state.
 
-### Linting & Formatting
-- **Lint**: `clj-kondo --lint src` (Ensure `clj-kondo` is configured in `.clj-kondo`).
-- **Check Formatting**: Use `cljfmt check` or `zprint` if configured.
-- **Native Access**: Ensure `:poly` alias is used for tasks requiring native access (e.g., `clojure -M:poly ...`).
+**Alternative (not recommended)**: 
+- `clojure -M:poly test :dev` (slower, JVM startup)
+- `clojure -M:test -e "(require 'namespace) (clojure.test/run-tests 'namespace)"`
 
-### Building & Artifacts
-- **Build Uberjar**: `clojure -T:build uberjar` (45MB standalone JAR with AOT compilation)
-- **Build Docker Image**: `docker build -t simplicity:latest .`
-- **Interactive Build**: `./scripts/build-deployment.sh` (menu-driven: uberjar/Docker/both)
-- **Clean Target**: `rm -rf target`
-- **Jar Info**: `clojure -T:build jar-info`
+**Note**: The `:dev` alias excludes `development/src` to avoid classloader conflicts when Polylith merges aliases for testing.
+
+### Linting & Formatting - USE bb lint
+
+- **Lint**: `bb lint` (primary)
+- **Lint (Auto-fix)**: `bb lint:fix`
+- **Alternative**: `clj-kondo --lint components/*/src bases/*/src`
+
+### Building & Artifacts - USE bb build
+
+- **Build Uberjar**: `bb uberjar` (primary, 45MB standalone JAR)
+- **Build Docker Image**: `bb docker:build` (primary)
+- **Interactive Build**: `bb deploy:build` (primary)
+- **Clean Target**: `bb clean` (primary)
+- **Jar Info**: `bb jar-info`
+- **Full Build**: `bb build` (clean + test + uberjar)
+
+**Alternatives (not recommended):**
+- `clojure -T:build uberjar`
+- `./scripts/build-deployment.sh`
+- `docker build -t simplicity:latest .`
 
 **Deployment Artifacts:**
 - **Uberjar**: `target/simplicity-standalone.jar` (standalone, requires Java 17+)
 - **Docker**: Multi-stage optimized image (builder + runtime)
-- **Docker Compose**: `docker-compose up -d` (with persistent volumes)
+- **Docker Compose**: `bb docker:compose` (primary)
 
 See [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md) for production deployment.
 
@@ -122,11 +177,28 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - Use `clojure -M:poly info` to understand the current workspace topology.
 - **Connectivity**: Ensure all new bricks are registered in the root `deps.edn` `:dev` alias to enable cross-brick REPL access and `poly check` validation.
 
-### 2. Implementation Loop (∃ Truth)
+### 2. Implementation Loop (∃ Truth) - **HOT RELOAD WORKFLOW (BEST PRACTICE)**
 - **Step 1**: Identify the relevant Component or Base.
 - **Step 2**: Check the `interface` for existing contracts.
 - **Step 3**: Implement changes in `impl` or `core`.
-- **Step 4**: **Verification**: Use `brepl balance <file>` after edits to ensure structural integrity and prevent `BindException` or `Syntax Error` on server restart.
+- **Step 4**: **Hot Reload**: Use `(restart)` in REPL to reload changes (0.5s vs 30s full restart).
+- **Step 5**: **Verification**: Test changes in browser or via REPL. Use `brepl` for structure validation if needed.
+
+**CRITICAL: Use the hot reload workflow** (see [docs/hot-reload-best-practices.md](./docs/hot-reload-best-practices.md)):
+```clojure
+;; In REPL after making changes
+(restart)  ; Stop server, reload code, restart server (0.5 seconds)
+```
+
+**Hot Reload Best Practices**:
+1. ✅ **Lifecycle Management**: `(stop)` properly shuts down scheduler and resources
+2. ✅ **State Preservation**: Uses `defonce` to preserve game state/user data across reloads
+3. ✅ **Clean Refresh Paths**: Excludes `development/src` and test files from reload
+4. ✅ **System State Pattern**: Single atom tracks server + components for atomic lifecycle
+5. ✅ **Error Resilience**: Try-catch on each component shutdown prevents cascade failures
+6. ✅ **Non-blocking Server**: `:join? false` keeps REPL interactive
+
+**Performance**: 60x faster feedback loop (0.5s vs 30s JVM restart)
 
 ### 3. Technical Constraints (τ Wisdom)
 - **Middleware**: Be vigilant with `ring-defaults`. Form parameters are **keywordized** (e.g., use `:username` not `"username"`).
@@ -150,8 +222,10 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - **Brick-level**: Specific dependencies for a component or base should be managed in the development project or the specific project `deps.edn` if building an artifact.
 - **Vigilance**: Avoid adding heavy dependencies unless strictly necessary for the domain model.
 - **Aliases**:
-  - `:dev` - Development dependencies (REPL, testing, Polylith)
+  - `:dev` - Development dependencies (excludes `development/src` to avoid test classloader conflicts)
+  - `:nrepl` - REPL dependencies (includes `development/src` for hot reload workflow)
   - `:test` - Test dependencies (test paths)
+  - `:poly-test` - Polylith test runner alias (deduplicated paths)
   - `:poly` - Polylith tooling
   - `:prod` - Production dependencies (minimal)
   - `:build` - Build tooling (tools.build for uberjar compilation)
@@ -159,12 +233,12 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 ### 5. Self-Correction
 - If `poly check` fails, you have violated Polylith constraints (e.g., circular dependency or illegal import). Fix immediately.
 - Use `clj-kondo` to catch static analysis issues before committing.
-- **Test Coverage**: 501 passing assertions across 71 test cases (current)
+- **Test Coverage**: 611 passing assertions across test suite (current)
   - Auth: 2 tests, 14 assertions
-  - Game: 15 tests, 146 assertions
-  - UI: 42 tests, 149 assertions
-  - User: 12 tests, 49 assertions
-  - Web-server: 28 tests, 143 assertions (includes security tests)
+  - Game: 13 tests, 136 assertions
+  - UI: 44 tests, 151 assertions (includes comprehensive script loading tests)
+  - User: tests passing
+  - Web-server: tests passing (includes security tests)
 - Run `clojure -M:poly test :dev` before committing to verify all tests pass.
 
 ## Tools & Utilities

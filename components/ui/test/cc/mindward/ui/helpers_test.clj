@@ -165,7 +165,7 @@
       (is (not (h/valid-username? "ab"))))
     
     (testing "rejects too long"
-      (is (not (h/valid-username? "thisusernameiswaytoolong123"))))
+      (is (not (h/valid-username? "thisusernameiswaytoolongandexceedsthirtytwocharacters"))))
     
     (testing "rejects invalid characters"
       (is (not (h/valid-username? "user@name")))

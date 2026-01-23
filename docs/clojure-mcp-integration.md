@@ -62,10 +62,13 @@ Three files provide context to AI assistants:
 
 Claude Desktop starts MCP servers outside your project directory, so we use the `:not-cwd` flag.
 
-**1. Start nREPL in your project:**
+**1. Start development environment with hot reload:**
 ```bash
 cd /Users/davidwu/workspace/simplicity
-clojure -M:nrepl
+bb dev
+
+# In REPL:
+user=> (start)  ; Start web server
 ```
 
 **2. Configure Claude Desktop:**
@@ -99,6 +102,13 @@ Now Claude can:
 - Run tests and verify changes
 - Understand Polylith architecture constraints
 
+**5. Hot reload workflow:**
+```
+Claude: [Makes code changes via clojure_edit]
+You: [In REPL] (restart)
+     ✅ Changes applied in 1-2 seconds!
+```
+
 ### Option 2: Claude Code (Recommended for CLI)
 
 Claude Code runs from your project directory, making setup simpler.
@@ -120,10 +130,34 @@ cd /Users/davidwu/workspace/simplicity
 claude
 ```
 
+**3. In the Claude session, start the web server:**
+```
+You: "Start the development server"
+
+Claude: [Uses clojure_eval]
+        (start)
+        
+You: [Server starts at http://localhost:3000]
+```
+
+**4. Hot reload workflow:**
+```
+You: "Add a function to count live cells in the game component"
+
+Claude: [Edits components/game/src/cc/mindward/game/interface.clj]
+
+You: "Hot reload the changes"
+
+Claude: [Uses clojure_eval]
+        (restart)
+        
+You: ✅ Changes applied in 1-2 seconds!
+```
+
 Ask Claude to:
 - "Show me the game engine implementation"
 - "Add a test for the user authentication component"
-- "Evaluate this expression in the REPL: `(require '[cc.mindward.game.interface :as game])`"
+- "Hot reload the server after making changes"
 
 ### Option 3: Manual Connection (Any LLM Client)
 
@@ -172,17 +206,29 @@ When connected via clojure-mcp, AI assistants have access to:
 **You**: "I need to add a new function to calculate the population of a Game of Life board"
 
 **Claude**: 
-1. Reads `components/game/src/cc/mindward/component/game/interface.clj`
-2. Uses `clojure_eval` to test the implementation in the REPL
-3. Uses `clojure_edit` to add the new function
-4. Runs tests with `bash` to verify it works
+1. Reads `components/game/src/cc/mindward/game/interface.clj`
+2. Uses `clojure_edit` to add the new function
+3. Uses `clojure_eval` to test the implementation in the REPL
+
+**You**: "Hot reload the changes so I can test in the browser"
+
+**Claude**: 
+```clojure
+(restart)
+;; INFO  Restarting with hot reload...
+;; INFO  Stopping web server...
+;; :reloading (cc.mindward.game.interface cc.mindward.game.impl)
+;; INFO  ✅ Server started on http://localhost: 3000
+```
 
 **You**: "Great! Can you show me how to use it?"
 
 **Claude**: Uses `clojure_eval` to demonstrate:
 ```clojure
-(require '[cc.mindward.component.game.interface :as game] :reload)
-(game/population test-board)
+(require '[cc.mindward.game.interface :as game] :reload)
+(let [board #{[1 1] [1 2] [2 1] [2 2]}]
+  (game/population board))
+;; => 4
 ```
 
 ## Tips for Effective Use
@@ -193,13 +239,29 @@ When starting a new conversation:
 - Add "Clojure Project Info" resource  
 - This gives the AI understanding of the architecture
 
-### 2. Use the REPL Actively
+### 2. Use the Hot Reload Workflow
+Encourage the AI to use the hot reload workflow:
+- AI edits code with `clojure_edit`
+- You run `(restart)` in your REPL (or ask AI to do it)
+- Test changes at http://localhost:3000
+- **Feedback loop: 1-2 seconds!**
+
+### 3. Start the Server First
+Before asking AI to test changes:
+```
+You: "Start the development server"
+AI: (start)
+You: [Server running at http://localhost:3000]
+```
+
+### 4. Use the REPL Actively
 Encourage the AI to:
 - Test ideas in the REPL before editing files
 - Validate changes after editing
 - Use `:reload` when requiring namespaces
+- Use `(restart)` to apply changes to the running server
 
-### 3. Commit Often
+### 5. Commit Often
 - Create a branch before starting
 - Have the AI commit working changes frequently
 - This prevents losing good work if the AI goes in a bad direction
@@ -211,7 +273,21 @@ clojure -M:poly check    # Verify architecture
 clojure -M:poly test :dev # Run all tests
 ```
 
-### 5. Use Architectural Constraints
+Or ask the AI to run them via `bash` tool.
+
+### 5. Use Hot Reload Instead of Full Restart
+**Don't do this:**
+```bash
+^C  # Stop server
+clojure -M -m cc.mindward.web-server.core  # Restart (30 seconds)
+```
+
+**Do this instead:**
+```clojure
+user=> (restart)  ; Hot reload (1-2 seconds!)
+```
+
+### 6. Use Architectural Constraints
 The AI knows about Polylith rules from `LLM_CODE_STYLE.md`:
 - Components must only expose `interface` namespaces
 - Bases delegate to components (no business logic)

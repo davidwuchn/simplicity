@@ -101,3 +101,25 @@
   [{:keys [username password name]}]
   (jdbc/execute! (ds) ["INSERT INTO users (username, password_hash, name) VALUES (?, ?, ?)"
                        username (hash-password password) name]))
+
+(defn health-check
+  "Check user database health status.
+   Returns health information for monitoring."
+  []
+  (try
+    (let [datasource @db-state
+          result (jdbc/execute! (ds) ["SELECT 1"])
+          user-count (-> (jdbc/execute! (ds) ["SELECT COUNT(*) as count FROM users"]
+                                       {:builder-fn rs/as-unqualified-lower-maps})
+                        first
+                        :count)]
+      {:healthy? true
+       :details {:database-connected true
+                 :datasource-initialized (some? datasource)
+                 :user-count user-count
+                 :timestamp (System/currentTimeMillis)}})
+    (catch Exception e
+      {:healthy? false
+       :details {:database-connected false
+                 :error (.getMessage e)
+                 :timestamp (System/currentTimeMillis)}})))
