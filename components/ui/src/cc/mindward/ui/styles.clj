@@ -2,7 +2,9 @@
   "CSS styles for the Simplicity UI.
    
    Separates presentation concerns from component logic.
-   All styles are defined as data structures for easier manipulation.")
+   All styles are defined as functions for better organization and testability.
+   
+   (fractal Clarity): Break down monolithic stylesheet into logical sections.")
 
 ;; === Color Palette ===
 (def colors
@@ -29,8 +31,13 @@
    :lg "1024px"
    :xl "1280px"})
 
-;; === Main Stylesheet ===
-(defn stylesheet []
+;; ------------------------------------------------------------
+;; CSS Section Functions (π Synthesis - compose from parts)
+;; ------------------------------------------------------------
+
+(defn base-styles
+  "Base styles for body and universal selectors."
+  []
   "
   /* === Base Styles === */
   * { box-sizing: border-box; }
@@ -42,7 +49,12 @@
     background-size: 50px 50px;
     min-height: 100vh;
   }
-  
+  ")
+
+(defn cyber-components
+  "Cyber-themed UI components (cards, inputs, buttons)."
+  []
+  "
   /* === Cyber Components === */
   .font-cyber { font-family: 'Orbitron', sans-serif; }
   .cyber-card { 
@@ -74,7 +86,13 @@
     border-color: #ff003c;
     box-shadow: 0 0 10px rgba(255, 0, 60, 0.5);
   }
-  
+  ")
+
+(defn cyber-buttons
+  "Primary and secondary cyber-themed buttons."
+  []
+  "
+  /* === Cyber Buttons === */
   .cyber-btn { 
     background-color: #fcee0a; 
     color: #000; 
@@ -136,7 +154,12 @@
     box-shadow: 4px 4px 0px #fcee0a;
     transform: translate(-2px, -2px);
   }
-  
+  ")
+
+(defn animations
+  "Keyframe animations and animation utilities."
+  []
+  "
   /* === Animations === */
   .glitch-text { 
     text-shadow: 2px 0 #ff003c, -2px 0 #00f0ff; 
@@ -165,14 +188,28 @@
     animation: slideIn 0.3s ease-out;
   }
   
-  /* === Colors === */
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  ")
+
+(defn color-utilities
+  "Text and border color utility classes."
+  []
+  "
+  /* === Color Utilities === */
   .text-cyber-yellow { color: #fcee0a; }
   .text-cyber-cyan { color: #00f0ff; }
   .text-cyber-red { color: #ff003c; }
   .border-cyber-yellow { border-color: #fcee0a; }
   .border-cyber-cyan { border-color: #00f0ff; }
   .border-cyber-red { border-color: #ff003c; }
-  
+  ")
+
+(defn loading-state
+  "Loading spinner and disabled state styles."
+  []
+  "
   /* === Loading State === */
   .loading {
     position: relative;
@@ -192,10 +229,12 @@
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
   }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-  
+  ")
+
+(defn toast-notifications
+  "Toast notification container and variants."
+  []
+  "
   /* === Toast Notifications === */
   #toast-container {
     position: fixed;
@@ -223,7 +262,12 @@
   .toast.error { border-color: #ff003c; box-shadow: 6px 6px 0px 0px #ff003c; color: #ff003c; }
   .toast.info { border-color: #00f0ff; box-shadow: 6px 6px 0px 0px #00f0ff; color: #00f0ff; }
   .toast.warning { border-color: #fcee0a; box-shadow: 6px 6px 0px 0px #fcee0a; color: #fcee0a; }
-  
+  ")
+
+(defn responsive-design
+  "Media queries for responsive layouts."
+  []
+  "
   /* === Responsive Design === */
   @media (max-width: 768px) {
     body { background-size: 30px 30px; }
@@ -243,7 +287,12 @@
       font-size: 0.875rem;
     }
   }
-  
+  ")
+
+(defn accessibility
+  "Accessibility utilities (screen reader, focus states)."
+  []
+  "
   /* === Accessibility === */
   .sr-only {
     position: absolute;
@@ -262,3 +311,29 @@
     outline-offset: 4px;
   }
   ")
+
+;; ------------------------------------------------------------
+;; Main Stylesheet Composer (π Synthesis)
+;; ------------------------------------------------------------
+
+(defn stylesheet
+  "Compose full stylesheet from modular sections.
+   
+   Benefits of this refactoring:
+   - Each section is independently testable
+   - Easy to modify individual sections without touching others
+   - Clear separation of concerns (components, animations, responsive, etc.)
+   - Better code navigation and readability
+   
+   (fractal Clarity): Complex system broken into simple, composable parts."
+  []
+  (str
+    (base-styles)
+    (cyber-components)
+    (cyber-buttons)
+    (animations)
+    (color-utilities)
+    (loading-state)
+    (toast-notifications)
+    (responsive-design)
+    (accessibility)))
