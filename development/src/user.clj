@@ -347,10 +347,3 @@
   ;; Check status
   (status)
   )
-
-;; ------------------------------------------------------------
-;; Auto-display banner on REPL startup
-;; (φ Vitality): Welcome developers with helpful context
-;; ------------------------------------------------------------
-
-(banner)
