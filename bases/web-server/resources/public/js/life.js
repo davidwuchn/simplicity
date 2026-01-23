@@ -379,7 +379,7 @@ window.addEventListener('keydown', async (e) => {
     }
 });
 
-// === Start ===
+// === Start Conway's Game of Life ===
 resize();
 loop();
 
@@ -907,10 +907,10 @@ function draw() {
     }
 }
 
-// === Main Loop ===
+// === Main Loop (Warfare Mode) ===
 let lastLoopUpdate = 0;
 
-function loop() {
+function warfareLoop() {
     const now = Date.now();
     
     // Throttle updates to TICK_MS interval
@@ -924,7 +924,7 @@ function loop() {
         lastLoopUpdate = now;
     }
     
-    requestAnimationFrame(loop);
+    requestAnimationFrame(warfareLoop);
 }
 
 // === Input ===
@@ -1166,6 +1166,6 @@ canvas.addEventListener('touchstart', (e) => {
     }
 });
 
-// === Start ===
+// === Start Warfare Mode ===
 resize();
-loop();
+warfareLoop();
