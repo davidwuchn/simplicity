@@ -1,12 +1,12 @@
 /**
  * Conway's Game of Life - Background Animation
  * 
- * A beautiful, musical cellular automaton that syncs with the backend.
- * Used as the landing page background.
+ * A beautiful, musical cellular automaton for the landing page.
+ * Runs entirely client-side (no backend API required).
  * 
  * Features:
- * - Backend-synced game state via API
- * - Musical feedback based on cell density
+ * - Classic Conway's Game of Life rules
+ * - Musical feedback based on cell activity
  * - Interactive: click to add cells, keyboard to change scales
  */
 
@@ -17,7 +17,7 @@
 const CONFIG = {
     cellSize: 8,
     tickMs: 150,
-    apiBase: '/api',
+    initialDensity: 0.15,  // Initial random fill percentage
     audio: {
         baseFreq: 130.81,
         bpm: 120,
@@ -49,10 +49,9 @@ const state = {
     cols: 0,
     rows: 0,
     
-    // Game
+    // Game - using Set of "x,y" strings for O(1) lookup
     board: new Set(),
     generation: 0,
-    score: 0,
     lastUpdate: 0,
     
     // Audio
@@ -66,10 +65,7 @@ const state = {
     delayGain: null,
     activeNotes: 0,
     lastNoteTime: {},
-    currentScale: SCALES.major,
-    
-    // Misc
-    csrfToken: ''
+    currentScale: SCALES.major
 };
 
 // =============================================================================
@@ -84,9 +80,9 @@ function init() {
     }
     
     state.ctx = state.canvas.getContext('2d');
-    state.csrfToken = document.getElementById('csrf-token')?.value || '';
     
     resize();
+    initializeRandomBoard();
     setupEventListeners();
     startGameLoop();
 }
@@ -96,6 +92,19 @@ function resize() {
     state.height = state.canvas.height = window.innerHeight;
     state.cols = Math.floor(state.width / CONFIG.cellSize);
     state.rows = Math.floor(state.height / CONFIG.cellSize);
+}
+
+function initializeRandomBoard() {
+    state.board.clear();
+    state.generation = 0;
+    
+    for (let x = 0; x < state.cols; x++) {
+        for (let y = 0; y < state.rows; y++) {
+            if (Math.random() < CONFIG.initialDensity) {
+                state.board.add(`${x},${y}`);
+            }
+        }
+    }
 }
 
 function setupEventListeners() {
@@ -116,12 +125,12 @@ function startGameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-async function gameLoop() {
+function gameLoop() {
     const now = Date.now();
     
     if (now - state.lastUpdate > CONFIG.tickMs) {
         try {
-            await evolveGame();
+            evolve();
             draw();
         } catch (e) {
             console.error('Game loop error:', e);
@@ -133,52 +142,104 @@ async function gameLoop() {
 }
 
 // =============================================================================
-// BACKEND API
+// CONWAY'S GAME OF LIFE LOGIC
 // =============================================================================
 
-async function apiCall(action, data = {}) {
-    try {
-        const response = await fetch(`${CONFIG.apiBase}/game`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'x-csrf-token': state.csrfToken
-            },
-            body: new URLSearchParams({ action, ...data })
-        });
-        return await response.json();
-    } catch (e) {
-        console.error('API call failed:', e);
-        return { error: e.message };
-    }
-}
-
-async function syncGame(cellsToAdd = [], cellsToRemove = []) {
-    const action = (cellsToAdd.length > 0 || cellsToRemove.length > 0) ? 'manipulate' : 'create';
-    const data = action === 'manipulate' 
-        ? { cells: JSON.stringify(cellsToAdd), remove: JSON.stringify(cellsToRemove) }
-        : { cells: JSON.stringify([]) };
+function evolve() {
+    const { board, cols, rows } = state;
+    const newBoard = new Set();
+    const checked = new Set();
     
-    const result = await apiCall(action, data);
-    if (result.board) {
-        updateBoardFromResult(result);
-    }
-}
-
-async function evolveGame() {
-    const result = await apiCall('evolve');
-    if (result.board) {
-        updateBoardFromResult(result);
-        if (result.triggers) {
-            processMusicalTriggers(result.triggers);
+    // Track births/deaths for audio feedback
+    let births = 0;
+    let deaths = 0;
+    
+    // Check all living cells and their neighbors
+    for (const cellKey of board) {
+        const [x, y] = cellKey.split(',').map(Number);
+        
+        // Check this cell and all its neighbors
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                const nx = (x + dx + cols) % cols;
+                const ny = (y + dy + rows) % rows;
+                const key = `${nx},${ny}`;
+                
+                if (checked.has(key)) continue;
+                checked.add(key);
+                
+                const neighbors = countNeighbors(nx, ny);
+                const isAlive = board.has(key);
+                
+                // Conway's rules:
+                // 1. Live cell with 2-3 neighbors survives
+                // 2. Dead cell with exactly 3 neighbors becomes alive
+                if (isAlive) {
+                    if (neighbors === 2 || neighbors === 3) {
+                        newBoard.add(key);
+                    } else {
+                        deaths++;
+                    }
+                } else {
+                    if (neighbors === 3) {
+                        newBoard.add(key);
+                        births++;
+                    }
+                }
+            }
         }
     }
+    
+    state.board = newBoard;
+    state.generation++;
+    
+    // Musical feedback based on activity
+    if (state.audioInitialized) {
+        processActivitySound(births, deaths);
+    }
+    
+    // Auto-respawn if population dies out
+    if (newBoard.size < 50) {
+        addRandomCells(100);
+    }
 }
 
-function updateBoardFromResult(result) {
-    state.board = new Set(result.board.map(([x, y]) => `${x},${y}`));
-    state.generation = result.generation;
-    state.score = result.score;
+function countNeighbors(x, y) {
+    const { board, cols, rows } = state;
+    let count = 0;
+    
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            if (dx === 0 && dy === 0) continue;
+            
+            const nx = (x + dx + cols) % cols;
+            const ny = (y + dy + rows) % rows;
+            
+            if (board.has(`${nx},${ny}`)) {
+                count++;
+            }
+        }
+    }
+    
+    return count;
+}
+
+function addRandomCells(count) {
+    for (let i = 0; i < count; i++) {
+        const x = Math.floor(Math.random() * state.cols);
+        const y = Math.floor(Math.random() * state.rows);
+        state.board.add(`${x},${y}`);
+    }
+}
+
+function addCellCluster(centerX, centerY, radius = 1) {
+    for (let dx = -radius; dx <= radius; dx++) {
+        for (let dy = -radius; dy <= radius; dy++) {
+            const x = (centerX + dx + state.cols) % state.cols;
+            const y = (centerY + dy + state.rows) % state.rows;
+            state.board.add(`${x},${y}`);
+        }
+    }
 }
 
 // =============================================================================
@@ -189,7 +250,7 @@ function draw() {
     const { ctx, width, height, board } = state;
     
     // Background - subtle brightness based on population
-    const bgBrightness = Math.floor(5 + (board.size / 1000) * 10);
+    const bgBrightness = Math.floor(5 + Math.min(board.size / 500, 1) * 10);
     ctx.fillStyle = `rgb(${bgBrightness}, ${bgBrightness}, ${Math.floor(bgBrightness * 1.5)})`;
     ctx.fillRect(0, 0, width, height);
     
@@ -214,25 +275,25 @@ function draw() {
 }
 
 function drawStats() {
-    const { ctx, height, board, generation, score, currentScale } = state;
+    const { ctx, height, board, generation, currentScale } = state;
     
     ctx.fillStyle = '#666';
     ctx.font = '12px monospace';
     ctx.fillText(
-        `GEN: ${generation} | CELLS: ${board.size} | SCORE: ${score}`,
+        `GEN: ${generation} | CELLS: ${board.size}`,
         10, height - 10
     );
     
     const scaleName = Object.entries(SCALES)
         .find(([_, v]) => v === currentScale)?.[0] || 'major';
-    ctx.fillText(`SCALE: ${scaleName.toUpperCase()}`, 10, height - 28);
+    ctx.fillText(`SCALE: ${scaleName.toUpperCase()} | CLICK to add cells | 1-6 change scale`, 10, height - 28);
 }
 
 // =============================================================================
 // INPUT HANDLERS
 // =============================================================================
 
-async function handleClick(e) {
+function handleClick(e) {
     e.preventDefault();
     initAudio();
     
@@ -240,21 +301,13 @@ async function handleClick(e) {
     const row = Math.floor(e.clientY / CONFIG.cellSize);
     
     // Add 3x3 cluster
-    const cellsToAdd = [];
-    for (let i = -1; i <= 1; i++) {
-        for (let j = -1; j <= 1; j++) {
-            const nx = (col + i + state.cols) % state.cols;
-            const ny = (row + j + state.rows) % state.rows;
-            cellsToAdd.push([nx, ny]);
-        }
-    }
+    addCellCluster(col, row, 1);
     
-    await syncGame(cellsToAdd, []);
     playChord(getFrequency(col, row), 'major');
     draw();
 }
 
-async function handleKeydown(e) {
+function handleKeydown(e) {
     initAudio();
     
     // Number keys 1-6 change scale
@@ -277,22 +330,14 @@ async function handleKeydown(e) {
     // Space - add random cells
     if (e.code === 'Space') {
         e.preventDefault();
-        const cellsToAdd = [];
-        for (let i = 0; i < 20; i++) {
-            cellsToAdd.push([
-                Math.floor(Math.random() * state.cols),
-                Math.floor(Math.random() * state.rows)
-            ]);
-        }
-        await syncGame(cellsToAdd, []);
+        addRandomCells(50);
         draw();
         return;
     }
     
     // R - reset board
     if (e.key === 'r' || e.key === 'R') {
-        const cellsToRemove = Array.from(state.board).map(s => s.split(',').map(Number));
-        await syncGame([], cellsToRemove);
+        initializeRandomBoard();
         draw();
     }
 }
@@ -426,24 +471,18 @@ function playChord(baseFreq, type = 'major') {
     });
 }
 
-function processMusicalTriggers(triggers) {
-    if (!triggers || triggers.length === 0) return;
+function processActivitySound(births, deaths) {
+    // Play notes based on activity level
+    const activity = births + deaths;
     
-    for (const trigger of triggers) {
-        switch (trigger.trigger) {
-            case 'density-high':
-            case 'density-mid':
-                const pitch = trigger.params?.frequency || 220;
-                playNote(pitch, 0.08, 0.2);
-                break;
-            case 'life-pulse':
-                const intensity = trigger.params?.intensity || 0.5;
-                const rate = trigger.params?.rate || 0.1;
-                if (Math.random() < rate * 10) {
-                    playNote(200 + (intensity * 400), rate * 0.1, 0.3);
-                }
-                break;
-        }
+    if (activity > 100 && Math.random() < 0.3) {
+        // High activity - play chord
+        const freq = CONFIG.audio.baseFreq * (1 + Math.random());
+        playChord(freq, births > deaths ? 'major' : 'minor');
+    } else if (activity > 20 && Math.random() < 0.2) {
+        // Medium activity - play note
+        const freq = CONFIG.audio.baseFreq * (1 + Math.random() * 2);
+        playNote(freq, 0.05, 0.2);
     }
 }
 
