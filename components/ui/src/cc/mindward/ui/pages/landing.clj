@@ -43,4 +43,4 @@
                               :type :primary
                               :class "min-w-[150px]"
                               :aria-label "Create new account"})]]]
-           :extra-footer [:script {:src "/js/life.js"}]})})
+           :extra-footer [:script {:src (str "/js/life.js?v=" (layout/app-version-string))}]})})
