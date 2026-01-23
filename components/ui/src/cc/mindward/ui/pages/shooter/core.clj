@@ -109,10 +109,10 @@
 
                ;; Quit Button (Upper Left)
               [:div {:class "absolute top-4 left-4 z-10"}
-               [:a {:href "/select-game"
+               [:a {:href "/game/life"
                     :class "cyber-btn-secondary text-sm"
-                    :aria-label "Return to game selection"}
-                "← QUIT"]]
+                    :aria-label "Play Conway's Life"}
+                "← LIFE"]]
 
                ;; Controls Hint
               [:div {:id "controls-hint" :class "absolute bottom-4 right-4 text-gray-500 text-xs font-mono pointer-events-none text-right hud-element"}
@@ -120,7 +120,7 @@
                [:div "SPACE to Switch Weapon"]
                [:div "SHIFT for Shield"]
                [:div "R to Reboot"]
-               [:div {:class "mt-2"} [:a {:href "/select-game" :class "text-red-500 hover:text-white pointer-events-auto"} "ABORT MISSION"]]
+               [:div {:class "mt-2"} [:a {:href "/game/life" :class "text-red-500 hover:text-white pointer-events-auto"} "ABORT MISSION"]]
                [:div {:class "mt-2 text-gray-600"} "v" app-version]]
 
                ;; Game Over Overlay (hidden by default)
