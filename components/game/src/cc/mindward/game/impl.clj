@@ -5,15 +5,13 @@
    τ (Wisdom): Use transient collections for performance in hot loops.
    ∀ (Vigilance): Bounds checking prevents infinite board growth."
   (:require [clojure.set :as set]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [cc.mindward.game.config :as config]))
 
 ;; ------------------------------------------------------------
 ;; Domain Constants & Schema (∃ Truth)
 ;; ------------------------------------------------------------
-
-(def ^:private max-bounds 100)
-(def ^:private min-bounds -100)
-(def ^:private game-ttl-ms (* 60 60 1000))
+;; All magic numbers moved to cc.mindward.game.config namespace
 
 ;; Game state structure:
 ;; {:board #{[x y] ...} :generation n :created-at timestamp :last-accessed timestamp}
@@ -41,8 +39,8 @@
 (defn- in-bounds?
   "Check if coordinate is within defined bounds."
   [[x y]]
-  (and (<= min-bounds x max-bounds)
-       (<= min-bounds y max-bounds)))
+  (and (<= config/board-min-x x config/board-max-x)
+       (<= config/board-min-y y config/board-max-y)))
 
 (defn- count-neighbors
   "Count living neighbors for each cell on the board."
@@ -50,21 +48,29 @@
   (frequencies (mapcat neighbors board)))
 
 (defn- next-generation
-  "Evolve board one generation using Conway's rules."
+  "Evolve board one generation using Conway's rules.
+   τ (Wisdom): Uses transient collections for performance."
   [board]
   (let [neighbor-counts (count-neighbors board)]
-    (set (for [[cell count] neighbor-counts
-               :let [alive? (contains? board cell)]
-               :when (or (= count 3)
-                         (and alive? (= count 2)))]
-           cell))))
+    (persistent!
+     (reduce (fn [acc [cell count]]
+               (let [alive? (contains? board cell)]
+                 (if (or (= count config/conway-birth-neighbors)
+                         (and alive? (<= config/conway-survival-min count config/conway-survival-max)))
+                   (conj! acc cell)
+                   acc)))
+             (transient #{})
+             neighbor-counts))))
 
 (defn- calculate-game-score
   "Pure function to calculate score from game state."
   [{:keys [board generation]}]
   (let [living-cells (count board)
-        complexity-score (max 1 (* living-cells (min generation 100)))
-        stability-bonus (if (> generation 10) 100 0)]
+        complexity-score (max config/score-minimum 
+                              (* living-cells (min generation config/score-generation-cap)))
+        stability-bonus (if (> generation config/score-stability-threshold) 
+                          config/score-stability-bonus 
+                          0)]
     (+ complexity-score stability-bonus)))
 
 ;; ------------------------------------------------------------
@@ -141,20 +147,27 @@
   [game-id]
   (when-let [board (get-board game-id)]
     (let [cell-count (count board)
-          density (min 1.0 (/ cell-count 100.0))]
+          density (min 1.0 (/ cell-count config/music-max-cells-normalization))]
       (cond-> []
-        (> cell-count 50) (conj {:trigger :density-high
-                                 :params {:frequency 440
-                                          :amplitude 0.8}})
-        (> cell-count 20) (conj {:trigger :density-mid
-                                 :params {:frequency 220
-                                          :amplitude 0.6}})
-        (pos? cell-count) (conj {:trigger :life-pulse
-                                 :params {:rate (/ 1.0 (max 1 cell-count))
-                                          :intensity density}})
-        :always (conj {:trigger :drone
-                       :params {:frequency 55
-                                :amplitude 0.3}})))))
+        (> cell-count config/music-density-high-threshold) 
+        (conj {:trigger :density-high
+               :params {:frequency config/music-freq-high-density
+                        :amplitude config/music-amp-high-density}})
+        
+        (> cell-count config/music-density-mid-threshold) 
+        (conj {:trigger :density-mid
+               :params {:frequency config/music-freq-mid-density
+                        :amplitude config/music-amp-mid-density}})
+        
+        (pos? cell-count) 
+        (conj {:trigger :life-pulse
+               :params {:rate (/ 1.0 (max 1 cell-count))
+                        :intensity density}})
+        
+        :always 
+        (conj {:trigger :drone
+               :params {:frequency config/music-freq-drone
+                        :amplitude config/music-amp-drone}})))))
 
 (defn save-game!
   [game-id name]
@@ -195,7 +208,7 @@
 (defn cleanup-stale-games!
   []
   (let [now (System/currentTimeMillis)
-        cutoff (- now game-ttl-ms)
+        cutoff (- now config/game-ttl-ms)
         before (count @games)]
     (swap! games (fn [m]
                    (into {} (filter (fn [[_ g]] (> (:last-accessed g 0) cutoff))) m)))
@@ -209,7 +222,11 @@
   (when-not @cleanup-executor
     (let [executor (java.util.concurrent.Executors/newSingleThreadScheduledExecutor)
           task (fn [] (try (cleanup-stale-games!) (catch Exception e (log/error e "Cleanup failed"))))]
-      (.scheduleAtFixedRate executor task 10 10 java.util.concurrent.TimeUnit/MINUTES)
+      (.scheduleAtFixedRate executor 
+                            task 
+                            config/cleanup-initial-delay-minutes 
+                            config/cleanup-interval-minutes 
+                            java.util.concurrent.TimeUnit/MINUTES)
       (reset! cleanup-executor executor))))
 
 (defn stop-cleanup-scheduler!
@@ -223,3 +240,16 @@
   (reset! games {})
   (reset! saved-games {})
   (start-cleanup-scheduler!))
+
+(defn health-check
+  "Check game engine health status.
+   Returns health information for monitoring."
+  []
+  (let [scheduler-running? (some? @cleanup-executor)
+        active-games (count @games)
+        saved-count (count @saved-games)]
+    {:healthy? scheduler-running?
+     :details {:scheduler-running scheduler-running?
+               :active-games active-games
+               :saved-games saved-count
+               :timestamp (System/currentTimeMillis)}}))

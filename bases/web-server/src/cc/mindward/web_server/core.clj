@@ -13,6 +13,16 @@
             [cc.mindward.ui.interface :as ui])
   (:gen-class))
 
+;; ------------------------------------------------------------
+;; μ (Directness): DRY Helpers
+;; ------------------------------------------------------------
+
+(defn- redirect-with-error
+  "Redirect to path with URL-encoded error message.
+   μ (Directness): Eliminates duplicate URL encoding logic."
+  [path error-msg]
+  (res/redirect (str path "?error=" (java.net.URLEncoder/encode error-msg "UTF-8"))))
+
 (defn leaderboard-page [{:keys [session]}]
   (let [leaderboard (user/get-leaderboard)]
     (ui/leaderboard-page session leaderboard)))
@@ -34,12 +44,12 @@
       (not (:valid? username-check))
       (do
         (log/warn "Invalid username on signup:" (:error username-check))
-        (res/redirect (str "/signup?error=" (java.net.URLEncoder/encode (:error username-check) "UTF-8"))))
+        (redirect-with-error "/signup" (:error username-check)))
       
       (not (:valid? password-check))
       (do
         (log/warn "Invalid password on signup:" (:error password-check))
-        (res/redirect (str "/signup?error=" (java.net.URLEncoder/encode (:error password-check) "UTF-8"))))
+        (redirect-with-error "/signup" (:error password-check)))
       
       :else
       (try
@@ -49,7 +59,7 @@
             (assoc :session (assoc session :username username)))
         (catch Exception e
           (log/warn e "User creation failed:" username)
-          (res/redirect "/signup?error=Username%20already%20exists"))))))
+          (redirect-with-error "/signup" "Username already exists"))))))
 
 (defn game-page [request]
   (let [{:keys [session anti-forgery-token]} request]
@@ -76,7 +86,7 @@
     (if (not (:valid? username-check))
       (do
         (log/warn "Invalid username on login:" (:error username-check))
-        (res/redirect "/login?error=Invalid%20credentials"))
+        (redirect-with-error "/login" "Invalid credentials"))
       (let [auth-result (auth/authenticate username password)]
         (if auth-result
           (do
@@ -85,7 +95,7 @@
                 (assoc :session (assoc session :username username))))
           (do
             (log/warn "Failed login attempt for user:" username)
-            (res/redirect "/login?error=Invalid%20credentials")))))))
+            (redirect-with-error "/login" "Invalid credentials")))))))
 
 (defn save-score [{:keys [params session]}]
   (when-let [username (:username session)]
