@@ -117,74 +117,54 @@
           {:session session
            :title "Login"
            :content
-           [:div
-            ;; Background Canvas for Game of Life
-            [:canvas {:id "bgCanvas"
-                      :class "fixed top-0 left-0 w-full h-full z-0 pointer-events-auto"
-                      :aria-hidden "true"}]
-            [:input {:type "hidden" :id "csrf-token" :value (:csrf-token session "")}]
+           (c/card
+            {:title "Net Access"
+             :class "max-w-md mx-auto mt-8 md:mt-12 fade-in"
+             :content
+             [:div
+              ;; Error alert
+              (when (:error params)
+                (c/alert {:type :error
+                          :message "ACCESS DENIED. INVALID CREDENTIALS."}))
 
-            [:div {:class "relative z-10 min-h-[80vh] flex flex-col justify-center items-center text-center pointer-events-none px-4"}
-             [:div {:class "relative mb-8 md:mb-12 pointer-events-auto fade-in"}
-              [:h1 {:class "text-4xl md:text-7xl font-black text-cyber-yellow mb-2 glitch-text uppercase tracking-tighter"}
-               "MINDWARD"]
-              [:div {:class "text-lg md:text-2xl font-bold text-cyber-cyan tracking-[0.5em] md:tracking-[1em] uppercase"}
-               "Simplicity"]]
+              ;; Login form
+              [:form {:method "POST"
+                      :action "/login"
+                      :id "login-form"
+                      :aria-label "Login form"}
+               [:input {:type "hidden" :name "__anti-forgery-token" :value anti-forgery-token}]
 
-             [:p {:class "text-base md:text-xl text-gray-400 mb-12 md:mb-16 max-w-lg font-mono border-l-4 border-cyber-red pl-4 md:pl-6 text-left bg-black/50 p-3 md:p-4 pointer-events-auto backdrop-blur-sm fade-in"}
-              "Authenticate to access the grid. Enter your credentials to establish a secure connection."]
+               ;; Username
+               (c/form-input {:id "username-input"
+                              :name "username"
+                              :label "Net ID"
+                              :placeholder "ID_REQUIRED"
+                              :required? true
+                              :autocomplete "username"})
 
-             ;; Login Card
-             (c/card
-              {:title "Net Access"
-               :class "max-w-md mx-auto pointer-events-auto"
-               :content
-               [:div
-                ;; Error alert
-                (when (:error params)
-                  (c/alert {:type :error
-                            :message "ACCESS DENIED. INVALID CREDENTIALS."}))
+               ;; Password
+               (c/form-input {:id "password-input"
+                              :name "password"
+                              :label "Access Key"
+                              :type "password"
+                              :placeholder "KEY_REQUIRED"
+                              :required? true
+                              :autocomplete "current-password"})
 
-                ;; Login form
-                [:form {:method "POST"
-                        :action "/login"
-                        :id "login-form"
-                        :aria-label "Login form"}
-                 [:input {:type "hidden" :name "__anti-forgery-token" :value anti-forgery-token}]
+               ;; Submit Button
+               (c/button {:text "JACK IN"
+                          :type :primary
+                          :submit? true
+                          :aria-label "Login"
+                          :class "w-full"})
 
-                 ;; Username
-                 (c/form-input {:id "username-input"
-                                :name "username"
-                                :label "Net ID"
-                                :placeholder "ID_REQUIRED"
-                                :required? true
-                                :autocomplete "username"})
+               ;; Signup Link
+               [:div {:class "mt-6 text-center text-xs md:text-sm"}
+                [:span {:class "text-gray-500"} "New to the grid? "]
+                [:a {:href "/signup"
+                     :class "text-cyber-cyan hover:text-cyber-yellow transition-colors"}
+                 "Initiate"]]]
 
-                 ;; Password
-                 (c/form-input {:id "password-input"
-                                :name "password"
-                                :label "Access Key"
-                                :type "password"
-                                :placeholder "KEY_REQUIRED"
-                                :required? true
-                                :autocomplete "current-password"})
-
-                 ;; Submit Button
-                 (c/button {:text "JACK IN"
-                            :type :primary
-                            :submit? true
-                            :aria-label "Login"
-                            :class "w-full"})
-
-                 ;; Signup Link
-                 [:div {:class "mt-6 text-center text-xs md:text-sm"}
-                  [:span {:class "text-gray-500"} "New to the grid? "]
-                  [:a {:href "/signup"
-                       :class "text-cyber-cyan hover:text-cyber-yellow transition-colors"}
-                   "Initiate"]]]
-
-                ;; Show toast on error
-                (when (:error params)
-                  [:script "setTimeout(() => showToast('Invalid credentials. Try again.', 'error'), 100);"])]})]
-
-            :extra-footer [:script {:src (str "/js/life.js?v=" (layout/app-version-string))}]]})})
+              ;; Show toast on error
+              (when (:error params)
+                [:script "setTimeout(() => showToast('Invalid credentials. Try again.', 'error'), 100);"])]})})})
