@@ -7,12 +7,13 @@
   "Render the game page (full-screen canvas game).
    
    Options:
-   - :session - Ring session map (unused, for game page)
+   - :session - Ring session map (contains :username)
    - :anti-forgery-token - CSRF token
    - :high-score - User's high score"
-  [_session anti-forgery-token high-score]
+  [session anti-forgery-token high-score]
   (let [cdn-links (layout/cdn-links-map)
-        app-version (layout/app-version-string)]
+        app-version (layout/app-version-string)
+        username (:username session)]
     {:status 200
      :headers {"Content-Type" "text/html"}
      :body (str
@@ -195,6 +196,9 @@
                 }
               }
              ")]
+               
+               ;; Current user info for leaderboard highlighting
+               [:script (h/raw (str "const CURRENT_USERNAME = " (pr-str username) ";"))]
                
                [:script {:type "module" :src (str "/js/game.js?v=" app-version)}]]]))})
 )

@@ -2214,7 +2214,7 @@ function draw() {
             for (let i = 0; i < Math.min(10, topScores.length); i++) {
                 const entry = topScores[i];
                 const rank = i + 1;
-                const isCurrentUser = entry.username === '<?= username ?>';
+                const isCurrentUser = typeof CURRENT_USERNAME !== 'undefined' && entry.username === CURRENT_USERNAME;
                 
                 // Highlight top 3 with different colors
                 if (rank === 1) ctx.fillStyle = '#ffd700'; // Gold
