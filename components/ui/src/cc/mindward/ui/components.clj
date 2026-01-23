@@ -184,7 +184,7 @@
 
 (defn table
   "Render a complete table.
-   
+
    Options:
    - :columns - Vector of column names (required)
    - :rows - Vector of row data (required)
@@ -194,11 +194,11 @@
     :or {empty-message "No data available." corners? true}}]
   [:div {:class "bg-black border border-cyber-cyan relative overflow-hidden"}
    (when corners?
-     [:<>
-      [:div {:class "absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-cyber-yellow"}]
-      [:div {:class "absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-cyber-yellow"}]
-      [:div {:class "absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-cyber-yellow"}]
-      [:div {:class "absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-cyber-yellow"}]])
+    [:div {:class "absolute inset-0 pointer-events-none"}
+     [:div {:class "absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-cyber-yellow"}]
+     [:div {:class "absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-cyber-yellow"}]
+     [:div {:class "absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-cyber-yellow"}]
+     [:div {:class "absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-cyber-yellow"}]])
    [:div {:class "overflow-x-auto"}
     [:table {:class "w-full text-left border-collapse" :role "table"}
      (table-header columns)
@@ -209,8 +209,8 @@
                :class "px-6 py-10 text-center text-gray-500 uppercase tracking-widest text-xs md:text-sm"}
           empty-message]]
         (for [[idx row-data] (map-indexed vector rows)]
-          ^{:key idx}
-          (table-row (:cells row-data) (:options row-data))))]]]])
+          (with-meta (table-row (:cells row-data) (:options row-data))
+            {:key idx})))]]]])
 
 ;; === Utility Components ===
 
