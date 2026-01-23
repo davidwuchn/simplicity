@@ -242,6 +242,17 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - Run `clojure -M:poly test :dev` before committing to verify all tests pass.
 
 ## Tools & Utilities
+- **ripgrep (rg)**: The preferred search tool for code search and pattern matching.
+  - **Always use `rg` instead of `grep`** for faster, more intelligent code search
+  - **Respects .gitignore**: Automatically skips files in `.gitignore`
+  - **Better defaults**: Colors, line numbers, recursive search by default
+  - **Examples**:
+    ```bash
+    rg "console\.log" --type js           # Search in JavaScript files
+    rg -n "defn validate" components/     # Search with line numbers
+    rg -l "TODO" bases/                   # List files with matches
+    rg -i "error" --stats                 # Case-insensitive with statistics
+    ```
 - **brepl**: The mandatory tool for Clojure/EDN evaluation and structural integrity.
   - **Evaluation Rule**: ALWAYS use the heredoc pattern (`<<'EOF'`) to avoid quoting hell.
   - **Balancing Rule**: ALWAYS run `brepl balance <file>` after every `edit` or `write` on `*.clj` or `*.edn` files to ensure structural integrity.
