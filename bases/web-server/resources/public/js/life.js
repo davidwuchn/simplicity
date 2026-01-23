@@ -599,3 +599,13 @@ if (document.readyState === 'loading') {
 } else {
     init();
 }
+
+// =============================================================================
+// EXPORT TO GLOBAL SCOPE (for onclick handlers)
+// =============================================================================
+
+window.toggleLifePlay = toggleLifePlay;
+window.lifeStep = lifeStep;
+window.lifeClear = lifeClear;
+window.lifeRandom = lifeRandom;
+window.updateHud = updateHud;
