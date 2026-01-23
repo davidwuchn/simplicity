@@ -366,6 +366,9 @@ See hardcoded configuration analysis for complete list of tunable parameters.
 - **Option 2**: Cloudflare Tunnel (Zero Trust)
 - **Option 3**: Standalone uberjar on VPS
 
+**Future Optimizations (when scaling):**
+- [ ] Tailwind CSS: Replace CDN with purged local build (see [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md#future-optimizations))
+
 See comprehensive guide: [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md)
 
 ---

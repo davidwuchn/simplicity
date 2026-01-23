@@ -629,6 +629,28 @@ After deployment:
 7. ✅ Setup automated backups
 8. ✅ Configure monitoring and alerts
 
+## Future Optimizations
+
+### Tailwind CSS Build (Optional)
+
+Currently using CDN (`cdn.tailwindcss.com`) for Tailwind CSS. For production optimization:
+
+**Why optimize?**
+- CDN serves full Tailwind (~300KB) vs purged CSS (~10-20KB)
+- Remove external CDN dependency
+- Faster initial page load
+
+**How to implement (when needed):**
+1. Install Node.js toolchain
+2. Add `package.json` with Tailwind CLI
+3. Create build script to purge unused classes
+4. Serve static CSS from `/public/css/tailwind.min.css`
+5. Update `layout.clj` to use local file
+
+**Current trade-off:** Keeping CDN aligns with project philosophy (易简则天下之理得) - simplicity over premature optimization. The warning in browser console is cosmetic, not functional.
+
+**When to optimize:** When traffic exceeds ~10K daily visitors or when removing external dependencies becomes a priority.
+
 ## Support
 
 For deployment issues:
