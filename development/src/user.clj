@@ -203,7 +203,7 @@
         (.stop server)
         (log/info "Server stopped.")
         (catch InterruptedException e
-          (Thread/currentThread.interrupt)
+          (.interrupt (Thread/currentThread))
           (log/info "Server stop interrupted."))
         (catch Exception e
           (log/error e "Error stopping server"))))
