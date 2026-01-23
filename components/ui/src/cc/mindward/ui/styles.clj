@@ -27,13 +27,6 @@
    :zinc-800     "#27272a"
    :zinc-900     "#18181b"})
 
-;; === Breakpoints ===
-(def breakpoints
-  {:sm "640px"
-   :md "768px"
-   :lg "1024px"
-   :xl "1280px"})
-
 ;; ------------------------------------------------------------
 ;; Helper Functions (μ Directness - DRY principle)
 ;; ------------------------------------------------------------
@@ -58,295 +51,25 @@
   body { 
     background-color: " (c :background) "; 
     color: " (c :foreground) "; 
-    font-family: 'Orbitron', sans-serif; 
     background-image: linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent); 
     background-size: 50px 50px;
     min-height: 100vh;
   }
-  "))
-
-(defn cyber-components
-  "Cyber-themed UI components (cards, inputs, buttons)."
-  []
-  (str "
-  /* === Cyber Components === */
-  .font-cyber { font-family: 'Orbitron', sans-serif; }
-  .cyber-card { 
-    background-color: " (c :black) "; 
-    border: 2px solid " (c :cyber-yellow) "; 
-    box-shadow: 6px 6px 0px 0px " (c :cyber-cyan) "; 
-    padding: 2rem;
-    transition: all 0.3s ease;
-  }
-  .cyber-card:hover {
-    box-shadow: 8px 8px 0px 0px " (c :cyber-cyan) ", 0 0 20px rgba(0, 240, 255, 0.3);
-    transform: translate(-2px, -2px);
-  }
-  
-  .cyber-input { 
-    background-color: " (c :gray-dark) "; 
-    border: 1px solid " (c :cyber-cyan) "; 
-    color: " (c :cyber-cyan) "; 
-    border-radius: 0;
-    transition: all 0.2s ease;
-  }
-  .cyber-input:focus { 
-    border-color: " (c :cyber-yellow) "; 
-    outline: none; 
-    box-shadow: 0 0 10px " (c :cyber-yellow) ", inset 0 0 5px rgba(252, 238, 10, 0.1);
-    transform: scale(1.01);
-  }
-  .cyber-input:invalid:not(:placeholder-shown) {
-    border-color: " (c :cyber-red) ";
-    box-shadow: 0 0 10px rgba(255, 0, 60, 0.5);
-  }
-  "))
-
-(defn cyber-buttons
-  "Primary and secondary cyber-themed buttons."
-  []
-  (str "
-  /* === Cyber Buttons === */
-  .cyber-btn { 
-    background-color: " (c :cyber-yellow) "; 
-    color: " (c :black) "; 
-    font-weight: 900; 
-    text-transform: uppercase; 
-    border: none; 
-    clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%); 
-    padding: 12px 24px; 
-    transition: all 0.2s ease;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-  }
-  .cyber-btn::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: width 0.3s, height 0.3s;
-  }
-  .cyber-btn:hover::before {
-    width: 300px;
-    height: 300px;
-  }
-  .cyber-btn:hover { 
-    background-color: " (c :cyber-cyan) "; 
-    box-shadow: 4px 4px 0px " (c :cyber-red) "; 
-    transform: translate(-2px, -2px); 
-  }
-  .cyber-btn:active {
-    transform: translate(0, 0);
-    box-shadow: 2px 2px 0px " (c :cyber-red) ";
-  }
-  .cyber-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-  
-  .cyber-btn-secondary { 
-    background-color: " (c :gray-medium) "; 
-    color: " (c :cyber-cyan) "; 
-    border: 2px solid " (c :cyber-cyan) "; 
-    font-weight: 700; 
-    text-transform: uppercase; 
-    clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%); 
-    padding: 10px 22px; 
-    transition: all 0.2s ease;
-    cursor: pointer;
-  }
-  .cyber-btn-secondary:hover { 
-    background-color: " (c :cyber-cyan) "; 
-    color: " (c :black) "; 
-    box-shadow: 4px 4px 0px " (c :cyber-yellow) ";
-    transform: translate(-2px, -2px);
-  }
-  "))
-
-(defn animations
-  "Keyframe animations and animation utilities."
-  []
-  (str "
-  /* === Animations === */
-  .glitch-text { 
-    text-shadow: 2px 0 " (c :cyber-red) ", -2px 0 " (c :cyber-cyan) "; 
-    animation: glitch 1s infinite alternate-reverse; 
-  }
-  @keyframes glitch { 
-    0% { text-shadow: 2px 0 " (c :cyber-red) ", -2px 0 " (c :cyber-cyan) "; } 
-    25% { text-shadow: -2px 0 " (c :cyber-red) ", 2px 0 " (c :cyber-cyan) "; } 
-    50% { text-shadow: 2px 0 " (c :cyber-cyan) ", -2px 0 " (c :cyber-yellow) "; } 
-    100% { text-shadow: -2px 0 " (c :cyber-cyan) ", 2px 0 " (c :cyber-red) "; } 
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .fade-in {
-    animation: fadeIn 0.5s ease-out;
-  }
-  
-  @keyframes slideIn {
-    from { transform: translateX(-100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-  .slide-in {
-    animation: slideIn 0.3s ease-out;
-  }
-  
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-  "))
-
-(defn color-utilities
-  "Text and border color utility classes."
-  []
-  (str "
-  /* === Color Utilities === */
-  .text-cyber-yellow { color: " (c :cyber-yellow) "; }
-  .text-cyber-cyan { color: " (c :cyber-cyan) "; }
-  .text-cyber-red { color: " (c :cyber-red) "; }
-  .border-cyber-yellow { border-color: " (c :cyber-yellow) "; }
-  .border-cyber-cyan { border-color: " (c :cyber-cyan) "; }
-  .border-cyber-red { border-color: " (c :cyber-red) "; }
-  "))
-
-(defn loading-state
-  "Loading spinner and disabled state styles."
-  []
-  (str "
-  /* === Loading State === */
-  .loading {
-    position: relative;
-    pointer-events: none;
-  }
-  .loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 20px;
-    height: 20px;
-    margin: -10px 0 0 -10px;
-    border: 2px solid " (c :cyber-cyan) ";
-    border-top-color: transparent;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-  }
-  "))
-
-(defn toast-notifications
-  "Toast notification container and variants."
-  []
-  (str "
-  /* === Toast Notifications === */
-  #toast-container {
-    position: fixed;
-    top: 80px;
-    right: 20px;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    pointer-events: none;
-  }
-  .toast {
-    background: " (c :black) ";
-    border: 2px solid;
-    padding: 16px 20px;
-    min-width: 300px;
-    max-width: 400px;
-    box-shadow: 6px 6px 0px 0px;
-    animation: slideIn 0.3s ease-out;
-    pointer-events: auto;
-    font-size: 14px;
-    font-weight: 700;
-  }
-  .toast.success { border-color: " (c :success-green) "; box-shadow: 6px 6px 0px 0px " (c :success-green) "; color: " (c :success-green) "; }
-  .toast.error { border-color: " (c :cyber-red) "; box-shadow: 6px 6px 0px 0px " (c :cyber-red) "; color: " (c :cyber-red) "; }
-  .toast.info { border-color: " (c :cyber-cyan) "; box-shadow: 6px 6px 0px 0px " (c :cyber-cyan) "; color: " (c :cyber-cyan) "; }
-  .toast.warning { border-color: " (c :cyber-yellow) "; box-shadow: 6px 6px 0px 0px " (c :cyber-yellow) "; color: " (c :cyber-yellow) "; }
-  "))
-
-(defn responsive-design
-  "Media queries for responsive layouts."
-  []
-  (str "
-  /* === Responsive Design === */
   @media (max-width: 768px) {
     body { background-size: 30px 30px; }
-    .cyber-card { 
-      padding: 1.5rem; 
-      box-shadow: 4px 4px 0px 0px " (c :cyber-cyan) "; 
-    }
-    .glitch-text { font-size: 2.5rem !important; }
-    #toast-container { right: 10px; left: 10px; top: 60px; }
-    .toast { min-width: auto; max-width: 100%; }
-    nav .hidden-mobile { display: none !important; }
-  }
-  
-  @media (max-width: 640px) {
-    .cyber-btn, .cyber-btn-secondary {
-      padding: 10px 18px;
-      font-size: 0.875rem;
-    }
   }
   "))
 
-(defn accessibility
-  "Accessibility utilities (screen reader, focus states)."
-  []
-  (str "
-  /* === Accessibility === */
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-  
-  :focus-visible {
-    outline: 2px solid " (c :cyber-yellow) ";
-    outline-offset: 4px;
-  }
-  "))
-
-;; ------------------------------------------------------------
-;; Main Stylesheet Composer (π Synthesis)
-;; ------------------------------------------------------------
+;; Note: Animations, Color Utilities, and Accessibility are now handled by Tailwind Config in layout.clj
 
 (defn stylesheet
   "Compose full stylesheet from modular sections.
    
-   Benefits of this refactoring:
-   - Each section is independently testable
-   - Easy to modify individual sections without touching others
-   - Clear separation of concerns (components, animations, responsive, etc.)
-   - Better code navigation and readability
-   
    (fractal Clarity): Complex system broken into simple, composable parts."
   []
   (str
-    (base-styles)
-    (cyber-components)
-    (cyber-buttons)
-    (animations)
-    (color-utilities)
-    (loading-state)
-    (toast-notifications)
-    (responsive-design)
-    (accessibility)))
+   (base-styles)
+   (cyber-components)
+   (cyber-buttons)
+   (loading-state)
+   (toast-notifications)))

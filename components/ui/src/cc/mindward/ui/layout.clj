@@ -5,6 +5,7 @@
   (:require [hiccup2.core :as h]
             [clojure.java.io :as io]
             [clojure.string :as str]
+            [clojure.data.json :as json]
             [cc.mindward.ui.styles :as styles]
             [cc.mindward.ui.components :as c]
             [cc.mindward.ui.helpers :as helpers]))
@@ -39,39 +40,22 @@
 
 ;; === Scripts ===
 
-(defn- toast-script 
-  "JavaScript for toast notifications."
+(defn- tailwind-config-script
+  "Generate Tailwind configuration script.
+   Injects the project's design system (colors, fonts) into Tailwind."
   []
-  "
-  function showToast(message, type = 'info', duration = 3000) {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type} fade-in`;
-    toast.textContent = message;
-    toast.setAttribute('role', 'status');
-    container.appendChild(toast);
-    setTimeout(() => {
-      toast.style.animation = 'slideIn 0.3s ease-out reverse';
-      setTimeout(() => toast.remove(), 300);
-    }, duration);
-  }")
-
-(defn- form-loading-script 
-  "JavaScript for form loading states."
-  []
-  "
-  document.addEventListener('DOMContentLoaded', () => {
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
-      form.addEventListener('submit', (e) => {
-        const btn = form.querySelector('button[type=submit]');
-        if (btn) {
-          btn.classList.add('loading');
-          btn.disabled = true;
-        }
-      });
-    });
-  });")
+  (let [config {:theme
+                {:extend
+                 {:colors styles/colors
+                  :fontFamily {:sans ["Orbitron" "sans-serif"]}
+                  :keyframes {:glitch {"0%" {:textShadow (str "2px 0 " (:cyber-red styles/colors) ", -2px 0 " (:cyber-cyan styles/colors))}
+                                       "25%" {:textShadow (str "-2px 0 " (:cyber-red styles/colors) ", 2px 0 " (:cyber-cyan styles/colors))}
+                                       "50%" {:textShadow (str "2px 0 " (:cyber-cyan styles/colors) ", -2px 0 " (:cyber-yellow styles/colors))}
+                                       "100%" {:textShadow (str "-2px 0 " (:cyber-cyan styles/colors) ", 2px 0 " (:cyber-red styles/colors))}}
+                              :spin {:to {:transform "rotate(360deg)"}}}
+                  :animation {:glitch "glitch 1s infinite alternate-reverse"
+                              :spin "spin 0.6s linear infinite"}}}}]
+    (str "tailwind.config = " (json/write-str config) ";")))
 
 ;; === Head Component ===
 
@@ -87,6 +71,7 @@
    [:meta {:name "description" :content (:description meta-config)}]
    [:title title]
    [:script {:src (:tailwind cdn-links)}]
+   [:script (h/raw (tailwind-config-script))]
    [:link {:href (:font cdn-links) :rel "stylesheet"}]
    [:style (styles/stylesheet)]])
 
@@ -165,8 +150,7 @@
       extra-footer
       
        ;; Scripts
-       [:script (h/raw (toast-script))]
-       [:script (h/raw (form-loading-script))]]])))
+       [:script {:src (str "/js/ui.js?v=" @app-version)}]]])))
 
 
 ;; === Public Getters (for use in page namespaces) ===

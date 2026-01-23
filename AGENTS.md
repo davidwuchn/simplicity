@@ -240,6 +240,7 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - **Client-Side**: 
   - **Audio Policy**: Web Audio API requires a user gesture (`click`/`keydown`) to unlock. Always guard `new AudioContext()` with a `try-catch` and handle `suspended` state.
   - **Interaction**: Use `e.preventDefault()` for all critical application keys (e.g., Arrows, Space, R) to prevent browser-level interference like scrolling or character insertion.
+  - **Language Preference**: Prefer ClojureScript over JavaScript. Use `.cljs` for all complex client-side logic to maintain system consistency (π Synthesis). Reserve `.js` for trivial scripts or direct browser API manipulations where CLJS overhead is unjustified.
 - **Logic**: Use threshold-based triggers (e.g., `score >= limit`) instead of exact matches (`score == limit`) to handle discrete state jumps safely.
 
 ### 4. Dependency Management (e Purpose)

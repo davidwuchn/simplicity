@@ -21,9 +21,7 @@
    {:doc "Start Babashka nREPL server on port 7888"
     :task (shell "bb nrepl-server 7888")}
    
-   repl
-   {:doc "Start development REPL (alias for dev)"
-    :task (run 'dev)}
+
   
   check
   {:doc "Check Polylith workspace integrity"
@@ -42,7 +40,7 @@
   ;; ═══════════════════════════════════════════════════════════
   
    test
-   {:doc "Run all tests (618 assertions)"
+   {:doc "Run all tests"
     :task (shell "clojure -M:poly test :dev")}
   
   test:watch
@@ -250,57 +248,10 @@
            (println (str "Source files:     " src-files))
            (println (str "Test files:       " test-files))
            (println (str "Total files:      " clj-files))
-            (println (str "Test assertions:  618"))
            (println (str "Components:       4 (auth, game, ui, user)"))
            (println (str "Bases:            1 (web-server)"))
            (println "═══════════════════════════════════════════════════════════"))}
   
-  help
-  {:doc "Show all available tasks"
-   :task (do
-           (println "═══════════════════════════════════════════════════════════")
-           (println "  Simplicity - Babashka Build System")
-           (println "  易简则天下之理得 (Simplicity allows obtaining the logic of the world)")
-           (println "═══════════════════════════════════════════════════════════")
-           (println "\nDEVELOPMENT:")
-            (println "  bb dev             - Start development REPL with hot reload")
-            (println "  bb nrepl           - Start Babashka nREPL server on port 7888")
-            (println "  bb repl            - Alias for 'dev'")
-            (println "  bb check           - Check Polylith workspace integrity")
-            (println "  bb info            - Show Polylith workspace info")
-            (println "  bb diff            - Show changed bricks")
-           (println "\nTESTING:")
-            (println "  bb test            - Run all tests (618 assertions)")
-           (println "  bb test:watch      - Watch mode (re-run on changes)")
-           (println "  bb test:auth       - Test auth component")
-           (println "  bb test:game       - Test game component")
-           (println "  bb test:ui         - Test UI component")
-           (println "  bb test:user       - Test user component")
-           (println "  bb test:web-server - Test web-server base")
-           (println "\nLINTING:")
-           (println "  bb lint            - Lint all source files")
-           (println "  bb lint:fix        - Auto-fix linting issues")
-           (println "\nBUILD:")
-           (println "  bb clean           - Clean build artifacts")
-           (println "  bb uberjar         - Build standalone jar (45MB)")
-           (println "  bb build           - Full build (clean + test + uberjar)")
-           (println "  bb jar-info        - Show jar information")
-           (println "\nDOCKER:")
-           (println "  bb docker:build    - Build Docker image")
-           (println "  bb docker:run      - Run Docker container")
-           (println "  bb docker:compose  - Start with Docker Compose")
-           (println "\nDEPLOYMENT:")
-           (println "  bb deploy:build    - Interactive build menu")
-           (println "  bb deploy:health   - Monitor production health")
-           (println "\nDATABASE:")
-           (println "  bb db:reset        - Reset local database")
-           (println "  bb db:backup       - Backup database")
-           (println "\nUTILITIES:")
-           (println "  bb ver             - Show project version")
-           (println "  bb ver:bump        - Bump version (patch)")
-           (println "  bb health          - Check local server health")
-           (println "  bb stats           - Show project statistics")
-           (println "  bb help            - Show this help")
-           (println "\n═══════════════════════════════════════════════════════════")
-           (println "For detailed documentation, see docs/ directory")
-           (println "═══════════════════════════════════════════════════════════"))}}}
+   help
+   {:doc "Show all available tasks"
+    :task (shell "bb tasks")}}}
