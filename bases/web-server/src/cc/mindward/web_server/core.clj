@@ -24,11 +24,13 @@
   (res/redirect (str path "?error=" (java.net.URLEncoder/encode error-msg "UTF-8"))))
 
 (defn- redirect-with-success
-  "Redirect to path with URL-encoded success message (flash).
-   Provides user feedback on successful actions."
-  [path success-msg]
+  "Redirect to path with flash message, preserving session data.
+   Optionally sets :username in session for auth flows."
+  [session path success-msg & [username]]
   (-> (res/redirect path)
-      (assoc-in [:session :flash] {:type :success :message success-msg})))
+      (assoc :session (cond-> (or session {})
+                        username (assoc :username username)
+                        :always (assoc :flash {:type :success :message success-msg})))))
 
 ;; ------------------------------------------------------------
 ;; Input Validation (∀ Vigilance)
@@ -139,7 +141,7 @@
       (try
         (user/create-user! params)
         (log/info "User created successfully:" username)
-        (redirect-with-success "/select-game" (str "Identity established. Welcome, " username "."))
+        (redirect-with-success session "/select-game" (str "Identity established. Welcome, " username ".") username)
         (catch Exception e
           (log/warn e "User creation failed:" username)
           (redirect-with-error "/signup" "Username already exists"))))))
@@ -186,7 +188,7 @@
         (if auth-result
           (do
             (log/info "User logged in successfully:" username)
-            (redirect-with-success "/select-game" (str "Access granted. Connection established, " username ".")))
+            (redirect-with-success session "/select-game" (str "Access granted. Connection established, " username ".") username))
           (do
             (log/warn "Failed login attempt for user:" username)
             (redirect-with-error "/login" "Invalid credentials")))))))
@@ -227,7 +229,7 @@
 (defn game-api [{:keys [session params]}]
   ;; First, ensure user is authenticated
   (let [username (require-authentication session)]
-    (if (string? username)  ;; Check if we got a username or an error response
+    (if (string? username) ;; Check if we got a username or an error response
       (let [game-id (keyword (str "user-" username "-game"))
             action (:action params)]
         (case action
@@ -274,7 +276,7 @@
             (res/bad-request (json/write-str {:error "Saved ID required"})))
 
           (res/bad-request (json/write-str {:error "Invalid action"}))))
-      username)))  ;; Return 401 response
+      username))) ;; Return 401 response
 
 (defn list-saved-games-api [_]
   (res/response (json/write-str (game/list-saved-games))))
@@ -381,11 +383,11 @@
       ;; Rate limiting on auth endpoints (prevents brute force)
       (security/wrap-rate-limit {:paths #{"/login" "/signup"}
                                  :max-requests 10
-                                 :refill-rate 0.5})  ;; 1 request per 2 seconds
+                                 :refill-rate 0.5}) ;; 1 request per 2 seconds
       ;; Rate limiting on game API (prevents spam/DoS)
       (security/wrap-rate-limit {:paths #{"/api/game" "/game/score"}
                                  :max-requests 30
-                                 :refill-rate 2.0})  ;; 15 requests per second
+                                 :refill-rate 2.0}) ;; 15 requests per second
       ;; Security headers (CSP, X-Frame-Options, etc.) - must be AFTER wrap-defaults
       security/wrap-security-headers))
 
