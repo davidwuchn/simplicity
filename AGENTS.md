@@ -254,16 +254,21 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - Run `bb test` or `clojure -M:poly test :dev` before committing to verify all tests pass.
 
 ## Tools & Utilities
-- **ripgrep (rg)**: The preferred search tool for code search and pattern matching.
-  - **Always use `rg` instead of `grep`** for faster, more intelligent code search
-  - **Respects .gitignore**: Automatically skips files in `.gitignore`
+- **ripgrep (rg)**: **MANDATORY** search tool for all code search operations.
+  - **⚠️ NEVER use `grep`** - always use `rg` (ripgrep) instead
+  - **Why**: 10-100x faster, respects `.gitignore`, better defaults, smarter pattern matching
+  - **Respects .gitignore**: Automatically skips `target/`, `node_modules/`, etc.
   - **Better defaults**: Colors, line numbers, recursive search by default
-  - **Examples**:
+  - **Common patterns**:
     ```bash
-    rg "console\.log" --type js           # Search in JavaScript files
-    rg -n "defn validate" components/     # Search with line numbers
-    rg -l "TODO" bases/                   # List files with matches
+    rg "pattern"                          # Search recursively from current dir
+    rg "console\.log" --type js           # Search in JavaScript files only
+    rg "defn.*validate" --type clojure    # Search in Clojure files
+    rg -n "TODO" components/              # Search with line numbers
+    rg -l "FIXME" bases/                  # List files with matches only
     rg -i "error" --stats                 # Case-insensitive with statistics
+    rg -C 3 "pattern"                     # Show 3 lines of context
+    rg --type-list                        # List available file types
     ```
 - **brepl**: The mandatory tool for Clojure/EDN evaluation and structural integrity.
   - **Evaluation Rule**: ALWAYS use the heredoc pattern (`<<'EOF'`) to avoid quoting hell.
@@ -295,6 +300,7 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
   - Provides deployment instructions after build
 
 ## ∀ Vigilance: Anti-Patterns
+- **Using grep**: **NEVER use `grep`** for code search. Always use `rg` (ripgrep) instead - it's faster, respects `.gitignore`, and has better defaults. See Tools & Utilities section.
 - **Complexity**: If a function exceeds 20 lines, reconsider the domain model.
 - **Dependency Hell**: Avoid circular dependencies between components. Use `poly check` to verify.
 - **Slop**: Do not leave commented-out code or `(println ...)` in production paths. Use a logging library (logback configured).
