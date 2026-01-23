@@ -1,0 +1,6 @@
+;; Development project for Polylith workspace
+;; Provides cross-component REPL access for local development.
+;; Inherits from root deps.edn via :dev alias.
+
+{:paths ["src" "resources"]
+ :deps {}}

@@ -1,7 +1,6 @@
 (ns cc.mindward.web-server.core
   (:require [cc.mindward.auth.interface :as auth]
             [cc.mindward.game.interface :as game]
-            [cc.mindward.game.config :as game-config]
             [cc.mindward.web-server.security :as security]
             [clojure.data.json :as json]
             [clojure.string :as str]
@@ -57,8 +56,8 @@
                                          (let [x (int (first c))
                                                y (int (second c))]
                                          ;; Bounds check using game config
-                                           (when (and (<= game-config/board-min-x x game-config/board-max-x)
-                                                      (<= game-config/board-min-y y game-config/board-max-y))
+                                           (when (and (<= (game/board-min-x) x (game/board-max-x))
+                                                      (<= (game/board-min-y) y (game/board-max-y)))
                                              [x y])))))
                                 (filter some?))
                           coords)]

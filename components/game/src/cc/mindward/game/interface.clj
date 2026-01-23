@@ -1,9 +1,10 @@
 (ns cc.mindward.game.interface
   "Game engine interface - Conway's Game of Life with musical integration.
-   
+
    φ (Vitality): Game state evolves organically following cellular automata rules.
    ∃ (Truth): Musical triggers are deterministic based on pattern emergence."
   (:require [cc.mindward.game.impl :as impl]
+            [cc.mindward.game.config :as config]
             [clojure.spec.alpha :as s]))
 
 ;; ------------------------------------------------------------
@@ -25,6 +26,15 @@
 
 ;; Board represented as set of living cell coordinates [x y]
 ;; Musical triggers use pattern classification thresholds
+
+;; ------------------------------------------------------------
+;; Config Accessors (μ Directness - single point of config access)
+;; ------------------------------------------------------------
+
+(defn board-max-x [] config/board-max-x)
+(defn board-min-x [] config/board-min-x)
+(defn board-max-y [] config/board-max-y)
+(defn board-min-y [] config/board-min-y)
 
 ;; ------------------------------------------------------------
 ;; Query Operations (λ - pure lookups)
