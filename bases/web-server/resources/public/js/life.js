@@ -133,8 +133,9 @@ function startGameLoop() {
 
 function gameLoop() {
     const now = Date.now();
-    
-    if (now - state.lastUpdate > CONFIG.tickMs) {
+
+    // Only evolve when playing (not paused)
+    if (state.isPlaying && now - state.lastUpdate > CONFIG.tickMs) {
         try {
             evolve();
             draw();
@@ -143,7 +144,7 @@ function gameLoop() {
         }
         state.lastUpdate = now;
     }
-    
+
     requestAnimationFrame(gameLoop);
 }
 
