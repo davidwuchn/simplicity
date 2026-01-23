@@ -139,7 +139,8 @@
                 [:div "SPACE to Switch Weapon"]
                 [:div "SHIFT for Shield"]
                 [:div "R to Reboot"]
-                [:div {:class "mt-2"} [:a {:href "/" :class "text-red-500 hover:text-white pointer-events-auto"} "ABORT MISSION"]]]
+                [:div {:class "mt-2"} [:a {:href "/" :class "text-red-500 hover:text-white pointer-events-auto"} "ABORT MISSION"]]
+                [:div {:class "mt-2 text-gray-600"} "v" app-version]]
                
                ;; Game Over Overlay (hidden by default)
                [:div {:id "game-over-overlay" 
