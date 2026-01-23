@@ -147,9 +147,14 @@ See [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md) for product
 - **Boundaries**: Catch exceptions at the "Base" level (public API) and log/report.
 
 ### 5. Types & Data (π Synthesis)
-- **Clojure Spec**: Use `clojure.spec.alpha` to define domain constraints in `interface` namespaces.
+- **Clojure Spec**: Mandate `clojure.spec.alpha` to define domain constraints in all `interface` namespaces.
+- **Data Contracts**: Every public function in an `interface` should have an associated `s/fdef`.
 - **Maps**: Prefer maps over multiple positional arguments.
 - **Keywords**: Use namespaced keywords for domain entities (e.g., `:user/id`).
+
+### 6. Metadata Hygiene (fractal Clarity)
+- **Keyword IDs**: Always use `:keywords` for identifiers in `workspace.edn` (e.g., `:development` projects) and `deps.edn` (e.g., `:clojars` repository keys). 
+- **Type Safety**: Avoid using `Strings` for project or repository names in metadata to prevent `Symbol -> Keyword` casting errors in Clojure inspection tooling.
 
 ## Polylith Architectural Constraints (∀ Vigilance)
 
@@ -296,6 +301,8 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - **Abstraction Leak**: Never let implementation details (like DB connections or third-party client objects) escape the component interface. Use data maps or domain records.
 - **The God Base**: Bases are Controllers, not Views. Do not mix routing, logic, and HTML generation in one file.
 - **The Test Illusion**: `(is (= 1 1))` is not a test. Verify actual logic or data persistence.
+- **Unspec'd Interfaces**: Never create a component interface without corresponding Clojure Specs and `s/fdef` contracts.
+- **Metadata Strings**: Avoid using strings for project names, aliases, or repository IDs in `workspace.edn` or `deps.edn`. This causes casting failures in inspection tools.
 - **Hardcoded Secrets**: Never commit passwords or API keys. Use `System/getenv` or a config component. **Security validated**: 618 security-tested assertions.
 - **Dead Code**: Regularly audit for unused functions, commented-out code, and obsolete files. Use dead code analysis to identify security gaps (e.g., missing validation).
 - **The Infinite Loop**: When using `requestAnimationFrame`, always wrap the loop body in a `try-catch` block to prevent a crash from freezing the entire tab/rendering thread.
