@@ -3,6 +3,8 @@
    
    This namespace provides the foundational layout components used by all pages."
   (:require [hiccup2.core :as h]
+            [clojure.java.io :as io]
+            [clojure.string :as str]
             [cc.mindward.ui.styles :as styles]
             [cc.mindward.ui.components :as c]
             [cc.mindward.ui.helpers :as helpers]))
@@ -11,8 +13,20 @@
 
 (def ^:private app-version
   "Application version for cache-busting static assets.
-   Update this on each release to invalidate browser caches."
-  "1.4.2")
+   Read from VERSION file at project root (single source of truth)."
+  (delay
+    (try
+      (-> (io/resource "VERSION")
+          slurp
+          str/trim)
+      (catch Exception _
+        ;; Fallback for development when resource not on classpath
+        (try
+          (-> (io/file "VERSION")
+              slurp
+              str/trim)
+          (catch Exception _
+            "dev"))))))
 
 (def ^:private meta-config
   {:charset "UTF-8"
@@ -164,7 +178,7 @@
 (defn app-version-string
   "Get the current app version for cache busting."
   []
-  app-version)
+  @app-version)
 
 (defn cdn-links-map
   "Get CDN links configuration."

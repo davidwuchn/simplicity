@@ -7,7 +7,7 @@
   (:require [clojure.tools.build.api :as b]))
 
 (def lib 'cc.mindward/simplicity)
-(def version "1.0.0")
+(def version (clojure.string/trim (slurp "VERSION")))
 (def class-dir "target/classes")
 (def uber-file "target/simplicity-standalone.jar")
 
@@ -51,6 +51,11 @@
   (println "Copying resources...")
   (b/copy-dir {:src-dirs ["bases/web-server/resources"]
                :target-dir class-dir})
+  
+  ;; Copy VERSION file to classpath root
+  (println "Copying VERSION file...")
+  (b/copy-file {:src "VERSION"
+                :target (str class-dir "/VERSION")})
   
   ;; Compile Java classes (AOT compilation for main)
   (println "Compiling main class...")
