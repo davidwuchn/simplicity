@@ -220,7 +220,12 @@
 (defn start-cleanup-scheduler!
   []
   (when-not @cleanup-executor
-    (let [executor (java.util.concurrent.Executors/newSingleThreadScheduledExecutor)
+    (let [thread-factory (reify java.util.concurrent.ThreadFactory
+                           (newThread [_ runnable]
+                             (doto (Thread. runnable)
+                               (.setDaemon true)
+                               (.setName "game-cleanup-scheduler"))))
+          executor (java.util.concurrent.Executors/newSingleThreadScheduledExecutor thread-factory)
           task (fn [] (try (cleanup-stale-games!) (catch Exception e (log/error e "Cleanup failed"))))]
       (.scheduleAtFixedRate executor 
                             task 
