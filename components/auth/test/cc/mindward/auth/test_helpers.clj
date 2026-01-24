@@ -341,4 +341,5 @@
   (require '[cc.mindward.auth.interface :as auth]))
 
 ;; Call this at the top of test files that use these helpers
-(require-auth-namespace)
+;; Commented out to prevent loading issues
+;; (require-auth-namespace)
