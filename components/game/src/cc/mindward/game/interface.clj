@@ -16,9 +16,17 @@
 (s/def :game/board (s/coll-of :game/coordinate :kind set?))
 (s/def :game/generation (s/and int? #(>= % 0)))
 (s/def :game/score (s/and int? #(>= % 0)))
+(s/def :game/trigger keyword?)
+(s/def :game/params map?)
 
 (s/def :game/musical-trigger
   (s/keys :req-un [:game/trigger :game/params]))
+
+(s/def :game/healthy? boolean?)
+(s/def :game/details map?)
+
+(s/def :game/health-status
+  (s/keys :req [:game/healthy?] :opt [:game/details]))
 
 ;; ------------------------------------------------------------
 ;; Domain Model (π Synthesis)
@@ -40,15 +48,27 @@
 ;; Query Operations (λ - pure lookups)
 ;; ------------------------------------------------------------
 
+(s/fdef get-board
+  :args (s/cat :game-id :game/id)
+  :ret (s/nilable :game/board))
+
 (defn get-board
   "Get the current game board state. Returns set of [x y] coordinates."
   [game-id]
   (impl/get-board game-id))
 
+(s/fdef get-generation
+  :args (s/cat :game-id :game/id)
+  :ret :game/generation)
+
 (defn get-generation
   "Get the current generation number for a game."
   [game-id]
   (impl/get-generation game-id))
+
+(s/fdef get-score
+  :args (s/cat :game-id :game/id)
+  :ret (s/nilable :game/score))
 
 (defn get-score
   "Calculate score based on board complexity and generation.
@@ -81,11 +101,19 @@
   [game-id]
   (impl/evolve! game-id))
 
+(s/fdef clear-cells!
+  :args (s/cat :game-id :game/id :cells :game/board)
+  :ret :game/board)
+
 (defn clear-cells!
   "Clear specific cells from the board.
    cells: set of [x y] coordinates to remove."
   [game-id cells]
   (impl/clear-cells! game-id cells))
+
+(s/fdef add-cells!
+  :args (s/cat :game-id :game/id :cells :game/board)
+  :ret :game/board)
 
 (defn add-cells!
   "Add living cells to the board.
@@ -97,6 +125,10 @@
 ;; Musical Integration (∃ Truth - deterministic pattern mapping)
 ;; ------------------------------------------------------------
 
+(s/fdef get-musical-triggers
+  :args (s/cat :game-id :game/id)
+  :ret (s/coll-of :game/musical-trigger))
+
 (defn get-musical-triggers
   "Analyze board and return musical trigger events.
    Maps emergent patterns to audio parameters:
@@ -104,10 +136,18 @@
    - Cell births/deaths → envelope triggers
    - Stable patterns → sustained drones
    - Chaos → noise bursts
-   
+
    Returns vector of {:trigger :params} maps."
   [game-id]
   (impl/generate-musical-triggers game-id))
+
+;; ------------------------------------------------------------
+;; Lifecycle Management (τ Wisdom)
+;; ------------------------------------------------------------
+
+(s/fdef initialize!
+  :args (s/cat)
+  :ret nil?)
 
 (defn initialize!
   "Initialize the game engine. Must be called once at startup.
@@ -115,16 +155,28 @@
   []
   (impl/initialize!))
 
+(s/fdef cleanup-stale-games!
+  :args (s/cat)
+  :ret int?)
+
 (defn cleanup-stale-games!
   "Manually trigger cleanup of stale games.
    Returns the number of games removed."
   []
   (impl/cleanup-stale-games!))
 
+(s/fdef stop-cleanup-scheduler!
+  :args (s/cat)
+  :ret nil?)
+
 (defn stop-cleanup-scheduler!
   "Stop the background cleanup scheduler. Call on shutdown."
   []
   (impl/stop-cleanup-scheduler!))
+
+(s/fdef health-check
+  :args (s/cat)
+  :ret :game/health-status)
 
 (defn health-check
   "Check game engine health status.

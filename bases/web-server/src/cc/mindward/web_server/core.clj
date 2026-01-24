@@ -43,12 +43,12 @@
 
 (defn- parse-coordinates
   "Parse coordinate JSON into a set of [x y] vectors with bounds validation.
-   
+
    Security (∀ Vigilance):
    - Validates coordinates are within game board bounds
    - Limits array size to prevent memory exhaustion
    - Ensures coordinates are integers
-   
+
    Returns: Set of [x y] vectors, empty set on error."
   [json-str]
   (try
@@ -343,7 +343,7 @@
 
 (defn health-check
   "Health check endpoint for load balancers and monitoring.
-   Verifies database connectivity and returns system status."
+   Verifies database connectivity and game engine status."
   [_]
   (try
     (let [start-time (System/currentTimeMillis)
@@ -353,13 +353,18 @@
                         (catch Exception e
                           (log/error e "Database health check failed")
                           false))
+          ;; Check game engine health
+          game-health (game/health-check)
+          game-healthy? (:healthy? game-health)
           response-time (- (System/currentTimeMillis) start-time)
-          status (if db-healthy? "healthy" "unhealthy")]
-      {:status (if db-healthy? 200 503)
+          overall-healthy? (and db-healthy? game-healthy?)
+          status (if overall-healthy? "healthy" "unhealthy")]
+      {:status (if overall-healthy? 200 503)
        :headers {"Content-Type" "application/json"}
        :body (json/write-str {:status status
                               :timestamp (System/currentTimeMillis)
                               :checks {:database {:status (if db-healthy? "up" "down")}
+                                       :game (:details game-health)
                                        :responseTimeMs response-time}
                               :version "1.0.0"})})
     (catch Exception e

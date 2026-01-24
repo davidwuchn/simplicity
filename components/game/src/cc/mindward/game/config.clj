@@ -101,3 +101,11 @@
 (def cleanup-initial-delay-minutes
   "Initial delay before first cleanup run (minutes)."
   10)
+
+;; ------------------------------------------------------------
+;; Resource Limits (∀ Vigilance)
+;; ------------------------------------------------------------
+
+(def max-games
+  "Maximum number of concurrent game sessions to prevent unbounded memory growth."
+  1000)

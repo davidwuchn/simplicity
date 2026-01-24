@@ -1,6 +1,6 @@
 (ns cc.mindward.game.impl
   "Game engine implementation - Conway's Game of Life.
-   
+
    π (Synthesis): Board state as immutable sets for efficient evolution.
    τ (Wisdom): Use transient collections for performance in hot loops.
    ∀ (Vigilance): Bounds checking prevents infinite board growth."
@@ -22,6 +22,8 @@
 
 (defonce ^:private games (atom {}))
 (defonce ^:private cleanup-executor (atom nil))
+(defonce ^:private consecutive-failures (atom 0))
+(def ^:private max-consecutive-failures 5)
 
 ;; ------------------------------------------------------------
 ;; Helpers (λ Pure Functions)
@@ -48,7 +50,8 @@
 
 (defn- next-generation
   "Evolve board one generation using Conway's rules.
-   τ (Wisdom): Uses transient collections for performance."
+   τ (Wisdom): Uses transient collections for performance.
+   ∀ (Vigilance): Bounds checking is applied at creation time and when adding cells."
   [board]
   (let [neighbor-counts (count-neighbors board)]
     (persistent!
@@ -62,13 +65,15 @@
              neighbor-counts))))
 
 (defn- calculate-game-score
-  "Pure function to calculate score from game state."
+  "Pure function to calculate score from game state.
+   Uses logarithmic scaling to prevent unbounded score growth (μ Directness)."
   [{:keys [board generation]}]
   (let [living-cells (count board)
-        complexity-score (max config/score-minimum 
-                              (* living-cells (min generation config/score-generation-cap)))
-        stability-bonus (if (> generation config/score-stability-threshold) 
-                          config/score-stability-bonus 
+        ;; Logarithmic complexity score: compresses exponential growth into additive scale
+        complexity-score (max config/score-minimum
+                              (int (* 100 (Math/log (+ 1 (* living-cells (min generation config/score-generation-cap)))))))
+        stability-bonus (if (> generation config/score-stability-threshold)
+                          config/score-stability-bonus
                           0)]
     (+ complexity-score stability-bonus)))
 
@@ -77,16 +82,15 @@
 ;; ------------------------------------------------------------
 
 (defn- update-game!
-  "Internal helper for updating game state in the atom."
+  "Internal helper for updating game state in the atom.
+   Returns the updated game state or nil if game-id not found.
+   Thread-safe: uses swap-vals! and returns the new state atomically."
   [game-id update-fn]
-  (let [result (atom nil)]
-    (swap! games (fn [m]
-                   (if-let [game (get m game-id)]
-                     (let [new-game (update-fn game)]
-                       (reset! result new-game)
-                       (assoc m game-id new-game))
-                     m)))
-    @result))
+  (let [[_ updated-games] (swap-vals! games (fn [m]
+                                              (if-let [game (get m game-id)]
+                                                (assoc m game-id (update-fn game))
+                                                m)))]
+    (get-in updated-games [game-id])))
 
 ;; ------------------------------------------------------------
 ;; Public Implementation
@@ -109,14 +113,23 @@
                :generation 0
                :created-at now
                :last-accessed now}]
-     (swap! games assoc game-id game)
+     (swap! games (fn [m]
+                    (if (>= (count m) config/max-games)
+                      (do
+                        (log/warnf "Game creation rejected: max-games limit %d reached" config/max-games)
+                        (throw (ex-info "Maximum number of games reached"
+                                       {:error :max-games-reached
+                                        :max-games config/max-games
+                                        :current-count (count m)}))
+                        m)
+                      (assoc m game-id game))))
      board)))
 
 (defn evolve!
   [game-id]
   (let [now (System/currentTimeMillis)
-        new-game (update-game! game-id 
-                               (fn [g] 
+        new-game (update-game! game-id
+                               (fn [g]
                                  (-> g
                                      (update :board next-generation)
                                      (update :generation inc)
@@ -126,14 +139,14 @@
 (defn clear-cells!
   [game-id cells]
   (let [cells-set (set cells)
-        new-game (update-game! game-id 
+        new-game (update-game! game-id
                                #(update % :board set/difference cells-set))]
     (:board new-game)))
 
 (defn add-cells!
   [game-id cells]
   (let [bounded-cells (set (filter in-bounds? cells))
-        new-game (update-game! game-id 
+        new-game (update-game! game-id
                                #(update % :board set/union bounded-cells))]
     (:board new-game)))
 
@@ -146,27 +159,29 @@
   [game-id]
   (when-let [board (get-board game-id)]
     (let [cell-count (count board)
-          density (min 1.0 (/ cell-count config/music-max-cells-normalization))]
-      (cond-> []
-        (> cell-count config/music-density-high-threshold) 
-        (conj {:trigger :density-high
-               :params {:frequency config/music-freq-high-density
-                        :amplitude config/music-amp-high-density}})
-        
-        (> cell-count config/music-density-mid-threshold) 
-        (conj {:trigger :density-mid
-               :params {:frequency config/music-freq-mid-density
-                        :amplitude config/music-amp-mid-density}})
-        
-        (pos? cell-count) 
-        (conj {:trigger :life-pulse
-               :params {:rate (/ 1.0 (max 1 cell-count))
-                        :intensity density}})
-        
-        :always 
-        (conj {:trigger :drone
-               :params {:frequency config/music-freq-drone
-                        :amplitude config/music-amp-drone}})))))
+          density (min 1.0 (/ cell-count config/music-max-cells-normalization))
+          density-triggers (cond
+                             (> cell-count config/music-density-high-threshold)
+                             [{:trigger :density-high
+                               :params {:frequency config/music-freq-high-density
+                                        :amplitude config/music-amp-high-density}}]
+
+                             (> cell-count config/music-density-mid-threshold)
+                             [{:trigger :density-mid
+                               :params {:frequency config/music-freq-mid-density
+                                        :amplitude config/music-amp-mid-density}}]
+
+                             :else [])
+          life-trigger (when (pos? cell-count)
+                         {:trigger :life-pulse
+                          :params {:rate (/ 1.0 (max 1 cell-count))
+                                   :intensity density}})
+          drone-trigger {:trigger :drone
+                         :params {:frequency config/music-freq-drone
+                                  :amplitude config/music-amp-drone}}]
+      (vec (concat density-triggers
+                   (when life-trigger [life-trigger])
+                   [drone-trigger])))))
 
 ;; ------------------------------------------------------------
 ;; Lifecycle (τ Wisdom)
@@ -174,15 +189,25 @@
 
 (defn cleanup-stale-games!
   []
-  (let [now (System/currentTimeMillis)
-        cutoff (- now config/game-ttl-ms)
-        before (count @games)]
-    (swap! games (fn [m]
-                   (into {} (filter (fn [[_ g]] (> (:last-accessed g 0) cutoff))) m)))
-    (let [removed (- before (count @games))]
-      (when (pos? removed)
-        (log/infof "Game cleanup: removed %d stale games" removed))
-      removed)))
+  (let [result (atom nil)
+        [updated-games _] (swap-vals! games (fn [m]
+                                              (let [now (System/currentTimeMillis)
+                                                    cutoff (- now config/game-ttl-ms)
+                                                    before (count m)
+                                                    filtered (into {} (filter (fn [[_ g]] (> (:last-accessed g 0) cutoff))) m)
+                                                    removed (- before (count filtered))]
+                                                (reset! result removed)
+                                                filtered)))
+        removed @result]
+    (when (pos? removed)
+      (log/infof "Game cleanup: removed %d stale games" removed))
+    removed))
+
+(defn stop-cleanup-scheduler!
+  []
+  (when-let [executor @cleanup-executor]
+    (.shutdown executor)
+    (reset! cleanup-executor nil)))
 
 (defn start-cleanup-scheduler!
   []
@@ -193,19 +218,22 @@
                                (.setDaemon true)
                                (.setName "game-cleanup-scheduler"))))
           executor (java.util.concurrent.Executors/newSingleThreadScheduledExecutor thread-factory)
-          task (fn [] (try (cleanup-stale-games!) (catch Exception e (log/error e "Cleanup failed"))))]
-      (.scheduleAtFixedRate executor 
-                            task 
-                            config/cleanup-initial-delay-minutes 
-                            config/cleanup-interval-minutes 
+          task (fn []
+                 (try
+                   (cleanup-stale-games!)
+                   (reset! consecutive-failures 0)
+                   (catch Exception e
+                     (log/error e "Cleanup failed")
+                     (swap! consecutive-failures inc)
+                     (when (>= @consecutive-failures max-consecutive-failures)
+                       (log/errorf "Stopping cleanup scheduler after %d consecutive failures" max-consecutive-failures)
+                       (stop-cleanup-scheduler!)))))]
+      (.scheduleAtFixedRate executor
+                            task
+                            config/cleanup-initial-delay-minutes
+                            config/cleanup-interval-minutes
                             java.util.concurrent.TimeUnit/MINUTES)
       (reset! cleanup-executor executor))))
-
-(defn stop-cleanup-scheduler!
-  []
-  (when-let [executor @cleanup-executor]
-    (.shutdown executor)
-    (reset! cleanup-executor nil)))
 
 (defn initialize!
   []
