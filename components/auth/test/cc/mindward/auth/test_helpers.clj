@@ -13,6 +13,7 @@
             ;; Uncomment when running property tests specifically
             ;; [clojure.test.check.generators :as gen]
             [clojure.string :as str]
+            [cc.mindward.auth.interface :as auth]
             [cc.mindward.user.interface :as user]
             [cc.mindward.user.impl :as user-impl]))
 

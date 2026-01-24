@@ -220,12 +220,13 @@
 
     (let [num-threads 10
           results (atom [])
+          ;; Use bound-fn to capture dynamic bindings for threads
+          thread-fn (bound-fn []
+                       (let [result (auth/authenticate "concurrent-user" "shared-password")]
+                         (swap! results conj result)))
           threads (doall
                    (for [i (range num-threads)]
-                     (Thread.
-                      (fn []
-                        (let [result (auth/authenticate "concurrent-user" "shared-password")]
-                          (swap! results conj result))))))]
+                     (Thread. thread-fn)))]
 
       ;; Start all threads
       (doseq [thread threads] (.start thread))
