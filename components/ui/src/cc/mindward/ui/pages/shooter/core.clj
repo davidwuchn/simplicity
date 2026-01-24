@@ -24,80 +24,13 @@
                [:meta {:charset "UTF-8"}]
                [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"}]
                [:title "Space Shooter - Simplicity"]
-               [:script {:src (:tailwind cdn-links)}]
+               [:script {:src "/js/tailwind.js"}]
+               [:script {:src "/js/tailwind-config.js"}]
                [:link {:href (:font cdn-links) :rel "stylesheet"}]
-               [:style "
-              body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #050505; touch-action: none; }
-              #gameCanvas { display: block; width: 100%; height: 100%; }
-
-              /* HUD Styles */
-              .hud-element {
-                font-family: 'Orbitron', monospace;
-                background: rgba(0, 0, 0, 0.7);
-                backdrop-filter: blur(4px);
-                border: 1px solid #00f0ff;
-                padding: 8px 12px;
-                font-size: 14px;
-              }
-
-              /* Tutorial Overlay */
-              #tutorial-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.9);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 9999;
-                animation: fadeIn 0.3s ease-out;
-              }
-              #tutorial-overlay.hidden {
-                display: none !important;
-              }
-              .tutorial-card {
-                background: #000;
-                border: 2px solid #fcee0a;
-                box-shadow: 6px 6px 0px 0px #00f0ff;
-                padding: 2rem;
-                max-width: 500px;
-                margin: 20px;
-                animation: slideIn 0.3s ease-out;
-              }
-              @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
-              }
-              @keyframes slideIn {
-                from { transform: translateY(-50px); opacity: 0; }
-                to { transform: translateY(0); opacity: 1; }
-              }
-
-              /* Mobile Controls */
-              @media (max-width: 768px) {
-                .hud-element { font-size: 12px; padding: 6px 10px; }
-                #controls-hint { font-size: 10px; }
-              }
-
-              /* Touch Controls (future enhancement) */
-              .touch-control {
-                position: fixed;
-                bottom: 20px;
-                width: 60px;
-                height: 60px;
-                background: rgba(0, 240, 255, 0.2);
-                border: 2px solid #00f0ff;
-                border-radius: 50%;
-                display: none;
-              }
-              @media (max-width: 768px) and (pointer: coarse) {
-                .touch-control { display: block; }
-              }
-            "]]]
+               [:link {:href "/css/main.css" :rel "stylesheet"}]]
              [:body
               [:input {:type "hidden" :id "csrf-token" :value anti-forgery-token}]
+              [:input {:type "hidden" :id "current-username" :value username}]
 
                ;; Canvas (Full Screen)
               [:canvas {:id "gameCanvas" :class "cursor-none" :aria-label "Game canvas"}]
@@ -130,25 +63,23 @@
                 [:h2 {:class "text-4xl font-black text-cyber-red mb-4 uppercase"} "Mission Failed"]
                 [:div {:class "text-2xl text-cyber-cyan mb-6"}
                  "FINAL SCORE: " [:span {:id "final-score" :class "text-white"} "0"]]
-                [:button {:class "cyber-btn w-full mb-2" :onclick "location.reload()"} "Retry Mission"]
+                [:button {:class "cyber-btn w-full mb-2" :id "retry-btn"} "Retry Mission"]
                 [:a {:href "/leaderboard" :class "cyber-btn-secondary w-full inline-block text-center"} "View Rankings"]]]
 
-               ;; Game initialization script
-              [:script (h/raw "
-              function showGameOver(score) {
-                document.getElementById('final-score').textContent = score;
-                const gameOverOverlay = document.getElementById('game-over-overlay');
-                if (gameOverOverlay) {
-                  gameOverOverlay.classList.remove('hidden');
-                }
-              }
-             ")]]
-
-               ;; Current user info for leaderboard highlighting
-             [:script (h/raw (str "const CURRENT_USERNAME = " (pr-str username) ";"))]
+               ;; Load game UI logic (must be before game.js)
+             [:script {:src (str "/js/shooter-ui.js?v=" app-version)}]
 
                ;; Load game modules in order
              [:script {:src (str "/js/game-config.js?v=" app-version)}]
              [:script {:src (str "/js/music-config.js?v=" app-version)}]
              [:script {:src (str "/js/audio-utils.js?v=" app-version)}]
-             [:script {:src (str "/js/game.js?v=" app-version)}]))}))
+             [:script {:src (str "/js/game.js?v=" app-version)}]
+             
+             ;; Attach Retry Button listener (no inline onclick)
+             [:script (h/raw "
+               document.addEventListener('DOMContentLoaded', () => {
+                 const retryBtn = document.getElementById('retry-btn');
+                 if(retryBtn) retryBtn.addEventListener('click', () => location.reload());
+               });
+             ")]
+             ]))}))

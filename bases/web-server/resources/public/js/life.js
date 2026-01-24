@@ -590,22 +590,32 @@ function updateHud() {
 }
 
 // =============================================================================
-// START
+// EVENT LISTENERS (No inline handlers)
 // =============================================================================
+
+function attachLifeListeners() {
+    const playBtn = document.getElementById('life-play-btn');
+    if (playBtn) playBtn.addEventListener('click', toggleLifePlay);
+
+    const stepBtn = document.getElementById('life-step-btn');
+    if (stepBtn) stepBtn.addEventListener('click', lifeStep);
+
+    const clearBtn = document.getElementById('life-clear-btn');
+    if (clearBtn) clearBtn.addEventListener('click', lifeClear);
+
+    const randBtn = document.getElementById('life-rand-btn');
+    if (randBtn) randBtn.addEventListener('click', lifeRandom);
+}
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => {
+        init();
+        attachLifeListeners();
+    });
 } else {
     init();
+    attachLifeListeners();
 }
 
-// =============================================================================
-// EXPORT TO GLOBAL SCOPE (for onclick handlers)
-// =============================================================================
-
-window.toggleLifePlay = toggleLifePlay;
-window.lifeStep = lifeStep;
-window.lifeClear = lifeClear;
-window.lifeRandom = lifeRandom;
 window.updateHud = updateHud;

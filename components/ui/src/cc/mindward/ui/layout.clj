@@ -6,7 +6,6 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.data.json :as json]
-            [cc.mindward.ui.styles :as styles]
             [cc.mindward.ui.components :as c]
             [cc.mindward.ui.helpers :as helpers]))
 
@@ -35,27 +34,7 @@
    :description "Musical Game of Life - Connect to the grid"})
 
 (def ^:private cdn-links
-  {:tailwind "https://cdn.tailwindcss.com"
-   :font "https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap"})
-
-;; === Scripts ===
-
-(defn- tailwind-config-script
-  "Generate Tailwind configuration script.
-   Injects the project's design system (colors, fonts) into Tailwind."
-  []
-  (let [config {:theme
-                {:extend
-                 {:colors styles/colors
-                  :fontFamily {:sans ["Orbitron" "sans-serif"]}
-                  :keyframes {:glitch {"0%" {:textShadow (str "2px 0 " (:cyber-red styles/colors) ", -2px 0 " (:cyber-cyan styles/colors))}
-                                       "25%" {:textShadow (str "-2px 0 " (:cyber-red styles/colors) ", 2px 0 " (:cyber-cyan styles/colors))}
-                                       "50%" {:textShadow (str "2px 0 " (:cyber-cyan styles/colors) ", -2px 0 " (:cyber-yellow styles/colors))}
-                                       "100%" {:textShadow (str "-2px 0 " (:cyber-cyan styles/colors) ", 2px 0 " (:cyber-red styles/colors))}}
-                              :spin {:to {:transform "rotate(360deg)"}}}
-                  :animation {:glitch "glitch 1s infinite alternate-reverse"
-                              :spin "spin 0.6s linear infinite"}}}}]
-    (str "tailwind.config = " (json/write-str config) ";")))
+  {:font "https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap"})
 
 ;; === Head Component ===
 
@@ -70,10 +49,10 @@
    [:meta {:name "viewport" :content (:viewport meta-config)}]
    [:meta {:name "description" :content (:description meta-config)}]
    [:title title]
-   [:script {:src (:tailwind cdn-links)}]
-   [:script (h/raw (tailwind-config-script))]
+   [:script {:src "/js/tailwind.js"}]
+   [:script {:src "/js/tailwind-config.js"}]
    [:link {:href (:font cdn-links) :rel "stylesheet"}]
-   [:style (styles/stylesheet)]])
+   [:link {:href "/css/main.css" :rel "stylesheet"}]])
 
 ;; === Navigation Component ===
 

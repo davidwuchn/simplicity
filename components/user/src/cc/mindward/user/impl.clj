@@ -8,7 +8,8 @@
    Performance (τ Wisdom): Uses HikariCP connection pooling for production."
   (:require [next.jdbc :as jdbc]
             [next.jdbc.result-set :as rs]
-            [buddy.hashers :as hashers])
+            [buddy.hashers :as hashers]
+            [clojure.data.json :as json])
   (:import [com.zaxxer.hikari HikariConfig HikariDataSource]))
 
 ;; ------------------------------------------------------------
@@ -75,6 +76,18 @@
       password_hash TEXT NOT NULL,
       name TEXT NOT NULL,
       high_score INTEGER DEFAULT 0
+    )"])
+   (jdbc/execute! datasource ["
+    CREATE TABLE IF NOT EXISTS saved_games (
+      id TEXT PRIMARY KEY,
+      username TEXT NOT NULL,
+      name TEXT NOT NULL,
+      board_json TEXT NOT NULL,
+      generation INTEGER NOT NULL,
+      score INTEGER NOT NULL,
+      created_at INTEGER NOT NULL,
+      saved_at INTEGER NOT NULL,
+      FOREIGN KEY(username) REFERENCES users(username)
     )"])
    ;; Seed admin user if configured (∀ Vigilance - no hardcoded secrets)
    (let [admin-user (System/getenv "ADMIN_USER")
@@ -143,6 +156,48 @@
   [{:keys [username password name]}]
   (jdbc/execute! (ds) ["INSERT INTO users (username, password_hash, name) VALUES (?, ?, ?)"
                        username (hash-password password) name]))
+
+;; ------------------------------------------------------------
+;; Game Persistence (Fixed Memory Leak)
+;; ------------------------------------------------------------
+
+(defn save-game!
+  "Save a game state to the database."
+  [username name board generation score]
+  (let [id (str (java.util.UUID/randomUUID))
+        board-json (json/write-str board)
+        now (System/currentTimeMillis)]
+    (jdbc/execute! (ds)
+                   ["INSERT INTO saved_games (id, username, name, board_json, generation, score, created_at, saved_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    id username name board-json generation score now now])
+    {:id id :name name :saved true}))
+
+(defn load-game!
+  "Load a game state by ID. Returns map with :board (vector of vectors), :generation."
+  [id]
+  (let [row (jdbc/execute-one! (ds)
+                               ["SELECT board_json, generation FROM saved_games WHERE id = ?" id]
+                               {:builder-fn rs/as-unqualified-lower-maps})]
+    (when row
+      {:board (json/read-str (:board_json row))
+       :generation (:generation row)
+       :loaded true})))
+
+(defn list-saved-games
+  "List all saved games. Optionally filter by username."
+  ([] (list-saved-games nil))
+  ([username]
+   (let [query (if username
+                 ["SELECT id, name, generation, score FROM saved_games WHERE username = ? ORDER BY saved_at DESC" username]
+                 ["SELECT id, name, generation, score FROM saved_games ORDER BY saved_at DESC"])]
+     (jdbc/execute! (ds) query
+                    {:builder-fn rs/as-unqualified-lower-maps}))))
+
+(defn delete-game!
+  "Delete a saved game by ID."
+  [id]
+  (jdbc/execute! (ds) ["DELETE FROM saved_games WHERE id = ?" id]))
 
 (defn health-check
   "Check user database health status.

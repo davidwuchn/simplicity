@@ -38,17 +38,16 @@
                    ;; Buttons
                    [:div {:class "flex flex-col gap-2"}
                     [:button {:class "cyber-btn text-sm py-2"
-                              :onclick "toggleLifePlay()"
                               :id "life-play-btn"}
                      "PLAY"]
                     [:button {:class "cyber-btn-secondary text-sm py-2"
-                              :onclick "lifeStep()"}
+                              :id "life-step-btn"}
                      "STEP"]
                     [:button {:class "cyber-btn-secondary text-sm py-2"
-                              :onclick "lifeClear()"}
+                              :id "life-clear-btn"}
                      "CLEAR"]
                     [:button {:class "cyber-btn-secondary text-sm py-2"
-                              :onclick "lifeRandom()"}
+                              :id "life-rand-btn"}
                      "RAND"]
                     [:a {:href "/select-game"
                          :class "cyber-btn-secondary text-sm py-2 text-center"}

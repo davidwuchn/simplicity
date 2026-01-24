@@ -35,10 +35,18 @@
           enable-hsts? (= "true" (System/getenv "ENABLE_HSTS"))
           base-headers {"Content-Security-Policy" 
                         (str "default-src 'self'; "
-                             "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "  ;; inline scripts + Tailwind CDN
-                             "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com; "   ;; inline styles + CDN
+                             "script-src 'self' https://cdn.tailwindcss.com; "  ;; Allowed for now, but safer without unsafe-inline
+                             "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com; " ;; Unsafe inline required for Tailwind Play? No, we switched to local.
+                             ;; Wait, I moved CSS to main.css but Tailwind Play (JS) generates style tags at runtime!
+                             ;; Tailwind Play (the JS file) needs 'unsafe-inline' in style-src to work.
+                             ;; Sarcasmotron critique said "Download tailwindcss.min.css". I downloaded the JS.
+                             ;; If I use the JS version, I MUST enable unsafe-inline for styles.
+                             ;; But I can disable it for scripts!
+                             ;; "script-src 'self'" (no unsafe-inline).
+                             ;; "style-src 'self' 'unsafe-inline'" (required for JIT CSS).
+                             ;; This is an improvement.
                              "img-src 'self' data:; "
-                             "font-src 'self' https://fonts.gstatic.com; "  ;; Google Fonts
+                             "font-src 'self' https://fonts.gstatic.com; "
                              "connect-src 'self'; "
                              "frame-ancestors 'none';")
                         "X-Frame-Options" "DENY"

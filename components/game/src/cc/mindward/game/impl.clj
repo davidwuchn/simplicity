@@ -21,7 +21,6 @@
 ;; ------------------------------------------------------------
 
 (defonce ^:private games (atom {}))
-(defonce ^:private saved-games (atom {}))
 (defonce ^:private cleanup-executor (atom nil))
 
 ;; ------------------------------------------------------------
@@ -169,38 +168,6 @@
                :params {:frequency config/music-freq-drone
                         :amplitude config/music-amp-drone}})))))
 
-(defn save-game!
-  [game-id name]
-  (when-let [game (get @games game-id)]
-    (let [saved-id (str (java.util.UUID/randomUUID))
-          saved-game (assoc game
-                            :id saved-id
-                            :name name
-                            :saved-at (System/currentTimeMillis))]
-      (swap! saved-games assoc saved-id saved-game)
-      saved-game)))
-
-(defn load-game!
-  [saved-game-id new-game-id]
-  (when-let [saved-game (get @saved-games saved-game-id)]
-    (let [game-state (select-keys saved-game [:board :generation :created-at])
-          now (System/currentTimeMillis)]
-      (swap! games assoc new-game-id (assoc game-state :last-accessed now))
-      (:board game-state))))
-
-(defn delete-game!
-  [saved-game-id]
-  (swap! saved-games dissoc saved-game-id))
-
-(defn list-saved-games
-  []
-  (mapv (fn [[id game]]
-          {:id id
-           :name (:name game)
-           :generation (:generation game)
-           :score (calculate-game-score game)})
-        @saved-games))
-
 ;; ------------------------------------------------------------
 ;; Lifecycle (τ Wisdom)
 ;; ------------------------------------------------------------
@@ -243,7 +210,6 @@
 (defn initialize!
   []
   (reset! games {})
-  (reset! saved-games {})
   (start-cleanup-scheduler!))
 
 (defn health-check
@@ -251,10 +217,8 @@
    Returns health information for monitoring."
   []
   (let [scheduler-running? (some? @cleanup-executor)
-        active-games (count @games)
-        saved-count (count @saved-games)]
+        active-games (count @games)]
     {:healthy? scheduler-running?
      :details {:scheduler-running scheduler-running?
                :active-games active-games
-               :saved-games saved-count
                :timestamp (System/currentTimeMillis)}}))

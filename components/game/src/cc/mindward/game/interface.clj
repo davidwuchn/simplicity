@@ -56,14 +56,13 @@
   [game-id]
   (impl/calculate-score game-id))
 
-(defn list-saved-games
-  "List all saved game states. Returns vector of {:id :name :generation :score}."
-  []
-  (impl/list-saved-games))
-
 ;; ------------------------------------------------------------
 ;; Command Operations (! suffix - side effects)
 ;; ------------------------------------------------------------
+
+(s/fdef create-game!
+  :args (s/cat :game-id :game/id :initial-board (s/nilable :game/board))
+  :ret :game/board)
 
 (defn create-game!
   "Create a new game with initial board state.
@@ -71,6 +70,10 @@
   ([game-id] (create-game! game-id nil))
   ([game-id initial-board]
    (impl/create-game! game-id initial-board)))
+
+(s/fdef evolve!
+  :args (s/cat :game-id :game/id)
+  :ret :game/board)
 
 (defn evolve!
   "Evolve the game board one generation using Conway's rules.
@@ -89,22 +92,6 @@
    cells: set of [x y] coordinates to add."
   [game-id cells]
   (impl/add-cells! game-id cells))
-
-(defn save-game!
-  "Save current game state with a name.
-   Returns the saved game record."
-  [game-id name]
-  (impl/save-game! game-id name))
-
-(defn load-game!
-  "Load a saved game state by id. Returns new game-id."
-  [saved-game-id new-game-id]
-  (impl/load-game! saved-game-id new-game-id))
-
-(defn delete-game!
-  "Delete a saved game state."
-  [saved-game-id]
-  (impl/delete-game! saved-game-id))
 
 ;; ------------------------------------------------------------
 ;; Musical Integration (∃ Truth - deterministic pattern mapping)

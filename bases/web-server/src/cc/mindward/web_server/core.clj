@@ -260,7 +260,10 @@
           (let [game-name (:name params)
                 name-validation (validate-game-name game-name)]
             (if (:valid? name-validation)
-              (let [saved (game/save-game! game-id game-name)]
+              (let [board (game/get-board game-id)
+                    generation (game/get-generation game-id)
+                    score (game/get-score game-id)
+                    saved (user/save-game! username game-name board generation score)]
                 (res/response (json/write-str {:id (:id saved)
                                                :name (:name saved)
                                                :saved true})))
@@ -268,18 +271,31 @@
 
           "load"
           (if-let [saved-id (:savedId params)]
-            (let [loaded (game/load-game! saved-id game-id)]
-              (res/response (json/write-str {:board (into [] loaded)
-                                             :generation (game/get-generation game-id)
-                                             :score (game/get-score game-id)
-                                             :loaded true})))
+            (if-let [loaded (user/load-game! saved-id)]
+              (let [board-set (set (map vec (:board loaded)))]
+                (game/create-game! game-id board-set)
+                (res/response (json/write-str {:board (:board loaded)
+                                               :generation 0
+                                               :score (game/get-score game-id)
+                                               :loaded true})))
+              (res/not-found (json/write-str {:error "Game not found"})))
+            (res/bad-request (json/write-str {:error "Saved ID required"})))
+
+          "delete"
+          (if-let [saved-id (:savedId params)]
+            (do
+              (user/delete-game! saved-id)
+              (res/response (json/write-str {:deleted true})))
             (res/bad-request (json/write-str {:error "Saved ID required"})))
 
           (res/bad-request (json/write-str {:error "Invalid action"}))))
       username))) ;; Return 401 response
 
-(defn list-saved-games-api [_]
-  (res/response (json/write-str (game/list-saved-games))))
+(defn list-saved-games-api [{:keys [session]}]
+  (let [username (require-authentication session)]
+    (if (string? username)
+      (res/response (json/write-str (user/list-saved-games username)))
+      username)))
 
 ;; ------------------------------------------------------------
 ;; Logging Middleware

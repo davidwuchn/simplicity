@@ -75,6 +75,32 @@
   [username score]
   (impl/update-high-score! username score))
 
+(defn save-game!
+  "Save a game state.
+   username: owner of the game
+   name: name of the save
+   board: set of [x y] coordinates
+   generation: current generation int
+   score: current score int"
+  [username name board generation score]
+  (impl/save-game! username name board generation score))
+
+(defn load-game!
+  "Load a saved game by ID."
+  [id]
+  (impl/load-game! id))
+
+(defn list-saved-games
+  "List saved games.
+   Optional username to filter."
+  ([] (impl/list-saved-games))
+  ([username] (impl/list-saved-games username)))
+
+(defn delete-game!
+  "Delete a saved game by ID."
+  [id]
+  (impl/delete-game! id))
+
 (defn create-user!
   "Create a new user. Expects map with :username, :password, :name.
    Password is hashed before storage. Throws on duplicate username."
