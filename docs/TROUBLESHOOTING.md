@@ -95,8 +95,25 @@ bb test            # Run full test suite (652 assertions)
 ### Tests Failing Locally
 **Solutions**:
 1. **Clean Workspace**: `bb clean` to remove old artifacts.
-2. **Isolated Tests**: Run only the failing brick to isolate the issue: `bb test:game`.
+2. **Isolated Tests**: Run only the failing brick to isolate the issue: `bb test:game`, `bb test:user`, etc.
 3. **Verify Integrity**: Run `bb check` to ensure there are no architectural violations causing weird test behavior.
+4. **Enhanced Test Types**: If property or performance tests fail, check test.check dependency and generator complexity.
+
+### Tests Timing Out
+**Symptoms**: `bb test` or specific test commands time out after 60 seconds.
+
+**Solutions**:
+1. **Game Component Tests**: The game component may have issues with cleanup scheduler. Try running specific component tests first.
+2. **Timing Tests**: Security timing tests run multiple iterations. They are commented out by default to prevent timeouts.
+3. **Property Tests**: Property-based tests with `test.check` may generate complex cases. Reduce test count if needed.
+
+### Property Test Issues
+**Symptoms**: `bb test:property` fails with test.check errors.
+
+**Solutions**:
+1. **Test.check Dependency**: Ensure `org.clojure/test.check` is in dependencies (currently commented out to prevent timeouts).
+2. **Generator Complexity**: Reduce generator size or test count in property definitions.
+3. **State Management**: Ensure tests properly manage game state with `(initialize!)`.
 
 ---
 
@@ -105,6 +122,7 @@ bb test            # Run full test suite (652 assertions)
 1. **REPL Help**: Run `(help)` or `(banner)` in the REPL.
 2. **Documentation**: Check the `docs/` directory, especially `INDEX.md`.
 3. **Philosophy**: Review `AGENTS.md` to ensure you're following the core principles.
+4. **Test Documentation**: Review enhanced test infrastructure in `README.md` and `PROJECT_SUMMARY.md`.
 
 ---
-*Last Updated: 2024-05-20*
+*Last Updated: 2024-11-23*

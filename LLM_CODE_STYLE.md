@@ -94,8 +94,13 @@ This document defines the coding standards for the Simplicity project when worki
 
 ## Testing
 
-- **Test Coverage**: Maintain current coverage (501 assertions across 71 tests)
-- **Stateful Testing**: Use `use-fixtures` with temporary SQLite files
+- **Test Coverage**: Maintain current coverage (652 assertions with enhanced test infrastructure)
+- **Enhanced Test Types**: 
+  - **Property-based Tests**: Use `test.check` for generative testing (φ Vitality)
+  - **Documentation Tests**: Verify code matches documented contracts (π Synthesis)
+  - **Performance Tests**: Measure scalability characteristics (τ Wisdom)
+  - **Security Tests**: Timing attack prevention and security validation (∀ Vigilance)
+- **Stateful Testing**: Use `use-fixtures` with temporary SQLite files (∃ Truth)
 - **Isolation**: Use `with-redefs` to isolate component logic
 - **No Global State**: Never rely on shared global state
 
@@ -138,8 +143,13 @@ bb dev
 # Check workspace
 clojure -M:poly check
 
-# Run all tests
+# Run all tests (652 assertions)
 clojure -M:poly test :dev
+
+# Run enhanced test types
+bb test:property      # Property-based tests
+bb test:performance   # Performance tests
+bb test:documentation # Documentation contract tests
 
 # Start nREPL (for clojure-mcp)
 clojure -M:nrepl

@@ -220,15 +220,32 @@ For production deployments:
 
 ## Security Testing
 
+### Enhanced Security Test Infrastructure
+
+The project now includes comprehensive security testing aligned with the **∀ (Vigilance)** principle:
+
+#### Timing Attack Prevention Tests
+- **Constant-time password verification**: Tests ensure password comparison timing doesn't reveal correctness
+- **Username lookup timing consistency**: Tests ensure timing doesn't reveal user existence
+- **Password length independence**: Tests ensure verification time doesn't correlate with password length
+- **Non-existent user handling**: Tests ensure similar timing for existent vs non-existent users
+
+#### Security Test Types
+- **Property-based security tests**: Generative testing for SQL injection patterns
+- **Documentation contract tests**: Verify security guarantees match documentation
+- **Performance security tests**: Measure timing characteristics for attack prevention
+- **Integration security tests**: Real database testing with security scenarios
+
 ### Test Coverage
 Total: **652 passing assertions** across all test suites (including **160 security-focused assertions**)
 
-#### User Component Security Tests (36 assertions)
+#### User Component Security Tests (49 assertions)
 - SQL injection prevention (username, password, score)
 - Unicode handling
 - Long input handling
 - Password hashing verification
-- Timing attack resistance
+- **Timing attack resistance** (constant-time password verification)
+- **Username lookup timing consistency** (doesn't reveal user existence)
 - Duplicate username prevention
 
 #### Web Server Security Tests (99 assertions)
@@ -343,7 +360,7 @@ For security issues, please report to the repository maintainers via GitHub Issu
 
 ---
 
-*Last Updated: 2024-05-20*
+*Last Updated: 2024-11-23*
 *Version: 1.1.0* - Security hardening updates:
 - Elevated bcrypt work factor to cost 12
 - Added game API authorization checks

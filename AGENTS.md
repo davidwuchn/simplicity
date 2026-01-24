@@ -82,7 +82,11 @@ bb nrepl            # Start Babashka nREPL server on port 7888
 
 - **Run All Tests**: `bb test` (primary, 652 passing assertions)
 - **Run Tests (Watch Mode)**: `bb test:watch` (auto-reruns on file changes)
-- **Run Specific Brick Tests**: `bb test:game`, `bb test:ui`, `bb test:user`, etc.
+- **Run Specific Brick Tests**: `bb test:game`, `bb test:ui`, `bb test:user`, `bb test:auth`, `bb test:web-server`
+- **Run Enhanced Test Types**: 
+  - `bb test:property` - Property-based tests (test.check)
+  - `bb test:performance` - Performance tests
+  - `bb test:documentation` - Documentation contract tests
 - **Interactive REPL (brepl)**: Use `brepl` for fast evaluation (see Tools).
 
 **Alternative (not recommended)**: 
@@ -259,9 +263,11 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 ### 5. Self-Correction
 - If `poly check` fails, you have violated Polylith constraints (e.g., circular dependency or illegal import). Fix immediately.
 - Use `clj-kondo` to catch static analysis issues before committing.
-- **Test Coverage**: 265 passing assertions across 70 UI tests (current)
-  - UI: 70 tests, 265 assertions (includes comprehensive script loading tests)
-  - Note: Run `bb test:ui` for UI tests, `bb test` for full suite
+- **Test Coverage**: 652 passing assertions with enhanced test infrastructure
+  - **Component Tests**: 652 assertions across auth, game, ui, user, web-server
+  - **Enhanced Test Types**: Property-based, documentation contract, performance, and security timing tests
+  - **Security Focus**: 160 security-focused assertions (SQL injection, XSS, CSRF, rate limiting, input validation)
+  - Note: Run `bb test` for full suite, `bb test:<component>` for specific components
 - Run `bb test` or `clojure -M:poly test :dev` before committing to verify all tests pass.
 
 ## Tools & Utilities

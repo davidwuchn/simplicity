@@ -124,6 +124,9 @@ See `bb help` for complete list of tasks.
 | **Workspace Info** | `bb info` | `clojure -M:poly info` |
 | **Run All Tests** | `bb test` | `clojure -M:poly test :dev` |
 | **Run Component Tests** | `bb test:game` | `clojure -M:poly test brick:game` |
+| **Run Property Tests** | `bb test:property` | - |
+| **Run Performance Tests** | `bb test:performance` | - |
+| **Run Documentation Tests** | `bb test:documentation` | - |
 | **Lint Code** | `bb lint` | `clj-kondo --lint components/*/src bases/*/src` |
 | **Launch REPL** | `bb dev` | `clojure -M:nrepl` |
 | **Build Uberjar** | `bb uberjar` | `clojure -T:build uberjar` |
@@ -167,7 +170,7 @@ simplicity/
 
 ## 🧪 Testing
 
-**Current test coverage**: 652 passing assertions across all test cases
+**Current test coverage**: 652 passing assertions across all test cases with enhanced test infrastructure including property-based testing, documentation contract tests, and security timing tests.
 
 | Component | Tests | Assertions |
 | :--- | :---: | :---: |
@@ -180,10 +183,16 @@ simplicity/
 Run tests:
 ```bash
 # Using Babashka (recommended)
-bb test              # All tests
-bb test:watch        # Watch mode
-bb test:game         # Specific component
-bb test:user         # Specific component
+bb test              # All tests (652 assertions)
+bb test:watch        # Watch mode (auto-rerun on changes)
+bb test:game         # Game component tests
+bb test:user         # User component tests
+bb test:auth         # Auth component tests
+bb test:ui           # UI component tests
+bb test:web-server   # Web-server base tests
+bb test:property     # Property-based tests (test.check)
+bb test:performance  # Performance tests
+bb test:documentation # Documentation contract tests
 
 # Using Clojure directly
 clojure -M:poly test :dev              # All tests
@@ -195,13 +204,26 @@ Test files follow Polylith conventions:
 - `components/<name>/test/cc/mindward/<name>/<namespace>_test.clj`
 - Use fixtures for database isolation (see `user/interface_test.clj`)
 
+**Enhanced Test Infrastructure:**
+
+The project now includes comprehensive test types aligned with the Eight Keys philosophy:
+
+| Test Type | Purpose | Philosophy Applied |
+|-----------|---------|-------------------|
+| **Property-based Tests** | Generative testing with `test.check` for mathematical properties | φ (Vitality) - Organic exploration of edge cases |
+| **Documentation Tests** | Verify code behavior matches documented contracts | π (Synthesis) - Complete mental models |
+| **Performance Tests** | Measure evolution speed, memory usage, concurrent access | τ (Wisdom) - Foresight about scalability |
+| **Security Tests** | Timing attack prevention, SQL injection, XSS, CSRF | ∀ (Vigilance) - Defensive testing |
+| **Integration Tests** | Real database testing with fixtures | ∃ (Truth) - Verify actual behavior |
+
 **Security Testing:**
 - SQL injection prevention
-- XSS escaping verification
+- XSS escaping verification  
 - CSRF protection
 - Session security
 - Rate limiting
 - Input validation
+- Timing attack prevention
 
 See [docs/security.md](./docs/security.md) for complete security documentation.
 

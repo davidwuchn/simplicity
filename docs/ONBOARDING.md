@@ -73,7 +73,14 @@ See **[hot-reload.md](./hot-reload.md)** for more details.
 ```bash
 bb test              # Run all 652 tests
 bb test:watch        # Watch mode (auto-rerun on changes)
-bb test:game         # Run specific component tests
+bb test:game         # Run game component tests
+bb test:user         # Run user component tests
+bb test:auth         # Run auth component tests
+bb test:ui           # Run UI component tests
+bb test:web-server   # Run web-server base tests
+bb test:property     # Run property-based tests (test.check)
+bb test:performance  # Run performance tests
+bb test:documentation # Run documentation contract tests
 ```
 
 ### 3. Code Style & Philosophy
@@ -114,4 +121,4 @@ Follow the **Eight Keys** in [AGENTS.md](../AGENTS.md):
 *Philosophy: 易简则天下之理得 (Simplicity allows obtaining the logic of the world)*
 
 ---
-*Last Updated: 2024-05-20*
+*Last Updated: 2024-11-23*
