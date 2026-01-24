@@ -49,3 +49,6 @@ clerk.log
 
 # OpenCode (may contain user-specific paths)
 .opencode/config.json
+
+# ECA editor assistant configuration
+.eca/
