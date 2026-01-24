@@ -69,7 +69,7 @@ See [docs/hot-reload.md](./docs/hot-reload.md) for complete guide.
 
 ```bash
 bb help            # Show all 30+ available commands
-bb test            # Run all tests (611 assertions)
+bb test            # Run all tests (652 assertions)
 bb test:watch      # Auto-rerun tests on file changes
 bb check           # Check Polylith workspace integrity
 bb build           # Full build: clean + test + uberjar
