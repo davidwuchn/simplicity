@@ -271,10 +271,10 @@
     (let [session1 {:username "user1"}
           session2 {:username "user2"}
           ;; Request game page with session1
-          response1 (server/game-page {:session session1
+          response1 (server/shooter-page {:session session1
                                        :anti-forgery-token "dummy-token"})
           ;; Request game page with session2
-          response2 (server/game-page {:session session2
+          response2 (server/shooter-page {:session session2
                                        :anti-forgery-token "dummy-token"})
           body1 (:body response1)
           body2 (:body response2)]
@@ -293,7 +293,7 @@
 (deftest session-authentication-required-test
   (testing "Protected pages require authentication"
     ;; Request game page without session
-    (let [response (server/game-page {:session {}
+    (let [response (server/shooter-page {:session {}
                                       :anti-forgery-token "dummy-token"})]
       ;; Should redirect to login
       (is (= 302 (:status response))

@@ -110,7 +110,7 @@
 (defn signup-page [request]
   (let [{:keys [session params anti-forgery-token]} request]
     (if (:username session)
-      (res/redirect "/game")
+      (res/redirect "/select-game")
       (ui/signup-page session params anti-forgery-token))))
 
 (defn handle-signup [{:keys [params session]}]

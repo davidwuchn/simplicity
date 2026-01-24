@@ -1,7 +1,17 @@
 (ns cc.mindward.test-runner
   (:require [clojure.test :as test]
             [cc.mindward.user.interface-test]
-            [cc.mindward.auth.interface-test]))
+            [cc.mindward.user.security-test]
+            [cc.mindward.auth.interface-test]
+            [cc.mindward.auth.documentation-test]
+            [cc.mindward.game.interface-test]
+            #_[cc.mindward.game.property-test]
+            #_[cc.mindward.game.performance-test]
+            [cc.mindward.ui.core-test]
+            [cc.mindward.ui.components-test]
+            [cc.mindward.ui.helpers-test]
+            [cc.mindward.web-server.core-test]
+            [cc.mindward.web-server.security-test]))
 
 (defn -main [& _]
   (println "Running Simplicity tests...")

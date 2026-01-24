@@ -44,11 +44,11 @@
 ;; ------------------------------------------------------------
 
 (deftest landing-page-test
-  (testing "landing page redirects authenticated users to /game"
+  (testing "landing page redirects authenticated users to /select-game"
     (let [request (mock-request :get "/" :session {:username "testuser"})
           response (web/landing-page request)]
       (is (= 302 (:status response)) "redirects authenticated users")
-      (is (= "/game" (get-in response [:headers "Location"])) "redirects to /game")))
+      (is (= "/select-game" (get-in response [:headers "Location"])) "redirects to /select-game")))
 
   (testing "landing page renders for unauthenticated users"
     (let [request (mock-request :get "/" :session {})
@@ -57,11 +57,11 @@
       (is (string? (:body response)) "renders HTML body"))))
 
 (deftest login-flow-test
-  (testing "login page redirects authenticated users to /game"
+  (testing "login page redirects authenticated users to /select-game"
     (let [request (mock-request :get "/login" :session {:username "existing"})
           response (web/login-page request)]
       (is (= 302 (:status response)))
-      (is (= "/game" (get-in response [:headers "Location"])))))
+      (is (= "/select-game" (get-in response [:headers "Location"])))))
 
   (testing "login page renders for unauthenticated users"
     (let [request (mock-request :get "/login" :session {})
@@ -69,7 +69,7 @@
       (is (= 200 (:status response)))
       (is (string? (:body response)))))
 
-  (testing "successful login creates session and redirects to /game"
+  (testing "successful login creates session and redirects to /select-game"
     (let [username (str "logintest-" (System/currentTimeMillis))]
       (user/create-user! {:username username :password "secretpass" :name "Login Test"})
       (let [request (mock-request :post "/login"
@@ -77,7 +77,7 @@
                                   :session {})
             response (web/handle-login request)]
         (is (= 302 (:status response)) "redirects after successful login")
-        (is (= "/game" (get-in response [:headers "Location"])))
+        (is (= "/select-game" (get-in response [:headers "Location"])))
         (is (= username (get-in response [:session :username])) "session contains username"))))
 
   (testing "failed login redirects to /login with error"
@@ -95,7 +95,7 @@
     (let [request (mock-request :get "/signup" :session {:username "existing"})
           response (web/signup-page request)]
       (is (= 302 (:status response)))
-      (is (= "/game" (get-in response [:headers "Location"])))))
+      (is (= "/select-game" (get-in response [:headers "Location"])))))
 
   (testing "signup page renders for unauthenticated users"
     (let [request (mock-request :get "/signup" :session {})
@@ -110,7 +110,7 @@
                                 :session {})
           response (web/handle-signup request)]
       (is (= 302 (:status response)))
-      (is (= "/game" (get-in response [:headers "Location"])))
+      (is (= "/select-game" (get-in response [:headers "Location"])))
       (is (= username (get-in response [:session :username])) "session created")
       (is (some? (user/find-by-username username)) "user created in database")))
 
@@ -137,19 +137,19 @@
 ;; Game Page & Authorization Tests
 ;; ------------------------------------------------------------
 
-(deftest game-page-test
-  (testing "game page requires authentication"
-    (let [request (mock-request :get "/game" :session {})
-          response (web/game-page request)]
+(deftest shooter-page-test
+  (testing "shooter page requires authentication"
+    (let [request (mock-request :get "/shooter" :session {})
+          response (web/shooter-page request)]
       (is (= 302 (:status response)) "redirects unauthenticated users")
       (is (= "/login" (get-in response [:headers "Location"])) "redirects to /login")))
 
-  (testing "authenticated user can access game page"
+  (testing "authenticated user can access shooter page"
     (let [username (str "gamer-" (System/currentTimeMillis))]
       (user/create-user! {:username username :password "password123" :name "Gamer"})
-      (let [request (mock-request :get "/game" :session {:username username})
-            response (web/game-page request)]
-        (is (= 200 (:status response)) "renders game page")
+      (let [request (mock-request :get "/shooter" :session {:username username})
+            response (web/shooter-page request)]
+        (is (= 200 (:status response)) "renders shooter page")
         (is (string? (:body response)) "returns HTML")
         (is (re-find #"gameCanvas" (:body response)) "contains game canvas")
         (is (re-find #"BEST:" (:body response)) "shows high score label")))))
@@ -262,13 +262,13 @@
       (is (some #{[3 3]} (:board body)) "restores board state"))))
 
 (deftest game-api-invalid-action-test
-  (testing "invalid action returns error"
+  (testing "invalid action returns 400 error"
     (let [request (mock-request :post "/api/game"
                                 :params {:action "invalid"}
                                 :session {:username "user"})
           response (web/game-api request)
           body (json/read-str (:body response) :key-fn keyword)]
-      (is (= 200 (:status response)))
+      (is (= 400 (:status response)))
       (is (= "Invalid action" (:error body))))))
 
 (deftest list-saved-games-api-test
@@ -298,7 +298,7 @@
       (is (= "healthy" (:status body)))
       (is (number? (:timestamp body)) "includes timestamp")
       (is (= "up" (get-in body [:checks :database :status])) "database check passes")
-      (is (number? (get-in body [:checks :database :responseTimeMs])) "includes response time")
+      (is (number? (get-in body [:checks :responseTimeMs])) "includes response time")
       (is (= "1.0.0" (:version body)) "includes version")))
 
   (testing "health check includes all required fields"

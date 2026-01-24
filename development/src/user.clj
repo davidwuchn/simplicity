@@ -310,7 +310,7 @@
   (println "   → Use (auto-reload false) to disable")
   (println)
   (println "🧪 TESTING:")
-  (println "   Shell: bb test        - Run all 618 tests")
+  (println "   Shell: bb test        - Run all 652 tests")
   (println "   Shell: bb test:watch  - Watch mode")
   (println "   Shell: bb lint        - Lint all sources")
   (println)

@@ -221,7 +221,7 @@ For production deployments:
 ## Security Testing
 
 ### Test Coverage
-Total: **501 passing assertions** across 7 test suites
+Total: **652 passing assertions** across all test suites (including **160 security-focused assertions**)
 
 #### User Component Security Tests (36 assertions)
 - SQL injection prevention (username, password, score)
@@ -231,7 +231,7 @@ Total: **501 passing assertions** across 7 test suites
 - Timing attack resistance
 - Duplicate username prevention
 
-#### Web Server Security Tests (65 assertions)
+#### Web Server Security Tests (99 assertions)
 - Security headers verification
 - Rate limiting logic
 - Rate limit token refill
@@ -241,6 +241,11 @@ Total: **501 passing assertions** across 7 test suites
 - Session isolation
 - Session authentication
 - XSS escaping
+
+#### Auth Component Tests (25 assertions)
+- Password hashing (bcrypt+sha512)
+- Session creation and validation
+- Authentication logic
 
 ### Running Security Tests
 ```bash
@@ -338,7 +343,7 @@ For security issues, please report to the repository maintainers via GitHub Issu
 
 ---
 
-*Last Updated: 2024-01-15*
+*Last Updated: 2024-05-20*
 *Version: 1.1.0* - Security hardening updates:
 - Elevated bcrypt work factor to cost 12
 - Added game API authorization checks

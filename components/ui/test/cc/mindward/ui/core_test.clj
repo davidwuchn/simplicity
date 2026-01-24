@@ -3,7 +3,7 @@
             [cc.mindward.ui.layout :as layout]
             [cc.mindward.ui.pages.landing :as landing]
             [cc.mindward.ui.pages.auth :as auth]
-            [cc.mindward.ui.pages.game :as game-page]
+            [cc.mindward.ui.pages.shooter.core :as shooter]
             [cc.mindward.ui.pages.leaderboard :as leaderboard]
             [clojure.string :as str]))
 
@@ -69,24 +69,22 @@
       (is (contains-str? html "Orbitron") "Missing Orbitron font family"))))
 
 (deftest layout-cyber-styling-test
-  (testing "Layout includes cyberpunk CSS classes and animations"
+  (testing "Layout includes cyberpunk styling via Tailwind config"
     (let [html (layout/layout {:session nil :title "Test" :content [:div "Content"]})]
+      (is (contains-str? html "tailwind.config") "Missing Tailwind config")
+      (is (contains-str? html "\"cyber-cyan\"") "Missing cyber-cyan color in config")
+      (is (contains-str? html "\"cyber-yellow\"") "Missing cyber-yellow color in config")
+      (is (contains-str? html "\"cyber-red\"") "Missing cyber-red color in config")
+      (is (contains-str? html "Orbitron") "Missing Orbitron font family")
       (is (contains-str? html ".cyber-card") "Missing cyber-card style")
       (is (contains-str? html ".cyber-input") "Missing cyber-input style")
-      (is (contains-str? html ".cyber-btn") "Missing cyber-btn style")
-      (is (contains-str? html ".glitch-text") "Missing glitch-text style")
-      (is (contains-str? html "@keyframes glitch") "Missing glitch animation")
-      (is (contains-str? html "text-cyber-yellow") "Missing cyber-yellow color")
-      (is (contains-str? html "text-cyber-cyan") "Missing cyber-cyan color")
-      (is (contains-str? html "text-cyber-red") "Missing cyber-red color"))))
+      (is (contains-str? html ".cyber-btn") "Missing cyber-btn style"))))
 
 (deftest layout-navigation-unauthenticated-test
-  (testing "Layout shows login/signup links when user not authenticated"
+  (testing "Layout shows login link when user not authenticated"
     (let [html (layout/layout {:session nil :title "Test" :content [:div "Content"]})]
       (is (contains-str? html "LOGIN") "Missing LOGIN link")
-      (is (contains-str? html "INITIATE") "Missing INITIATE (signup) link")
-      (is (contains-str? html "href=\"/login\"") "Missing login href")
-      (is (contains-str? html "href=\"/signup\"") "Missing signup href")
+      (is (contains-str? html "href=\"/login?force=true\"") "Missing login href")
       (is (not (contains-str? html "PILOT:")) "Should not show PILOT when unauthenticated")
       (is (not (contains-str? html "ABORT")) "Should not show ABORT when unauthenticated"))))
 
@@ -100,7 +98,7 @@
       (is (contains-str? html "href=\"/game\"") "Missing game href")
       (is (contains-str? html "href=\"/logout\"") "Missing logout href")
       (is (not (contains-str? html "LOGIN")) "Should not show LOGIN when authenticated")
-      (is (not (contains-str? html "INITIATE")) "Should not show INITIATE when authenticated"))))
+      (is (not (contains-str? html "Initiate")) "Should not show Initiate when authenticated"))))
 
 (deftest layout-branding-test
   (testing "Layout includes MINDWARD branding"
@@ -284,7 +282,7 @@
 
 (deftest game-page-structure-test
   (testing "Game page returns proper response structure"
-    (let [response (game-page/game-page nil "game-token" 1000)]
+    (let [response (shooter/shooter-page nil "game-token" 1000)]
       (is (map? response) "Response should be a map")
       (is (= 200 (:status response)) "Should return 200 status")
       (is (= "text/html" (get-in response [:headers "Content-Type"])) "Should have text/html content type")
@@ -292,26 +290,26 @@
 
 (deftest game-page-canvas-test
   (testing "Game page includes game canvas"
-    (let [html (extract-html-body (game-page/game-page nil "token" 0))]
+    (let [html (extract-html-body (shooter/shooter-page nil "token" 0))]
       (is (contains-tag? html "canvas") "Missing canvas tag")
       (is (contains-str? html "id=\"gameCanvas\"") "Missing gameCanvas ID"))))
 
 (deftest game-page-csrf-token-test
   (testing "Game page includes CSRF token for API calls"
-    (let [html (extract-html-body (game-page/game-page nil "game-csrf-token" 0))]
+    (let [html (extract-html-body (shooter/shooter-page nil "game-csrf-token" 0))]
       (is (contains-str? html "id=\"csrf-token\"") "Missing CSRF token element")
       (is (contains-str? html "game-csrf-token") "CSRF token value not rendered"))))
 
 (deftest game-page-high-score-display-test
   (testing "Game page displays high score"
-    (let [html (extract-html-body (game-page/game-page nil "token" 5000))]
+    (let [html (extract-html-body (shooter/shooter-page nil "token" 5000))]
       (is (contains-str? html "BEST:") "Missing BEST label")
       (is (contains-str? html "5000") "High score value not rendered")
       (is (contains-str? html "id=\"high-score\"") "Missing high-score element ID"))))
 
 (deftest game-page-controls-overlay-test
   (testing "Game page shows control instructions"
-    (let [html (extract-html-body (game-page/game-page nil "token" 0))]
+    (let [html (extract-html-body (shooter/shooter-page nil "token" 0))]
       (is (contains-str? html "ARROWS to Move") "Missing arrow keys instruction")
       (is (contains-str? html "SPACE to Switch Weapon") "Missing space key instruction")
       (is (contains-str? html "R to Reboot") "Missing R key instruction")
@@ -319,7 +317,7 @@
 
 (deftest game-page-script-loading-test
   (testing "Game page loads game JavaScript with proper configuration"
-    (let [html (extract-html-body (game-page/game-page nil "token" 0))]
+    (let [html (extract-html-body (shooter/shooter-page nil "token" 0))]
       ;; Note: Scripts use global scope (not ES6 modules) for compatibility
       ;; Dependencies are loaded in order: config → music → audio → game
       (is (contains-str? html "/js/game-config.js") "Missing game-config.js")
@@ -330,7 +328,7 @@
 
 (deftest game-page-fullscreen-styling-test
   (testing "Game page has fullscreen styling"
-    (let [html (extract-html-body (game-page/game-page nil "token" 0))]
+    (let [html (extract-html-body (shooter/shooter-page nil "token" 0))]
       (is (contains-str? html "overflow: hidden") "Missing overflow hidden")
       (is (contains-str? html "width: 100%") "Missing width 100%")
       (is (contains-str? html "height: 100%") "Missing height 100%"))))
@@ -369,7 +367,7 @@
 (deftest landing-page-background-canvas-test
   (testing "Landing page includes background Game of Life canvas"
     (let [html (extract-html-body (landing/landing-page {:session nil}))]
-      (is (contains-str? html "id=\"bgCanvas\"") "Missing background canvas")
+      (is (contains-str? html "id=\"lifeCanvas\"") "Missing background canvas")
       (is (contains-str? html "/js/life.js") "Missing life.js script"))))
 
 ;; ============================================================================
@@ -382,7 +380,7 @@
                  (auth/login-page {:session nil :params {} :anti-forgery-token "t"})
                  (auth/signup-page {:session nil :params {} :anti-forgery-token "t"})
                  (leaderboard/leaderboard-page {:session nil :leaderboard []})
-                 (game-page/game-page nil "t" 0)]]
+                 (shooter/shooter-page nil "t" 0)]]
       (doseq [page pages]
         (is (contains-str? (:body page) "tailwindcss.com")
             "Page missing Tailwind CSS")))))
@@ -391,7 +389,7 @@
   (testing "All forms include CSRF token"
     (let [login-html (extract-html-body (auth/login-page {:session nil :params {} :anti-forgery-token "login-t"}))
           signup-html (extract-html-body (auth/signup-page {:session nil :params {} :anti-forgery-token "signup-t"}))
-          game-html (extract-html-body (game-page/game-page nil "game-t" 0))]
+          game-html (extract-html-body (shooter/shooter-page nil "game-t" 0))]
       (is (contains-csrf-token? login-html) "Login form missing CSRF token")
       (is (contains-csrf-token? signup-html) "Signup form missing CSRF token")
       (is (contains-csrf-token? game-html) "Game page missing CSRF token"))))

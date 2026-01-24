@@ -111,7 +111,7 @@ This document defines the coding standards for the Simplicity project when worki
 - Use `brepl balance <file>` after every edit to ensure structural integrity
 - Use heredoc pattern for evaluation: `brepl <<'EOF' ... EOF`
 - Always use `:reload` when requiring namespaces to pick up changes
-- See [docs/hot-reload-workflow.md](../docs/hot-reload-workflow.md) for complete guide
+- See [docs/hot-reload.md](../docs/hot-reload.md) for complete guide
 
 ## Verification Workflow
 

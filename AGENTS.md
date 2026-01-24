@@ -28,7 +28,7 @@ Common tasks:
 bb help            # Show all available tasks
 bb dev             # Start development REPL with hot reload (Clojure)
 bb nrepl           # Start Babashka nREPL server on port 7888
-bb test            # Run all tests (618 assertions)
+bb test            # Run all tests (652 assertions)
 bb test:watch      # Watch mode (re-run tests on changes)
 bb check           # Check Polylith workspace integrity
 bb lint            # Lint all source files
@@ -80,7 +80,7 @@ bb nrepl            # Start Babashka nREPL server on port 7888
 
 ### Testing (τ Wisdom) - USE bb test
 
-- **Run All Tests**: `bb test` (primary, 618 passing assertions)
+- **Run All Tests**: `bb test` (primary, 652 passing assertions)
 - **Run Tests (Watch Mode)**: `bb test:watch` (auto-reruns on file changes)
 - **Run Specific Brick Tests**: `bb test:game`, `bb test:ui`, `bb test:user`, etc.
 - **Interactive REPL (brepl)**: Use `brepl` for fast evaluation (see Tools).
@@ -208,7 +208,7 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - `(restart)` → Manual hot reload
 - `(stop)` → Stop server
 
-**CRITICAL: Use the hot reload workflow** (see [docs/hot-reload-best-practices.md](./docs/hot-reload-best-practices.md)):
+**CRITICAL: Use the hot reload workflow** (see [docs/hot-reload.md](./docs/hot-reload.md)):
 ```clojure
 ;; In REPL after making changes
 (restart)  ; Stop server, reload code, restart server (0.5 seconds)
@@ -235,7 +235,7 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
   - **Password Security**: bcrypt + sha512 with timing attack resistance
   - **SQL Injection**: Parameterized queries + input validation (test coverage: 36 assertions)
   - **XSS Prevention**: HTML escaping + CSP headers (test coverage: 99 assertions)
-  - See [docs/security.md](./docs/security.md) for complete security controls (618 security-tested assertions)
+  - See [docs/security.md](./docs/security.md) for complete security controls (652 total assertions, 160 security-focused)
 - **Persistence**: Use `next.jdbc` with `rs/as-unqualified-lower-maps` for idiomatic data flow.
 - **Client-Side**: 
   - **Audio Policy**: Web Audio API requires a user gesture (`click`/`keydown`) to unlock. Always guard `new AudioContext()` with a `try-catch` and handle `suspended` state.
@@ -259,12 +259,9 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 ### 5. Self-Correction
 - If `poly check` fails, you have violated Polylith constraints (e.g., circular dependency or illegal import). Fix immediately.
 - Use `clj-kondo` to catch static analysis issues before committing.
-- **Test Coverage**: 618 passing assertions across 135 tests (current)
-  - Auth: 3 tests, 25 assertions
-  - Game: 13 tests, 136 assertions
-  - UI: 70 tests, 267 assertions (includes comprehensive script loading tests)
-  - User: 12 tests, 49 assertions
-  - Web-server: 37 tests, 177 assertions (includes security tests)
+- **Test Coverage**: 265 passing assertions across 70 UI tests (current)
+  - UI: 70 tests, 265 assertions (includes comprehensive script loading tests)
+  - Note: Run `bb test:ui` for UI tests, `bb test` for full suite
 - Run `bb test` or `clojure -M:poly test :dev` before committing to verify all tests pass.
 
 ## Tools & Utilities
@@ -324,7 +321,7 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - **The Test Illusion**: `(is (= 1 1))` is not a test. Verify actual logic or data persistence.
 - **Unspec'd Interfaces**: Never create a component interface without corresponding Clojure Specs and `s/fdef` contracts.
 - **Metadata Strings**: Avoid using strings for project names, aliases, or repository IDs in `workspace.edn` or `deps.edn`. This causes casting failures in inspection tools.
-- **Hardcoded Secrets**: Never commit passwords or API keys. Use `System/getenv` or a config component. **Security validated**: 618 security-tested assertions.
+- **Hardcoded Secrets**: Never commit passwords or API keys. Use `System/getenv` or a config component. **Security validated**: 160 security-focused assertions.
 - **Dead Code**: Regularly audit for unused functions, commented-out code, and obsolete files. Use dead code analysis to identify security gaps (e.g., missing validation).
 - **The Infinite Loop**: When using `requestAnimationFrame`, always wrap the loop body in a `try-catch` block to prevent a crash from freezing the entire tab/rendering thread.
 - **Security Bypass**: Never skip input validation or rate limiting. All user inputs must be validated at the boundary (see `bases/web-server/src/cc/mindward/web_server/security.clj`).
@@ -365,7 +362,7 @@ See hardcoded configuration analysis for complete list of tunable parameters.
 
 ### Deployment Checklist
 **Before deploying to production:**
-1. ✅ Run `bb test` or `clojure -M:poly test :dev` (ensure all 618 tests pass)
+1. ✅ Run `bb test` or `clojure -M:poly test :dev` (ensure all 652 tests pass)
 2. ✅ Run `bb lint` (ensure zero warnings)
 3. ✅ Review [docs/security.md](./docs/security.md)
 4. ✅ Review [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md)

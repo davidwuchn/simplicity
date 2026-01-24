@@ -66,7 +66,7 @@
   
   test:auth
   {:doc "Run auth component tests"
-   :task (shell "clojure -M:test -e \"(require 'cc.mindward.auth.interface-test) (clojure.test/run-tests 'cc.mindward.auth.interface-test)\"")}
+   :task (shell "clojure -M:test -e \"(require 'cc.mindward.auth.interface-test 'cc.mindward.auth.documentation-test) (clojure.test/run-tests 'cc.mindward.auth.interface-test 'cc.mindward.auth.documentation-test)\"")}
   
   test:game
   {:doc "Run game component tests"
@@ -83,6 +83,18 @@
   test:web-server
   {:doc "Run web-server base tests"
    :task (shell "clojure -M:test -e \"(require 'cc.mindward.web-server.core-test 'cc.mindward.web-server.security-test) (clojure.test/run-tests 'cc.mindward.web-server.core-test 'cc.mindward.web-server.security-test)\"")}
+  
+  test:property
+  {:doc "Run property-based tests"
+   :task (shell "clojure -M:test -e \"(require 'cc.mindward.game.property-test) (clojure.test/run-tests 'cc.mindward.game.property-test)\"")}
+  
+  test:performance
+  {:doc "Run performance tests"
+   :task (shell "clojure -M:test -e \"(require 'cc.mindward.game.performance-test) (clojure.test/run-tests 'cc.mindward.game.performance-test)\"")}
+  
+  test:documentation
+  {:doc "Run documentation contract tests"
+   :task (shell "clojure -M:test -e \"(require 'cc.mindward.auth.documentation-test) (clojure.test/run-tests 'cc.mindward.auth.documentation-test)\"")}
   
   ;; ═══════════════════════════════════════════════════════════
   ;; Linting & Formatting Tasks

@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Documentation Overhaul (Simplicity π)**
+  - Consolidated hot reload guides into a single authoritative `docs/hot-reload.md`.
+  - Refactored `PROJECT_SUMMARY.md` into a concise mental model for LLMs.
+  - Standardized assertion counts across all documents to current truth (652 total, 160 security-focused).
+  - Modernized `ONBOARDING.md`, `TROUBLESHOOTING.md`, and `CONTRIBUTING.md` to favor the `bb dev` workflow.
+  - Updated `development/src/user.clj` REPL banner with accurate test stats and emoji-driven clarity.
+  - Standardized "Last Updated" dates and fixed future-dated entries.
 - **Developer Experience**
   - REPL startup banner with quick reference commands and emoji-organized categories
   - `(banner)` command to redisplay help anytime

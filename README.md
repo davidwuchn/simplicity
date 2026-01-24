@@ -63,7 +63,7 @@ clojure -M:nrepl
 
 **Workflow**: Edit code → `(restart)` in REPL → Test in browser (instant feedback!)
 
-See [docs/hot-reload-workflow.md](./docs/hot-reload-workflow.md) for complete guide.
+See [docs/hot-reload.md](./docs/hot-reload.md) for complete guide.
 
 ### Quick Commands (Babashka)
 
@@ -167,15 +167,15 @@ simplicity/
 
 ## 🧪 Testing
 
-**Current test coverage**: 611 passing assertions across all test cases
+**Current test coverage**: 652 passing assertions across all test cases
 
 | Component | Tests | Assertions |
 | :--- | :---: | :---: |
-| Auth | 2 | 14 |
+| Auth | 3 | 25 |
 | Game | 13 | 136 |
-| UI | 70 | 267 |
+| UI | 70 | 265 |
 | User | 12 | 49 |
-| Web-server | 28 | 145 |
+| Web-server | 37 | 177 |
 
 Run tests:
 ```bash

@@ -619,7 +619,7 @@ The game engine follows classic Conway's Game of Life rules:
 ## See Also
 
 - [Architecture Documentation](./architecture.md)
-- [Security Documentation](./security.md) - Complete security controls (501 tested assertions)
+- [Security Documentation](./security.md) - Complete security controls (652 tested assertions, 160 security-focused)
 - [Deployment Guide](./deployment-cloudflare.md) - Production deployment instructions
 - [Web Server README](../bases/web-server/README.md)
 - [Game Component Documentation](../components/game/README.md)
