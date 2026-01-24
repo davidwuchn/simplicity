@@ -1,24 +1,20 @@
-(comment
-  ;; Temporarily disabling property tests to diagnose test suite timeout
-  ;; These tests use test.check which can cause timeouts
+(ns cc.mindward.game.property-test
+  "Property-based tests for game component using test.check.
 
-  (ns cc.mindward.game.property-test
-    "Property-based tests for game component using test.check.
+   Tests Game of Life properties:
+   - Determinism: Same board always evolves to same next state
+   - Idempotence: Dead board stays dead
+   - Conservation: Certain patterns are stable (still lifes)
+   - Periodicity: Certain patterns repeat (oscillators)
 
-     Tests Game of Life properties:
-     - Determinism: Same board always evolves to same next state
-     - Idempotence: Dead board stays dead
-     - Conservation: Certain patterns are stable (still lifes)
-     - Periodicity: Certain patterns repeat (oscillators)
-
-     φ (Vitality): Generative testing explores edge cases organically
-     ∃ (Truth): Verifies mathematical properties of Conway's Game of Life"
-    (:require [clojure.test :refer [deftest is testing use-fixtures]]
-              [clojure.test.check :as tc]
-              [clojure.test.check.generators :as gen]
-              [clojure.test.check.properties :as prop]
-              [clojure.test.check.clojure-test :refer [defspec]]
-              [cc.mindward.game.interface :as game])))
+   φ (Vitality): Generative testing explores edge cases organically
+   ∃ (Truth): Verifies mathematical properties of Conway's Game of Life"
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
+            [clojure.test.check :as tc]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop]
+            [clojure.test.check.clojure-test :refer [defspec]]
+            [cc.mindward.game.interface :as game]))
 
 ;; ============================================================================
 ;; Generators for Game of Life boards

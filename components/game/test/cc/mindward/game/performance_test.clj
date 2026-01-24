@@ -1,20 +1,16 @@
-(comment
-  ;; Temporarily disabling performance tests to diagnose test suite timeout
-  ;; These tests use pmap which can cause thread pool issues
-  
-  (ns cc.mindward.game.performance-test
-    "Performance tests for game component.
-     
-     Tests:
-     - Evolution speed for different board sizes
-     - Memory usage patterns
-     - Concurrent access performance
-     
-     τ (Wisdom): Tests foresight about performance characteristics
-     ∀ (Vigilance): Defends against performance regressions"
-    (:require [clojure.test :refer [deftest is testing use-fixtures]]
-              [clojure.string :as str]
-              [cc.mindward.game.interface :as game])))
+(ns cc.mindward.game.performance-test
+  "Performance tests for game component.
+   
+   Tests:
+   - Evolution speed for different board sizes
+   - Memory usage patterns
+   - Concurrent access performance
+   
+   τ (Wisdom): Tests foresight about performance characteristics
+   ∀ (Vigilance): Defends against performance regressions"
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
+            [clojure.string :as str]
+            [cc.mindward.game.interface :as game]))
 
 ;; ============================================================================
 ;; Test Helpers

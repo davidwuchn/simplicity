@@ -82,4 +82,4 @@
                  if(retryBtn) retryBtn.addEventListener('click', () => location.reload());
                });
              ")]
-             ]))}))
+             ]]))}))

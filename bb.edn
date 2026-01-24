@@ -283,42 +283,73 @@
            (println "\nUsage:")
            (println "  Use the CLI script for full functionality:")
            (println "  ./scripts/memory.clj help")
-           (println "\nSymbols: 🧠💡 insight  🔄Δ pattern-shift  🎯⚡ decision  🌀 meta")))}
-  
-  memory:store
-  {:doc "Store a critical memory (use CLI for full functionality)"
-   :task (println "Use ./scripts/memory.clj store for interactive memory creation"))}
+           (println "\nSymbols: 🧠💡 insight  🔄Δ pattern-shift  🎯⚡ decision  🌀 meta"))}
   
   memory:recall
-  {:doc "Recall recent memories (n=2)"
-   :task (shell "git log -n 2 -- memories/ --oneline")}
+  {:doc "Recall memories (λ recall)"
+   :task (do
+           (println "═══════════════════════════════════════════════════════════")
+           (println "  MEMENTUM: Recall Memories")
+           (println "═══════════════════════════════════════════════════════════")
+           (println "\nUsage examples:")
+           (println "  bb memory:recall --recent 2")
+           (println "  bb memory:recall --search \"architecture\"")
+           (println "  bb memory:recall --symbol insight")
+           (println "\nDefault: Shows recent 2 memories (Fibonacci n-1, n-2)"))}
   
   memory:search
   {:doc "Search memories by content"
    :task (do
-           (print "Enter search query: ")
-           (flush)
-           (let [query (read-line)]
-             (shell (str "git grep -i \"" query "\" memories/"))))}
+           (println "═══════════════════════════════════════════════════════════")
+           (println "  MEMENTUM: Search Memories")
+           (println "═══════════════════════════════════════════════════════════")
+           (println "\nUsage:")
+           (println "  bb memory:search \"architecture\"")
+           (println "  bb memory:search \"testing\""))}
   
   memory:symbol
   {:doc "Search memories by symbol"
    :task (do
-           (print "Enter symbol (insight|pattern-shift|decision|meta): ")
-           (flush)
-           (let [symbol (read-line)]
-             (shell (str "git log --grep \"" symbol "\" -- memories/ --oneline"))))}
+           (println "═══════════════════════════════════════════════════════════")
+           (println "  MEMENTUM: Search by Symbol")
+           (println "═══════════════════════════════════════════════════════════")
+           (println "\nSymbols: 🧠💡 insight  🔄Δ pattern-shift  🎯⚡ decision  🌀 meta")
+           (println "\nUsage:")
+           (println "  bb memory:symbol insight")
+           (println "  bb memory:symbol decision"))}
+  
+  memory:store
+  {:doc "Store a critical memory"
+   :requires ([babashka.process :as p]
+              [clojure.string :as str])
+   :task (do
+           (println "═══════════════════════════════════════════════════════════")
+           (println "  MEMENTUM: Store Memory")
+           (println "═══════════════════════════════════════════════════════════")
+           (println "\nMemory System Workflow:")
+           (println "1. OBSERVE (git log -n 13)")
+           (println "2. ORIENT (git grep -i \"query\")")
+           (println "3. DECIDE (create memory file)")
+           (println "4. ACT (git commit)")
+           (println "\nRun 'bb memory:store' to create a new memory."))}
   
   memory:stats
   {:doc "Show MEMENTUM statistics"
-   :task (do
+   :requires ([babashka.fs :as fs]
+              [clojure.string :as str])
+   :task (let [memory-files (fs/glob "memories" "*.md")
+               memory-count (count memory-files)
+               symbols (->> memory-files
+                           (map (fn [f] (first (str/split (fs/file-name f) (re-pattern "-")))))
+                           frequencies
+                           (sort-by val >))]
            (println "═══════════════════════════════════════════════════════════")
            (println "  MEMENTUM Statistics")
            (println "═══════════════════════════════════════════════════════════")
-           (println "Memory files in memories/ directory:")
-           (shell "ls -la memories/*.md 2>/dev/null || echo 'No memories found'")
-           (println "\nRecent memory commits:")
-           (shell "git log -n 5 -- memories/ --oneline 2>/dev/null || echo 'No memory commits found'")
+           (println (str "Total memories: " memory-count))
+           (println "\nBy symbol:")
+           (doseq [[symbol count] symbols]
+             (println (str "  " symbol ": " count " memories")))
            (println "═══════════════════════════════════════════════════════════"))}
   
    help
