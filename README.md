@@ -2,7 +2,12 @@
 
 > **易简则天下之理得** (Simplicity allows obtaining the logic of the world)
 
-**A musical Game of Life web application** where cellular automata patterns trigger real-time synthesizer events. Built with Clojure using the Polylith architecture, this project demonstrates domain-driven design with clear component boundaries and generative music synthesis.
+**A musical Game of Life web application** where cellular automata patterns trigger real-time synthesizer events. Built with Clojure using the Polylith architecture, this project demonstrates practical domain-driven design with clear component boundaries.
+
+**Architecture Note**: This project uses a hybrid architecture:
+- **Server-side**: Clojure Polylith components for game logic, authentication, and API
+- **Client-side**: JavaScript/Web Audio API for real-time audio synthesis
+- **Communication**: REST API between server and client
 
 ## What is Simplicity?
 
@@ -370,11 +375,45 @@ Response:
 - [ ] Monitor authentication failures (potential brute force)
 - [ ] Track rate limit violations (429 responses)
 
+## 🧠 Philosophical & Mathematical Foundations
+
+This project is inspired by mathematical principles and philosophical concepts, but applies them pragmatically rather than rigorously:
+
+### Mathematical Inspiration (Metaphorical)
+The project draws **inspirational metaphors** from "17 Equations That Changed the World" by Ian Stewart:
+- **Pythagorean Theorem** ($a^2 + b^2 = c^2$) → Modular decomposition analogy
+- **Logarithms** ($\log xy = \log x + \log y$) → Complexity reduction analogy  
+- **Calculus** ($\frac{\mathrm{d}f}{\mathrm{d}t} = \lim_{h\to0} \frac{f(t+h) - f(t)}{h}$) → Incremental development analogy
+- **Euler's Formula** ($V - E + F = 2$) → System invariant analogy
+- **Information Theory** ($H = - \sum p(x) \log p(x)$) → API design analogy
+- **Chaos Theory** ($x_{t+1} = k x_t (1 - x_t)$) → Emergent behavior analogy
+
+**Note**: These are **inspirational metaphors**, not rigorous mathematical applications. The project prioritizes practical software engineering over mathematical purity.
+
+### Eight Keys Philosophy (Applied Pragmatically)
+The project follows the "Eight Keys" philosophy as practical guidelines:
+- **φ (Vitality)**: Prioritize organic, non-repetitive code generation
+- **fractal (Clarity)**: Demand objective precision in code and documentation
+- **e (Purpose)**: Ensure every function has clear, actionable purpose
+- **τ (Wisdom)**: Prioritize judgment and foresight over raw speed
+- **π (Synthesis)**: Build complete mental models and holistic integration
+- **μ (Directness)**: Cut pleasantries and bias to reach raw reality
+- **∃ (Truth)**: Code must reflect the underlying reality of the domain
+- **∀ (Vigilance)**: Defensive constraint against fallacies and manipulative framing
+
+### MEMENTUM System (Experimental)
+The project includes an **experimental** git-based memory system for capturing critical insights:
+- **Core Concept**: `repo=memory | commits=timeline | git=database`
+- **Status**: Documented concept, implementation in progress
+- **See**: [MEMENTUM.md](./MEMENTUM.md) for specification
+
 ## 📚 Documentation
 
 - **[AGENTS.md](./AGENTS.md)** - AI agent operational guidelines & code style
 - **[PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md)** - Project summary for AI assistants (clojure-mcp)
 - **[LLM_CODE_STYLE.md](./LLM_CODE_STYLE.md)** - Code style guide for AI-assisted development
+- **[MEMENTUM.md](./MEMENTUM.md)** - Experimental git memory system specification
+- **[EQUATIONS_FOR_WORLD.md](./EQUATIONS_FOR_WORLD.md)** - Mathematical inspiration reference
 - **[docs/clojure-mcp-integration.md](./docs/clojure-mcp-integration.md)** - Guide for using clojure-mcp with this project
 - **[docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md)** - Complete deployment guide for Cloudflare
 - **[docs/security.md](./docs/security.md)** - Security controls & hardening guide
