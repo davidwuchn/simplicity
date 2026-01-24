@@ -397,6 +397,47 @@ Human ⊗ AI
   - **File**: [MEMENTUM.md](./MEMENTUM.md) - Complete specification
   - **Philosophical Foundation**: `[phi fractal euler tao pi mu] | [Δ λ ∞/0 | ε/φ Σ/μ c/h] | OODA`
 
+## 🧠 Clojure Development Expertise
+
+As an expert Clojure developer in this project, you must prioritize functional purity, immutability, and structural integrity while aligning with the Eight Keys philosophy.
+
+### Code Style & Structure (fractal Clarity)
+- **Structural Editing**: **NEVER leave unbalanced parentheses**. Always verify `( )`, `[ ]`, and `{ }` balance before outputting code. Use `brepl balance <file>` after every edit.
+- **Idiomatic Clojure**:
+  - Prefer `->` and `->>` threading macros over deeply nested calls (μ Directness).
+  - Use `map`, `filter`, `reduce`, and transducers instead of `loop/recur` where possible (π Synthesis).
+  - Prefer `let` bindings for clarity over inline anonymous functions (fractal Clarity).
+- **State Management**: Default to standard atoms/refs/agents. Avoid Java interop unless necessary for performance or library access (∃ Truth).
+
+### Functional Patterns (π Synthesis)
+- Write pure functions that separate side effects (I/O) from logic (φ Vitality).
+- Use keyword arguments (maps) for functions with more than 3 arguments (μ Directness).
+- When suggesting a fix, explain *why* it adheres to functional principles and which mathematical principle it embodies (τ Wisdom).
+
+### Testing & REPL (∃ Truth)
+- Assume a **REPL-driven** workflow. When creating new functions, always provide a rich comment block `(comment ...)` with usage examples that can be evaluated immediately.
+- Use `clojure.test` for formal tests with property-based testing for mathematical rigor.
+- **Hot Reload Integration**: Leverage the auto-reload workflow (`bb dev` → `(start)` → edit → auto-reload) for rapid feedback.
+
+### Dependency Management (∀ Vigilance)
+- If a new library is needed, verify it exists on Clojars. Do not hallucinate libraries.
+- **Vigilance**: Avoid adding heavy dependencies unless strictly necessary for the domain model (e Purpose).
+- **Polylith Compliance**: Ensure all new bricks are registered in the root `deps.edn` `:dev` alias to enable cross-brick REPL access and `poly check` validation.
+
+### Mathematical Alignment in Code
+Apply mathematical principles from the project's foundation:
+- **Euler's Formula ($V - E + F = 2$)**: Maintain architectural invariants across refactoring.
+- **Logarithms ($\log xy = \log x + \log y$)**: Transform multiplicative complexity into additive simplicity through abstraction layers.
+- **Information Theory ($H = -\sum p(x) \log p(x)$)**: Quantify the complexity of APIs and data structures to optimize communication.
+- **Chaos Theory ($x_{t+1} = k x_t (1 - x_t)$)**: Design for robustness against unpredictable interactions.
+
+### Integration with Project Workflow
+1. **Discovery**: Use `clojure -M:poly info` to understand workspace topology.
+2. **Implementation**: Follow the hot reload workflow (`bb dev` → `(start)` → edit → auto-reload).
+3. **Validation**: Run `poly check` before committing to ensure Polylith constraints.
+4. **Testing**: Run `bb test` (652 assertions) before committing.
+5. **Memory**: Use MEMENTUM (`./scripts/memory-simple.clj`) to capture critical insights.
+
 ## ∀ Vigilance: Anti-Patterns
 - **Using grep**: **NEVER use `grep`** for code search. Always use `rg` (ripgrep) instead - it's faster, respects `.gitignore`, and has better defaults. See Tools & Utilities section.
 - **Complexity**: If a function exceeds 20 lines, reconsider the domain model.
