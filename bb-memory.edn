@@ -1,0 +1,86 @@
+{:min-bb-version "1.0.0"
+ :paths ["scripts"]
+ :deps {babashka/fs {:mvn/version "0.5.30"}
+        babashka/process {:mvn/version "0.6.25"}}
+ :tasks
+ {:help
+  {:doc "Show MEMENTUM help"
+   :task (do
+           (println "═══════════════════════════════════════════════════════════")
+           (println "  MEMENTUM - Git Memory System")
+           (println "═══════════════════════════════════════════════════════════")
+           (println "\nCommands:")
+           (println "  bb -f bb-memory.edn store      - Store a critical memory")
+           (println "  bb -f bb-memory.edn recall     - Recall recent memories")
+           (println "  bb -f bb-memory.edn search     - Search memories by content")
+           (println "  bb -f bb-memory.edn symbol     - Search memories by symbol")
+           (println "  bb -f bb-memory.edn stats      - Show memory statistics")
+           (println "  bb -f bb-memory.edn ooda       - Run OODA loop")
+           (println "\nOr use the CLI script:")
+           (println "  ./scripts/memory.clj help")
+           (println "\nSymbols: 🧠💡 insight  🔄Δ pattern-shift  🎯⚡ decision  🌀 meta"))}
+  
+  :store
+  {:doc "Store a critical memory"
+   :requires ([clojure.string :as str]
+              [babashka.fs :as fs])
+   :task (do
+           (println "═══════════════════════════════════════════════════════════")
+           (println "  MEMENTUM: Store Critical Memory")
+           (println "═══════════════════════════════════════════════════════════")
+           (println "\nFor full functionality, use:")
+           (println "  ./scripts/memory.clj store --symbol insight --slug my-memory")
+           (println "\nOr create memory file manually:")
+           (println "  memories/{symbol}-YYYY-MM-DD-{slug}.md"))}
+  
+  :recall
+  {:doc "Recall recent memories (default n=2)"
+   :task (shell "git log -n 2 -- memories/ --oneline")}
+  
+  :search
+  {:doc "Search memories by content"
+   :task (do
+           (print "Enter search query: ")
+           (flush)
+           (let [query (read-line)]
+             (shell (str "git grep -i \"" query "\" memories/"))))}
+  
+  :symbol
+  {:doc "Search memories by symbol"
+   :task (do
+           (print "Enter symbol (insight|pattern-shift|decision|meta): ")
+           (flush)
+           (let [symbol (read-line)]
+             (shell (str "git log --grep \"" symbol "\" -- memories/ --oneline"))))}
+  
+  :stats
+  {:doc "Show MEMENTUM statistics"
+   :task (do
+           (println "═══════════════════════════════════════════════════════════")
+           (println "  MEMENTUM Statistics")
+           (println "═══════════════════════════════════════════════════════════")
+           (println "Memory files:")
+           (shell "find memories -name '*.md' -type f 2>/dev/null | wc -l | xargs echo 'Total memories:'")
+           (println "\nBy symbol:")
+           (shell "find memories -name '*.md' -type f 2>/dev/null | xargs -I {} basename {} | cut -d- -f1 | sort | uniq -c | sort -rn || echo 'No memories found'")
+           (println "\nRecent memories:")
+           (shell "git log -n 5 -- memories/ --oneline 2>/dev/null || echo 'No memory commits found'")
+           (println "═══════════════════════════════════════════════════════════"))}
+  
+  :ooda
+  {:doc "Run MEMENTUM OODA loop"
+   :task (do
+           (println "═══════════════════════════════════════════════════════════")
+           (println "  MEMENTUM OODA Loop")
+           (println "═══════════════════════════════════════════════════════════")
+           (println "\n1. OBSERVE (recent context):")
+           (shell "git log -n 13 -- memories/ --oneline 2>/dev/null || echo 'No memories found'")
+           (println "\n2. ORIENT (search for patterns):")
+           (print "Enter search query (or press Enter to skip): ")
+           (flush)
+           (let [query (read-line)]
+             (when-not (str/blank? query)
+               (shell (str "git grep -i \"" query "\" memories/ 2>/dev/null || echo 'No matches found'"))))
+           (println "\n3. DECIDE (create/update memory)")
+           (println "4. ACT (git commit)")
+           (println "\nRun './scripts/memory.clj store' to create a new memory."))}}}

@@ -401,19 +401,22 @@ The project follows the "Eight Keys" philosophy as practical guidelines:
 - **∃ (Truth)**: Code must reflect the underlying reality of the domain
 - **∀ (Vigilance)**: Defensive constraint against fallacies and manipulative framing
 
-### MEMENTUM System (Experimental)
-The project includes an **experimental** git-based memory system for capturing critical insights:
+### MEMENTUM System (Implemented)
+The project includes a **fully implemented** git-based memory system for capturing critical insights:
 - **Core Concept**: `repo=memory | commits=timeline | git=database`
-- **Status**: Documented concept, implementation in progress
-- **See**: [MEMENTUM.md](./MEMENTUM.md) for specification
+- **Status**: ✅ Fully implemented with Babashka tasks and CLI tools
+- **Features**: Memory storage, recall, OODA loop, validation, statistics
+- **Usage**: `bb memory:store`, `bb memory:recall`, `bb memory:ooda`
+- **See**: [MEMENTUM.md](./MEMENTUM.md) for specification, [docs/mementum-usage.md](./docs/mementum-usage.md) for usage guide
 
 ## 📚 Documentation
 
 - **[AGENTS.md](./AGENTS.md)** - AI agent operational guidelines & code style
 - **[PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md)** - Project summary for AI assistants (clojure-mcp)
 - **[LLM_CODE_STYLE.md](./LLM_CODE_STYLE.md)** - Code style guide for AI-assisted development
-- **[MEMENTUM.md](./MEMENTUM.md)** - Experimental git memory system specification
+- **[MEMENTUM.md](./MEMENTUM.md)** - Git memory system specification
 - **[EQUATIONS_FOR_WORLD.md](./EQUATIONS_FOR_WORLD.md)** - Mathematical inspiration reference
+- **[docs/mementum-usage.md](./docs/mementum-usage.md)** - Complete guide to using the MEMENTUM memory system
 - **[docs/clojure-mcp-integration.md](./docs/clojure-mcp-integration.md)** - Guide for using clojure-mcp with this project
 - **[docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md)** - Complete deployment guide for Cloudflare
 - **[docs/security.md](./docs/security.md)** - Security controls & hardening guide

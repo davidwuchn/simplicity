@@ -265,35 +265,65 @@
            (println "═══════════════════════════════════════════════════════════"))}
   
   ;; ═══════════════════════════════════════════════════════════
-  ;; MEMENTUM Tasks - Git Memory System (Simple)
+  ;; MEMENTUM Tasks - Git Memory System
   ;; ═══════════════════════════════════════════════════════════
   
-  memory:help
-  {:doc "Show MEMENTUM help"
+  memory:store
+  {:doc "Store a critical insight or decision (λ store)"
+   :requires ([clojure.string :as str]
+              [babashka.fs :as fs]
+              [java-time.local :as t])
    :task (do
            (println "═══════════════════════════════════════════════════════════")
-           (println "  MEMENTUM - Git Memory System")
+           (println "  MEMENTUM: Store Critical Memory")
            (println "═══════════════════════════════════════════════════════════")
-           (println "\nCommands:")
-           (println "  bb memory:store      - Store a critical memory")
-           (println "  bb memory:recall     - Recall recent memories (n=2)")
-           (println "  bb memory:search     - Search memories by content")
-           (println "  bb memory:symbol     - Search memories by symbol")
-           (println "  bb memory:stats      - Show memory statistics")
-           (println "\nUsage:")
-           (println "  Use the CLI script for full functionality:")
-           (println "  ./scripts/memory.clj help")
-           (println "\nSymbols: 🧠💡 insight  🔄Δ pattern-shift  🎯⚡ decision  🌀 meta")))}
-  
-  memory:store
-  {:doc "Store a critical memory (use CLI for full functionality)"
-   :task (println "Use ./scripts/memory.clj store for interactive memory creation"))}
+           (println "\nSymbols:")
+           (println "  🧠💡 insight  - Novel architectural insight")
+           (println "  🔄Δ pattern-shift  - Significant pattern shift")
+           (println "  🎯⚡ decision  - Strategic decision (>1 week impact)")
+           (println "  🌀 meta  - Meta-learning that changes approach")
+           (print "\nEnter symbol (e.g., insight): ")
+           (flush)
+           (let [symbol (read-line)
+                 valid-symbols #{"insight" "pattern-shift" "decision" "meta"}
+                 _ (when-not (valid-symbols symbol)
+                     (println (str "Invalid symbol. Must be one of: " (str/join ", " valid-symbols)))
+                     (System/exit 1))
+                 date (.format (t/local-date) "yyyy-MM-dd")
+                 (print "Enter slug (short description, kebab-case): ")
+                 (flush)
+                 slug (read-line)
+                 filename (str "memories/" symbol "-" date "-" slug ".md")
+                 (print "Enter memory content (≤200 tokens, press Ctrl+D when done):\n")
+                 (flush)
+                 content (slurp *in*)
+                 token-count (count (str/split content (re-pattern "\\s+")))]
+             (when (> token-count 200)
+               (println (str "Warning: Memory exceeds 200 tokens (" token-count "). Compress ruthlessly.")))
+             (fs/create-dirs "memories")
+             (spit filename content)
+             (println (str "\n✓ Memory saved to: " filename))
+             (println "\nTo commit:")
+             (println (str "  git add " filename))
+             (println (str "  git commit -m \"" symbol " " slug "\""))))}
   
   memory:recall
-  {:doc "Recall recent memories (n=2)"
-   :task (shell "git log -n 2 -- memories/ --oneline")}
+  {:doc "Recall memories (λ recall)"
+   :task (do
+           (println "═══════════════════════════════════════════════════════════")
+           (println "  MEMENTUM: Recall Memories")
+           (println "═══════════════════════════════════════════════════════════")
+           (println "\nUsage examples:")
+           (println "  bb memory:recall --recent 2")
+           (println "  bb memory:recall --search \"architecture\"")
+           (println "  bb memory:recall --symbol insight")
+           (println "\nDefault: Shows recent 2 memories (Fibonacci n-1, n-2)"))}
   
-  memory:search
+  memory:recall:recent
+  {:doc "Show recent memories (default n=2)"
+   :task (shell "git log -n 2 -- memories/")}
+  
+  memory:recall:search
   {:doc "Search memories by content"
    :task (do
            (print "Enter search query: ")
@@ -301,25 +331,48 @@
            (let [query (read-line)]
              (shell (str "git grep -i \"" query "\" memories/"))))}
   
-  memory:symbol
+  memory:recall:symbol
   {:doc "Search memories by symbol"
    :task (do
            (print "Enter symbol (insight|pattern-shift|decision|meta): ")
            (flush)
            (let [symbol (read-line)]
-             (shell (str "git log --grep \"" symbol "\" -- memories/ --oneline"))))}
+             (shell (str "git log --grep \"" symbol "\" -- memories/"))))}
+  
+  memory:ooda
+  {:doc "Run MEMENTUM OODA loop"
+   :task (do
+           (println "═══════════════════════════════════════════════════════════")
+           (println "  MEMENTUM OODA Loop")
+           (println "═══════════════════════════════════════════════════════════")
+           (println "\n1. OBSERVE (recent context):")
+           (shell "git log -n 13 -- memories/")
+           (println "\n2. ORIENT (search for patterns):")
+           (print "Enter search query for orientation: ")
+           (flush)
+           (let [query (read-line)]
+             (shell (str "git grep -i \"" query "\" memories/")))
+           (println "\n3. DECIDE (create/update memory)")
+           (println "4. ACT (git commit)")
+           (println "\nRun 'bb memory:store' to create a new memory."))}
   
   memory:stats
   {:doc "Show MEMENTUM statistics"
-   :task (do
+   :requires ([babashka.fs :as fs])
+   :task (let [memory-files (fs/glob "memories" "*.md")
+               memory-count (count memory-files)
+               symbols (->> memory-files
+                           (map (fn [f] (first (str/split (fs/file-name f) (re-pattern "-")))))
+                           frequencies
+                           (sort-by val >))]
            (println "═══════════════════════════════════════════════════════════")
            (println "  MEMENTUM Statistics")
            (println "═══════════════════════════════════════════════════════════")
-           (println "Memory files in memories/ directory:")
-           (shell "ls -la memories/*.md 2>/dev/null || echo 'No memories found'")
-           (println "\nRecent memory commits:")
-           (shell "git log -n 5 -- memories/ --oneline 2>/dev/null || echo 'No memory commits found'")
-           (println "═══════════════════════════════════════════════════════════"))}
+           (println (str "Total memories: " memory-count))
+           (println "\nBy symbol:")
+           (doseq [[symbol count] symbols]
+             (println (str "  " symbol ": " count " memories")))
+           (println "═══════════════════════════════════════════════════════════")))}
   
    help
    {:doc "Show all available tasks"
