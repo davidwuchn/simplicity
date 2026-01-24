@@ -2,10 +2,10 @@
   "mcpServers": {
     "clojure-mcp": {
       "type": "stdio",
-      "command": "clojure",
+      "command": "/bin/bash",
       "args": [
-        "-Tmcp",
-        "start"
+        "-c",
+        "clojure -Tmcp start :not-cwd true :port 7888"
       ],
       "env": {}
     }

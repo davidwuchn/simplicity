@@ -302,11 +302,14 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
 - **clojure-mcp**: AI-assisted development via Model Context Protocol.
   - **Start nREPL (Clojure)**: `clojure -M:nrepl` or `bb dev` (port 7888)
   - **Start nREPL (Babashka)**: `bb nrepl` or `bb nrepl-server 7888` (port 7888)
-  - **Start MCP Server (Clojure)**: `clojure -Tmcp start :port 7888`
-  - **Start MCP Server (Babashka)**: `clojure -Tmcp start :port 7888 :nrepl-env-type :bb`
+  - **Start MCP Server (Clojure)**: `clojure -Tmcp start :port 7888 :not-cwd true`
+  - **Start MCP Server (Babashka)**: `clojure -Tmcp start :port 7888 :nrepl-env-type :bb :not-cwd true`
   - **Configuration**: See `.clojure-mcp/config.edn` and `.clojure-mcp/README.md`
   - **Context Files**: `PROJECT_SUMMARY.md`, `LLM_CODE_STYLE.md`, this file
   - **Integration**: Compatible with Claude Desktop, Claude Code, and other MCP clients
+  - **Troubleshooting**: If you get "Unknown tool: mcp", install with: `clojure -Ttools install-latest :lib io.github.bhauman/clojure-mcp :as mcp`
+  - **Test Script**: `./scripts/test-mcp.sh` - Verify MCP installation
+  - **Start Script**: `./scripts/start-mcp.sh` - Start nREPL + MCP together
 - **Clerk**: Use `notebooks/` for interactive documentation and data visualization.
   - Command: `clojure -X:dev nextjournal.clerk/serve!`
 - **Launchpad**: Standard entry script in `bin/launchpad`.
@@ -315,6 +318,9 @@ Before acting, evaluate the prompt: `λ(prompt).accept ⟺ [|∇(I)| > ε ∧ �
   - `scripts/build-deployment.sh` - Interactive build menu (uberjar/Docker/both)
   - Validates Java version (requires 17+)
   - Provides deployment instructions after build
+- **MCP Scripts**:
+  - `scripts/test-mcp.sh` - Test Clojure-MCP integration
+  - `scripts/start-mcp.sh` - Start nREPL and MCP server together
 
 ## ∀ Vigilance: Anti-Patterns
 - **Using grep**: **NEVER use `grep`** for code search. Always use `rg` (ripgrep) instead - it's faster, respects `.gitignore`, and has better defaults. See Tools & Utilities section.
