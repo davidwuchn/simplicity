@@ -10,12 +10,11 @@
    ∃ (Truth): Reflects real-world behavior
    ∀ (Vigilance): Anticipates and prevents failures"
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
-            ;; test.check commented out to prevent test failures
-            ;; Uncomment when running property tests specifically
-            ;; [clojure.test.check :as tc]
-            ;; [clojure.test.check.generators :as gen]
-            ;; [clojure.test.check.properties :as prop]
-            ;; [clojure.test.check.clojure-test :refer [defspec]]
+            [clojure.string :as str]
+            [clojure.test.check :as tc]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop]
+            [clojure.test.check.clojure-test :refer [defspec]]
             [cc.mindward.auth.interface :as auth]
             [cc.mindward.auth.test-helpers :as helpers]
             [cc.mindward.user.interface :as user]

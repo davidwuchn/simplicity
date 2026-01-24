@@ -9,9 +9,7 @@
    μ (Directness): Minimal, focused functionality
    ∃ (Truth): Reflects real-world scenarios
    ∀ (Vigilance): Includes security test scenarios"
-  (:require ;; test.check commented out to prevent test failures
-            ;; Uncomment when running property tests specifically
-            ;; [clojure.test.check.generators :as gen]
+  (:require [clojure.test.check.generators :as gen]
             [clojure.string :as str]
             [cc.mindward.auth.interface :as auth]
             [cc.mindward.user.interface :as user]
