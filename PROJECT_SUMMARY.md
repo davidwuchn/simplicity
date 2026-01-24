@@ -37,6 +37,7 @@
 2. **Clarity**: Edit code → `(restart)` (0.5s - 2s reload).
 3. **Truth**: Run `bb test` before any major change.
 4. **Directness**: Use `clojure -M:poly check` for structural integrity.
+5. **Memory**: Use MEMENTUM git memory system for critical insights (see AGENTS.md).
 
 ## 🔑 Key Constraints for LLMs
 
