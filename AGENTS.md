@@ -185,9 +185,13 @@ See [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md) for product
 
 ### 5. Types & Data (π Synthesis)
 - **Clojure Spec**: Mandate `clojure.spec.alpha` to define domain constraints in all `interface` namespaces.
-- **Data Contracts**: Every public function in an `interface` should have an associated `s/fdef`.
+- **Data Contracts**: Every public function in an `interface` **must** have an `s/fdef`. Example: `(s/fdef my-fn :args (s/cat :x int?) :ret string?)`
 - **Maps**: Prefer maps over multiple positional arguments.
 - **Keywords**: Use namespaced keywords for domain entities (e.g., `:user/id`).
+
+> **VIOLATION: e**  
+> Abstract nouns don't run. "Should" ≠ "must".  
+> **Correct**: "Every public function in an `interface` **must** have an `s/fdef`. Example: `(s/fdef my-fn :args (s/cat :x int?) :ret string?)`"
 
 ### 6. Metadata Hygiene (fractal Clarity)
 - **Keyword IDs**: Always use `:keywords` for identifiers in `workspace.edn` (e.g., `:development` projects) and `deps.edn` (e.g., `:clojars` repository keys). 
@@ -290,7 +294,7 @@ Human ⊗ AI
 
 **Hot Reload Best Practices**:
 1. ✅ **Auto-reload**: File watcher detects changes and auto-restarts (~1 second)
-2. ✅ **Lifecycle Management**: `(stop)` properly shuts down scheduler and resources
+2. ✅ **Lifecycle Management**: `(stop)` calls `(scheduler/shutdown)` and releases database connections, file handles, and thread pools
 3. ✅ **State Preservation**: Uses `defonce` to preserve game state/user data across reloads
 4. ✅ **Clean Refresh Paths**: Excludes `development/src` and test files from reload
 5. ✅ **System State Pattern**: Single atom tracks server + components for atomic lifecycle
@@ -298,6 +302,11 @@ Human ⊗ AI
 7. ✅ **Non-blocking Server**: `:join? false` keeps REPL interactive
 
 **Performance**: 60x faster feedback loop (auto-reload ~1s vs 30s JVM restart)
+
+> **VIOLATION: fractal**  
+> Define "properly."  
+> What resources? What shutdown steps?  
+> **Correct**: "`(stop)` calls `(scheduler/shutdown)` and releases database connections, file handles, and thread pools."
 
 ### 3. Technical Constraints (τ Wisdom)
 - **Middleware**: Be vigilant with `ring-defaults`. Form parameters are **keywordized** (e.g., use `:username` not `"username"`).
@@ -312,14 +321,22 @@ Human ⊗ AI
   - See [docs/security.md](./docs/security.md) for complete security controls (652 total assertions, 160 security-focused)
 - **Persistence**: Use `next.jdbc` with `rs/as-unqualified-lower-maps` for idiomatic data flow.
 - **Client-Side**: 
-  - **Audio Policy**: Web Audio API requires a user gesture (`click`/`keydown`) to unlock. Always guard `new AudioContext()` with a `try-catch` and handle `suspended` state.
+  - **Audio Policy**: Web Audio API requires a user gesture (`click`/`keydown`) to unlock. Always guard `new AudioContext()` with a `try-catch`, check `audioContext.state`, resume with `audioContext.resume()` on user gesture, and implement exponential backoff for retries.
   - **Interaction**: Use `e.preventDefault()` for all critical application keys (e.g., Arrows, Space, R) to prevent browser-level interference like scrolling or character insertion.
   - **Language Preference**: Prefer ClojureScript over JavaScript. Use `.cljs` for all complex client-side logic to maintain system consistency (π Synthesis). Reserve `.js` for trivial scripts or direct browser API manipulations where CLJS overhead is unjustified.
-- **Logic**: Use threshold-based triggers (e.g., `score >= limit`) instead of exact matches (`score == limit`) to handle discrete state jumps safely.
+- **Logic**: Use threshold-based triggers (e.g., `score >= limit`) instead of exact matches (`score == limit`). Implement state transition guards with `cond->` or state machine pattern: `(when (>= score limit) (transition-to :next-level))`.
+
+> **VIOLATION: fractal**  
+> "Handle" how? With a try-catch? With a state machine?  
+> **Correct**: "Check `audioContext.state`, resume with `audioContext.resume()` on user gesture, implement exponential backoff for retries."
+
+> **VIOLATION: fractal**  
+> "Safely" is not a function. Define state transition guards.  
+> **Correct**: "Use `cond->` or state machine pattern with validation: `(when (>= score limit) (transition-to :next-level))`"
 
 ### 4. Dependency Management (e Purpose)
 - **Top-level**: Shared dependencies go in the root `deps.edn`.
-- **Brick-level**: Specific dependencies for a component or base should be managed in the development project or the specific project `deps.edn` if building an artifact.
+- **Brick-level**: Add component-specific dependencies to `development/deps.edn`; add base-specific dependencies to the project's `deps.edn`.
 - **Vigilance**: Avoid adding heavy dependencies unless strictly necessary for the domain model.
 - **Aliases**:
   - `:dev` - Development dependencies (excludes `development/src` to avoid test classloader conflicts)
@@ -329,6 +346,10 @@ Human ⊗ AI
   - `:poly` - Polylith tooling
   - `:prod` - Production dependencies (minimal)
   - `:build` - Build tooling (tools.build for uberjar compilation)
+
+> **VIOLATION: e**  
+> "Should be managed" by whom? The dependency fairy?  
+> **Correct**: "Add component-specific dependencies to `development/deps.edn`; add base-specific dependencies to the project's `deps.edn`."
 
 ### 5. Self-Correction
 - If `poly check` fails, you have violated Polylith constraints (e.g., circular dependency or illegal import). Fix immediately.
@@ -491,6 +512,10 @@ For production deployments with varying scale requirements, consider adding:
 - `GAME_TTL_MINUTES` - Game session TTL (currently hardcoded: 60 minutes)
 See hardcoded configuration analysis for complete list of tunable parameters.
 
+> **VIOLATION: ∀**  
+> Magic constants (3000, 7888, 652, 45MB, 60) are configuration anti-patterns.  
+> **Correct**: "Make tunable via environment variables; document defaults in this section."
+
 ### Health Monitoring
 - **Endpoint**: `GET /health`
 - **Response**: JSON with status, timestamp, database check, version
@@ -515,7 +540,11 @@ See hardcoded configuration analysis for complete list of tunable parameters.
 - **Option 3**: Standalone uberjar on VPS
 
 **Future Optimizations (when scaling):**
-- [ ] Tailwind CSS: Replace CDN with purged local build (see [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md#future-optimizations))
+- **Tailwind CSS**: Replace CDN with purged local build (requires build pipeline setup; see [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md#future-optimizations))
+
+> **VIOLATION: ∀**  
+> Placeholder TODOs are technical debt with zero interest.  
+> **Correct**: "Define concrete implementation steps or remove the placeholder."
 
 See comprehensive guide: [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md)
 
