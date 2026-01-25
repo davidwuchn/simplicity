@@ -297,8 +297,8 @@ export LOG_PATH=/var/log/simplicity
 # Optional (only after HTTPS is verified)
 export ENABLE_HSTS=true
 
-# For multi-server deployments
-# TODO: Implement Redis-based rate limiting
+# For multi-server deployments (future enhancement)
+# Note: Redis-based rate limiting would be required for distributed deployments
 # export REDIS_URL=redis://localhost:6379
 ```
 

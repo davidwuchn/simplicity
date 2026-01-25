@@ -108,7 +108,7 @@ Babashka provides a unified task runner for all development operations:
 ```bash
 bb help           # Show all available commands
 bb dev            # Start development REPL with hot reload
-bb test           # Run all tests (611 assertions)
+bb test           # Run all tests (652 assertions)
 bb test:watch     # Watch mode (re-run tests on file changes)
 bb check          # Check Polylith workspace integrity
 bb lint           # Lint all source files
@@ -366,7 +366,7 @@ Response:
 **Configuration:**
 - [ ] Set `PORT` for your environment
 - [ ] Set `DB_PATH` to persistent storage location
-- [ ] Ensure Java 17+ on target system (or use Docker)
+- [ ] Verify Java 17+ with `java -version` or use Docker container
 - [ ] Configure persistent volumes (Docker: `/app/data`, `/app/logs`)
 
 **Monitoring:**
