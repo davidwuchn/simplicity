@@ -6,7 +6,11 @@
    ∀ (Vigilance): Bounds checking prevents infinite board growth."
   (:require [clojure.set :as set]
             [clojure.tools.logging :as log]
-            [cc.mindward.game.config :as config]))
+            [clojure.data.json :as json]
+            [next.jdbc :as jdbc]
+            [next.jdbc.result-set :as rs]
+            [cc.mindward.game.config :as config])
+  (:import [com.zaxxer.hikari HikariConfig HikariDataSource]))
 
 ;; ------------------------------------------------------------
 ;; Domain Constants & Schema (∃ Truth)
@@ -15,6 +19,64 @@
 
 ;; Game state structure:
 ;; {:board #{[x y] ...} :generation n :created-at timestamp :last-accessed timestamp}
+
+;; ------------------------------------------------------------
+;; Database Configuration (τ Wisdom - connection pooling)
+;; ------------------------------------------------------------
+
+(defn make-datasource
+  "Create a pooled datasource using HikariCP for game persistence."
+  ([db-path] (make-datasource db-path {:pool? true}))
+  ([db-path {:keys [pool?] :or {pool? true}}]
+   (if pool?
+     (let [config (doto (HikariConfig.)
+                    (.setJdbcUrl (str "jdbc:sqlite:" db-path))
+                    (.setMaximumPoolSize 10)
+                    (.setMinimumIdle 2)
+                    (.setConnectionTimeout 30000)
+                    (.setIdleTimeout 600000)
+                    (.setMaxLifetime 1800000)
+                    (.setPoolName "simplicity-game-pool"))]
+       (HikariDataSource. config))
+     (jdbc/get-datasource {:dbtype "sqlite" :dbname db-path}))))
+
+(defonce ^:private db-state (atom nil))
+
+(defn get-datasource
+  "Get or create datasource for saved games. Lazy initialization."
+  []
+  (or @db-state
+      (let [db-path (or (System/getenv "DB_PATH") "simplicity.db")
+            ds (make-datasource db-path)]
+        (reset! db-state ds)
+        ds)))
+
+(def ^:dynamic *ds* nil)
+
+(defn ds
+  "Get current datasource. Uses *ds* if bound (for tests), otherwise get-datasource."
+  []
+  (or *ds* (get-datasource)))
+
+(defn init-db!
+  "Initialize saved_games table. Idempotent - safe to call multiple times."
+  ([] (init-db! (ds)))
+  ([datasource]
+   (jdbc/execute! datasource ["
+    CREATE TABLE IF NOT EXISTS saved_games (
+      id TEXT PRIMARY KEY,
+      username TEXT NOT NULL,
+      name TEXT NOT NULL,
+      board TEXT NOT NULL,
+      generation INTEGER NOT NULL,
+      score INTEGER NOT NULL,
+      created_at INTEGER NOT NULL
+    )
+    "])
+   (jdbc/execute! datasource ["
+    CREATE INDEX IF NOT EXISTS idx_saved_games_username ON saved_games(username)
+    "])
+   (log/info "Game persistence database initialized")))
 
 ;; ------------------------------------------------------------
 ;; State Management (π Synthesis)
@@ -82,9 +144,9 @@
 ;; ------------------------------------------------------------
 
 (defn- update-game!
-  "Internal helper for updating game state in the atom.
-   Returns the updated game state or nil if game-id not found.
-   Thread-safe: uses swap-vals! and returns the new state atomically."
+  "Internal helper for updating game state in: atom.
+   Returns: updated game state or nil if game-id not found.
+   Thread-safe: uses swap-vals! and returns: new state atomically."
   [game-id update-fn]
   (let [[_ updated-games] (swap-vals! games (fn [m]
                                               (if-let [game (get m game-id)]
@@ -184,6 +246,64 @@
                    [drone-trigger])))))
 
 ;; ------------------------------------------------------------
+;; Game Persistence (∃ Truth - save/load functionality)
+;; ------------------------------------------------------------
+
+(defn- generate-id
+  "Generate unique ID for saved game."
+  []
+  (str (java.util.UUID/randomUUID)))
+
+(defn save-game!
+  "Save game state to database.
+   Returns map with :id, :name, :generation, :score.
+   nil if game-id not found."
+  [game-id name]
+  (when-let [game (get @games game-id)]
+    (let [datasource (ds)
+          id (generate-id)
+          now (System/currentTimeMillis)
+          board-json (json/write-str (vec (:board game)))]
+      (jdbc/execute-one! datasource
+        ["INSERT INTO saved_games (id, username, name, board, generation, score, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+         id name name board-json (:generation game) (calculate-game-score game) now])
+      {:id id
+       :name name
+       :generation (:generation game)
+       :score (calculate-game-score game)})))
+
+(defn load-game!
+  "Load game from database and create new game state.
+   Returns board (set of [x y] coordinates) or nil if not found."
+  [saved-id game-id]
+  (let [datasource (ds)
+        result (jdbc/execute-one! datasource
+                 ["SELECT board, generation FROM saved_games WHERE id = ?" saved-id])]
+    (when result
+      (let [board-coords (json/read-str (:board result) :key-fn keyword)]
+        (create-game! game-id (set board-coords))
+        (update-game! game-id #(assoc % :generation (:generation result)))
+        (get-board game-id)))))
+
+(defn delete-game!
+  "Delete saved game from database.
+   Returns nil (no-op if not found)."
+  [saved-id]
+  (let [datasource (ds)]
+    (jdbc/execute-one! datasource
+      ["DELETE FROM saved_games WHERE id = ?" saved-id])
+    nil))
+
+(defn list-saved-games
+  "List all saved games.
+   Returns vector of maps with :id, :name, :generation, :score."
+  []
+  (let [datasource (ds)]
+    (jdbc/execute! datasource
+      ["SELECT id, name, generation, score, created_at FROM saved_games ORDER BY created_at DESC"]
+      {:builder-fn rs/as-unqualified-lower-maps})))
+
+;; ------------------------------------------------------------
 ;; Lifecycle (τ Wisdom)
 ;; ------------------------------------------------------------
 
@@ -194,7 +314,7 @@
                                               (let [now (System/currentTimeMillis)
                                                     cutoff (- now config/game-ttl-ms)
                                                     before (count m)
-                                                    filtered (into {} (filter (fn [[_ g]] (> (:last-accessed g 0) cutoff))) m)
+                                                    filtered (into {} (filter (fn [[_ g]] (> (:last-accessed g) cutoff)) m))
                                                     removed (- before (count filtered))]
                                                 (reset! result removed)
                                                 filtered)))

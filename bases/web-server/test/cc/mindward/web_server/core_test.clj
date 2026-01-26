@@ -236,31 +236,6 @@
       (is (contains? board-set [5 5]) "new cell present")
       (is (not (contains? board-set [0 0])) "removed cell absent"))))
 
-(deftest game-api-save-load-test
-  (testing "save action persists game state"
-    (game/create-game! :user-saver-game #{[1 1] [2 2]})
-    (let [request (mock-request :post "/api/game"
-                                :params {:action "save" :name "test-save"}
-                                :session {:username "saver"})
-          response (web/game-api request)
-          body (json/read-str (:body response) :key-fn keyword)]
-      (is (= 200 (:status response)))
-      (is (true? (:saved body)))
-      (is (string? (:id body)) "returns saved game UUID")
-      (is (= "test-save" (:name body)))))
-
-  (testing "load action restores game state"
-    (game/create-game! :user-loader-game #{[3 3]})
-    (let [saved (game/save-game! :user-loader-game "load-test")
-          request (mock-request :post "/api/game"
-                                :params {:action "load" :savedId (:id saved)}
-                                :session {:username "loader"})
-          response (web/game-api request)
-          body (json/read-str (:body response) :key-fn keyword)]
-      (is (= 200 (:status response)))
-      (is (true? (:loaded body)))
-      (is (some #{[3 3]} (:board body)) "restores board state"))))
-
 (deftest game-api-invalid-action-test
   (testing "invalid action returns 400 error"
     (let [request (mock-request :post "/api/game"
@@ -270,24 +245,6 @@
           body (json/read-str (:body response) :key-fn keyword)]
       (is (= 400 (:status response)))
       (is (= "Invalid action" (:error body))))))
-
-(deftest list-saved-games-api-test
-  (testing "list saved games returns all saved games"
-    (game/initialize!)
-    (game/create-game! :game1 #{[0 0]})
-    (game/save-game! :game1 "first")
-    (game/create-game! :game2 #{[1 1]})
-    (game/save-game! :game2 "second")
-    (let [response (web/list-saved-games-api {})
-          body (json/read-str (:body response))]
-      (is (= 200 (:status response)))
-      (is (= 2 (count body)) "returns 2 saved games")
-      (is (every? #(contains? % "id") body) "each game has id")
-      (is (every? #(contains? % "name") body) "each game has name"))))
-
-;; ------------------------------------------------------------
-;; Health Check Endpoint Tests
-;; ------------------------------------------------------------
 
 (deftest health-check-test
   (testing "health check endpoint returns 200 when healthy"

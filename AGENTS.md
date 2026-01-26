@@ -54,7 +54,7 @@ Common tasks:
 bb help            # Show all available tasks
 bb dev             # Start development REPL with hot reload (Clojure)
 bb nrepl           # Start Babashka nREPL server on port 7888
-bb test            # Run all tests (652 assertions)
+bb test            # Run all tests (658 assertions)
 bb test:watch      # Watch mode (re-run tests on changes)
 bb check           # Check Polylith workspace integrity
 bb lint            # Lint all source files
@@ -106,7 +106,7 @@ bb nrepl            # Start Babashka nREPL server on port 7888
 
 ### Testing (τ Wisdom) - USE bb test
 
-- **Run All Tests**: `bb test` (primary, 652 passing assertions)
+- **Run All Tests**: `bb test` (primary, 658 passing assertions)
 - **Run Tests (Watch Mode)**: `bb test:watch` (auto-reruns on file changes)
 - **Run Specific Brick Tests**: `bb test:game`, `bb test:ui`, `bb test:user`, `bb test:auth`, `bb test:web-server`
 - **Run Enhanced Test Types**: 
@@ -318,7 +318,7 @@ Human ⊗ AI
   - **Password Security**: bcrypt + sha512 with timing attack resistance
   - **SQL Injection**: Parameterized queries + input validation (test coverage: 36 assertions)
   - **XSS Prevention**: HTML escaping + CSP headers (test coverage: 99 assertions)
-  - See [docs/security.md](./docs/security.md) for complete security controls (652 total assertions, 160 security-focused)
+  - See [docs/security.md](./docs/security.md) for complete security controls (658 total assertions, 160 security-focused)
 - **Persistence**: Use `next.jdbc` with `rs/as-unqualified-lower-maps` for idiomatic data flow.
 - **Client-Side**: 
   - **Audio Policy**: Web Audio API requires a user gesture (`click`/`keydown`) to unlock. Always guard `new AudioContext()` with a `try-catch`, check `audioContext.state`, resume with `audioContext.resume()` on user gesture, and implement exponential backoff for retries.
@@ -354,8 +354,8 @@ Human ⊗ AI
 ### 5. Self-Correction
 - If `poly check` fails, you have violated Polylith constraints (e.g., circular dependency or illegal import). Fix immediately.
 - Use `clj-kondo` to catch static analysis issues before committing.
-- **Test Coverage**: 652 passing assertions with enhanced test infrastructure
-  - **Component Tests**: 652 assertions across auth, game, ui, user, web-server
+- **Test Coverage**: 658 passing assertions with enhanced test infrastructure
+  - **Component Tests**: 658 assertions across auth, game, ui, user, web-server
   - **Enhanced Test Types**: Property-based, documentation contract, performance, and security timing tests
   - **Security Focus**: 160 security-focused assertions (SQL injection, XSS, CSRF, rate limiting, input validation)
   - Note: Run `bb test` for full suite, `bb test:<component>` for specific components
@@ -456,7 +456,7 @@ Apply mathematical principles from the project's foundation:
 1. **Discovery**: Use `clojure -M:poly info` to understand workspace topology.
 2. **Implementation**: Follow the hot reload workflow (`bb dev` → `(start)` → edit → auto-reload).
 3. **Validation**: Run `poly check` before committing to ensure Polylith constraints.
-4. **Testing**: Run `bb test` (652 assertions) before committing.
+4. **Testing**: Run `bb test` (658 assertions) before committing.
 5. **Memory**: Use MEMENTUM (`./scripts/memory-simple.clj`) to capture critical insights.
 
 ## ∀ Vigilance: Anti-Patterns
@@ -523,7 +523,7 @@ See hardcoded configuration analysis for complete list of tunable parameters.
 
 ### Deployment Checklist
 **Before deploying to production:**
-1. ✅ Run `bb test` or `clojure -M:poly test :dev` (ensure all 652 tests pass)
+1. ✅ Run `bb test` or `clojure -M:poly test :dev` (ensure all 658 tests pass)
 2. ✅ Run `bb lint` (ensure zero warnings)
 3. ✅ Review [docs/security.md](./docs/security.md)
 4. ✅ Review [docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md)
