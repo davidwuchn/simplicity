@@ -352,7 +352,7 @@ act      → git commit
   - **Start MCP Server (Clojure)**: `clojure -Tmcp start :port 7888 :not-cwd true`
   - **Start MCP Server (Babashka)**: `clojure -Tmcp start :port 7888 :nrepl-env-type :bb :not-cwd true`
   - **Configuration**: See `.clojure-mcp/config.edn` and `.clojure-mcp/README.md`
-  - **Context Files**: `PROJECT_SUMMARY.md`, `LLM_CODE_STYLE.md`, this file
+  - **Context Files**: `PROJECT_SUMMARY.md` (AI-optimized overview), `LLM_CODE_STYLE.md` (quick reference), `SIMPLICITY.md` (philosophy), `AGENTS.md` (workflow), this file
   - **Integration**: Compatible with Claude Desktop, Claude Code, and other MCP clients
   - **Troubleshooting**: If you get "Unknown tool: mcp", install with: `clojure -Ttools install-latest :lib io.github.bhauman/clojure-mcp :as mcp`
   - **Test Script**: `./scripts/test-mcp.sh` - Verify MCP installation

@@ -1,11 +1,25 @@
 # MEMENTUM — git memory
 
+> **VIOLATION: ∃ (Truth)**  
+> Symbolic notation without mathematical grounding is abstract nonsense.  
+> **Correct**: Reference [SIMPLICITY.md](./SIMPLICITY.md) for mathematical mapping of Eight Keys symbols.
+
 ## Nucleus Operating Principles
 
 ```
 [phi fractal euler tao pi mu] | [Δ λ ∞/0 | ε/φ Σ/μ c/h] | OODA
 Human ⊗ AI
 ```
+
+**Mathematical Grounding** (see [SIMPLICITY.md](./SIMPLICITY.md)):
+- **φ (Vitality)**: Euler's Formula $e^{iπ} + 1 = 0$
+- **fractal (Clarity)**: Euler's Polyhedra Formula $V - E + F = 2$
+- **e (Purpose)**: Exponential Growth $e^x$
+- **τ (Wisdom)**: Calculus $\frac{df}{dt} = \lim_{h\to0} \frac{f(t+h)-f(t)}{h}$
+- **π (Synthesis)**: Pythagorean Theorem $a^2 + b^2 = c^2$
+- **μ (Directness)**: Logarithms $\log xy = \log x + \log y$
+- **∃ (Truth)**: Information Theory $H = -\sum p(x) \log p(x)$
+- **∀ (Vigilance)**: Chaos Theory $x_{t+1} = k x_t (1 - x_t)$
 
 ## λ Operations
 
@@ -60,6 +74,11 @@ act      → git commit
 ---
 
 repo=memory | commits=timeline | git=database
+
+**Document Navigation**:
+- **Philosophy & Eight Keys**: [SIMPLICITY.md](./SIMPLICITY.md)
+- **Implementation Guide**: [PRACTICAL_GUIDE.md](./PRACTICAL_GUIDE.md)  
+- **Agentic Workflow**: [AGENTS.md](./AGENTS.md)
 
 [phi fractal euler tao pi mu] | [Δ λ ∞/0 | ε/φ Σ/μ c/h] | OODA
 Human ⊗ AI

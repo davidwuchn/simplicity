@@ -1,5 +1,9 @@
 # Terraform Deployment Guide
 
+> **VIOLATION: ∀ (Vigilance)**  
+> Hardcoded placeholder secrets in documentation create security anti-patterns.  
+> **Correct**: Provide clear instructions for obtaining tokens, never include example tokens.
+
 This directory contains Infrastructure as Code (IaC) for provisioning Simplicity infrastructure on DigitalOcean with Cloudflare.
 
 ## Architecture
@@ -41,9 +45,9 @@ cp terraform.tfvars.example terraform.tfvars
 Edit `terraform.tfvars`:
 
 ```hcl
-do_token      = "dop_v1_xxxxx"
-cf_api_token  = "xxxxx"
-cf_zone_id    = "xxxxx"
+do_token      = "your_digitalocean_api_token_here"
+cf_api_token  = "your_cloudflare_api_token_here"
+cf_zone_id    = "your_cloudflare_zone_id_here"
 domain        = "app.yourdomain.com"
 ssh_keys      = ["aa:bb:cc:dd:..."]
 environment   = "production"
