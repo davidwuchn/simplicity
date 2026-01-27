@@ -203,8 +203,9 @@ if [ -f "scripts/sarcasmotron-check.sh" ]; then
         fi
     fi
 else
-    print_warning "sarcasmotron-check.sh not found - skipping philosophical validation"
-    echo "  Consider creating script to enforce Eight Keys principles"
+    print_warning "sarcasmotron-check.sh not found - philosophical validation not available"
+    echo "  Run: bash scripts/install-hooks.sh to install complete validation suite"
+    echo "  Or create scripts/sarcasmotron-check.sh to enforce Eight Keys principles"
 fi
 
 print_success "All checks passed!"

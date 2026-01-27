@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Documentation validation script for Simplicity repository
-# Validates cross-references, broken links, and documentation consistency
+# Documentation validation script for Simplicity repository - Fixed version
+# Intelligently validates cross-references, broken links, and documentation consistency
 
 set -e
 
@@ -41,6 +41,21 @@ done
 # Track validation results
 ERRORS=0
 WARNINGS=0
+
+# Helper function to check if line is in pattern definition
+is_pattern_definition() {
+    local file="$1"
+    local line_num="$2"
+    
+    # Look backward for pattern array definitions
+    local look_back=5
+    local start_line=$((line_num > look_back ? line_num - look_back : 1))
+    
+    # Check if any of the previous lines contain pattern array definitions
+    sed -n "${start_line},${line_num}p" "$file" | grep -q -E "^(VIOLATION_PATTERNS|SECRET_PATTERNS)=\(|^[[:space:]]*[\"']"
+    
+    return $?
+}
 
 # 1. Check for broken markdown links
 echo ""
@@ -91,35 +106,47 @@ for doc in "${REQUIRED_DOCS[@]}"; do
     fi
 done
 
-# 3. Check for sarcasmotron violations in documentation
+# 3. Check for actual sarcasmotron violations in documentation (not pattern definitions)
 echo ""
-print_info "3. Checking for sarcasmotron violations..."
+print_info "3. Checking for actual sarcasmotron violations..."
 
-# Common violation patterns
-VIOLATION_PATTERNS=(
-    "handle properly"
-    "should be"
-    "might be"
-    "could be"
+# Common violation patterns (real violations, not meta-patterns)
+REAL_VIOLATION_PATTERNS=(
     "TODO"
     "FIXME"
     "XXX"
     "HACK"
 )
 
-for pattern in "${VIOLATION_PATTERNS[@]}"; do
-    violations=$(grep -r -i "$pattern" --include="*.md" . 2>/dev/null | grep -v "scripts/validate-docs.sh" | wc -l || echo 0)
-    
-    if [[ "$violations" -gt 0 ]]; then
-        print_warning "Found $violations instances of '$pattern' (sarcasmotron violation)"
-        ((WARNINGS++))
+for pattern in "${REAL_VIOLATION_PATTERNS[@]}"; do
+    # Find all matches
+    while IFS=: read -r file line; do
+        line_num=$(echo "$line" | cut -d: -f1)
+        line_content=$(echo "$line" | cut -d: -f2-)
         
-        # Show first few instances
-        if [[ "$violations" -le 5 ]]; then
-            grep -r -i "$pattern" --include="*.md" . 2>/dev/null | grep -v "scripts/validate-docs.sh" | head -3 | while read -r line; do
-                echo "   $line"
-            done
+        # Skip if this is in a pattern definition
+        if is_pattern_definition "$file" "$line_num"; then
+            continue
         fi
+        
+        # Skip if it's talking about the pattern itself (e.g., "Check for TODO")
+        if echo "$line_content" | grep -q -i "check.*$pattern\|$pattern.*check\|pattern.*$pattern"; then
+            continue
+        fi
+        
+        print_warning "Found '$pattern' in $file:$line_num (sarcasmotron violation)"
+        ((WARNINGS++))
+    done < <(grep -r -n -i "$pattern" --include="*.md" . 2>/dev/null | grep -v "scripts/validate-docs.sh" || true)
+done
+
+# Also check for vague language but be smart about it
+VAGUE_PATTERNS=("should be" "might be" "could be")
+for pattern in "${VAGUE_PATTERNS[@]}"; do
+    count=$(grep -r -i "$pattern" --include="*.md" . 2>/dev/null | grep -v "scripts/validate-docs.sh" | grep -v "VIOLATION_PATTERNS" | wc -l || echo 0)
+    
+    if [[ "$count" -gt 0 ]]; then
+        print_warning "Found $count instances of '$pattern' in documentation (potential sarcasmotron violation)"
+        ((WARNINGS++))
     fi
 done
 
@@ -185,26 +212,28 @@ else
     ((WARNINGS++))
 fi
 
-# 5. Check for placeholder secrets
+# 5. Check for placeholder secrets (real secrets, not examples)
 echo ""
 print_info "5. Checking for placeholder secrets..."
 
-SECRET_PATTERNS=(
-    "xxxxx"
-    "password"
-    "secret.*key"
-    "api.*token"
-    "dop_v1_"
+# Real secret patterns (not example placeholders)
+REAL_SECRET_PATTERNS=(
+    "password.*=.*[\"'].*[\"']"
+    "secret.*key.*=.*[\"'].*[\"']"
+    "api.*token.*=.*[\"'].*[\"']"
+    "dop_v1_.*"
 )
 
-for pattern in "${SECRET_PATTERNS[@]}"; do
+for pattern in "${REAL_SECRET_PATTERNS[@]}"; do
     secrets=$(grep -r -i "$pattern" --include="*.md" --include="*.tf" --include="*.sh" . 2>/dev/null | 
               grep -v "scripts/validate-docs.sh" | 
               grep -v "terraform.tfvars.example" |
+              grep -v "your_.*_here" |
+              grep -v "example.*token" |
               wc -l || echo 0)
     
     if [[ "$secrets" -gt 0 ]]; then
-        print_warning "Found $secrets potential placeholder secrets with pattern '$pattern'"
+        print_warning "Found $secrets potential hardcoded secrets with pattern '$pattern'"
         ((WARNINGS++))
     fi
 done

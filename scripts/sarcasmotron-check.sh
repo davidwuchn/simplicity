@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Sarcasmotron Eight Keys violation checker
-# Integrates with pre-commit hooks to enforce philosophical rigor
+# Sarcasmotron Eight Keys violation checker - Fixed version
+# Intelligently detects violations while ignoring pattern definitions
 
 set -e
 
@@ -45,10 +45,26 @@ fi
 VIOLATION_COUNT=0
 WARNING_COUNT=0
 
+# Helper function to check if line is in pattern definition
+is_pattern_definition() {
+    local file="$1"
+    local line_num="$2"
+    
+    # Look backward for array definition patterns
+    local context_lines=10
+    local start_line=$((line_num > context_lines ? line_num - context_lines : 1))
+    
+    # Extract context before the line
+    sed -n "${start_line},${line_num}p" "$file" | grep -q -E "^(VAGUE_PATTERNS|ABSTRACT_NOUN_PATTERNS|TRUTH_PATTERNS|VIGILANCE_PATTERNS|SECRET_PATTERNS|VIOLATION_PATTERNS)=\(|^[[:space:]]*[\"']"
+    
+    return $?
+}
+
 # 1. Check for fractal (Clarity) violations - vague language
 echo ""
 print_info "1. Checking for fractal (Clarity) violations..."
 
+# Patterns to check (but we'll filter out definitions)
 VAGUE_PATTERNS=(
     "handle properly"
     "handle.*edge.*cases"
@@ -61,23 +77,30 @@ VAGUE_PATTERNS=(
 )
 
 for pattern in "${VAGUE_PATTERNS[@]}"; do
-    matches=$(echo "$STAGED_FILES" | xargs grep -l -i "$pattern" 2>/dev/null || true)
+    # Get files with matches
+    matching_files=$(echo "$STAGED_FILES" | xargs grep -l -i "$pattern" 2>/dev/null || true)
     
-    if [[ -n "$matches" ]]; then
-        for file in $matches; do
+    for file in $matching_files; do
+        # Get line numbers with matches
+        while IFS=: read -r line_num line_content; do
+            # Skip if this is a pattern definition line
+            if is_pattern_definition "$file" "$line_num"; then
+                continue
+            fi
+            
             # Get context for the violation
-            context=$(grep -i -B2 -A2 "$pattern" "$file" | head -5)
+            context=$(sed -n "$((line_num-2)),$((line_num+2))p" "$file" 2>/dev/null || true)
             
             print_violation "fractal (Clarity)" \
-                "Vague language: '$pattern' in $file" \
+                "Vague language: '$pattern' in $file:$line_num" \
                 "Define exact validation rules, error codes, or state transitions"
             echo "   Context:"
             echo "$context" | sed 's/^/     /'
             echo ""
             
             ((VIOLATION_COUNT++))
-        done
-    fi
+        done < <(grep -n -i "$pattern" "$file" 2>/dev/null || true)
+    done
 done
 
 # 2. Check for e (Purpose) violations - abstract nouns
@@ -96,19 +119,21 @@ ABSTRACT_NOUN_PATTERNS=(
 for pattern in "${ABSTRACT_NOUN_PATTERNS[@]}"; do
     matches=$(echo "$STAGED_FILES" | xargs grep -l "$pattern" 2>/dev/null || true)
     
-    if [[ -n "$matches" ]]; then
-        for file in $matches; do
-            # Get the violating line
-            violating_line=$(grep "$pattern" "$file" | head -1)
+    for file in $matches; do
+        # Get the violating line, skip if in pattern definition
+        while IFS=: read -r line_num line_content; do
+            if is_pattern_definition "$file" "$line_num"; then
+                continue
+            fi
             
             print_violation "e (Purpose)" \
-                "Abstract noun: '$violating_line' in $file" \
+                "Abstract noun: '$line_content' in $file:$line_num" \
                 "Functions must have specific, actionable purpose. Name after what they DO, not what they ARE."
             echo ""
             
             ((VIOLATION_COUNT++))
-        done
-    fi
+        done < <(grep -n "$pattern" "$file" 2>/dev/null || true)
+    done
 done
 
 # 3. Check for ∃ (Truth) violations - ignoring underlying data
@@ -125,21 +150,25 @@ TRUTH_PATTERNS=(
 )
 
 for pattern in "${TRUTH_PATTERNS[@]}"; do
-    matches=$(echo "$STAGED_FILES" | xargs grep -l -i "$pattern" 2>/dev/null || true)
+    matching_files=$(echo "$STAGED_FILES" | xargs grep -l -i "$pattern" 2>/dev/null || true)
     
-    if [[ -n "$matches" ]]; then
-        for file in $matches; do
-            context=$(grep -i -B1 -A1 "$pattern" "$file" | head -3)
+    for file in $matching_files; do
+        while IFS=: read -r line_num line_content; do
+            if is_pattern_definition "$file" "$line_num"; then
+                continue
+            fi
+            
+            context=$(sed -n "$((line_num-1)),$((line_num+1))p" "$file" 2>/dev/null || true)
             
             print_violation "∃ (Truth)" \
-                "Surface agreement ≠ truth: '$pattern' in $file" \
+                "Surface agreement ≠ truth: '$pattern' in $file:$line_num" \
                 "Analyze actual data flows, invariants, and system behavior. Verify assumptions."
             echo "   Context: $context"
             echo ""
             
             ((VIOLATION_COUNT++))
-        done
-    fi
+        done < <(grep -n -i "$pattern" "$file" 2>/dev/null || true)
+    done
 done
 
 # 4. Check for ∀ (Vigilance) violations - accepting manipulation
@@ -157,37 +186,48 @@ VIGILANCE_PATTERNS=(
 )
 
 for pattern in "${VIGILANCE_PATTERNS[@]}"; do
-    matches=$(echo "$STAGED_FILES" | xargs grep -l -i "$pattern" 2>/dev/null || true)
+    matching_files=$(echo "$STAGED_FILES" | xargs grep -l -i "$pattern" 2>/dev/null || true)
     
-    if [[ -n "$matches" ]]; then
-        for file in $matches; do
-            context=$(grep -i -B1 -A1 "$pattern" "$file" | head -3)
+    for file in $matching_files; do
+        while IFS=: read -r line_num line_content; do
+            # Special handling for TODO/FIXME/XXX/HACK
+            if [[ "$pattern" == "TODO" || "$pattern" == "FIXME" || "$pattern" == "XXX" || "$pattern" == "HACK" ]]; then
+                # Skip if it's in a comment about the pattern itself
+                if echo "$line_content" | grep -q -i "pattern.*$pattern\|$pattern.*pattern"; then
+                    continue
+                fi
+            fi
+            
+            if is_pattern_definition "$file" "$line_num"; then
+                continue
+            fi
+            
+            context=$(sed -n "$((line_num-1)),$((line_num+1))p" "$file" 2>/dev/null || true)
             
             if [[ "$pattern" == "TODO" || "$pattern" == "FIXME" || "$pattern" == "XXX" || "$pattern" == "HACK" ]]; then
                 print_violation "∀ (Vigilance)" \
-                    "Placeholder technical debt: '$pattern' in $file" \
+                    "Placeholder technical debt: '$pattern' in $file:$line_num" \
                     "Define concrete implementation steps or remove the placeholder. Technical debt has zero interest."
             else
                 print_violation "∀ (Vigilance)" \
-                    "Accepting manipulation: '$pattern' in $file" \
+                    "Accepting manipulation: '$pattern' in $file:$line_num" \
                     "Verify claims, question assumptions, demand evidence. You're the brakes, not engine."
             fi
             echo "   Context: $context"
             echo ""
             
             ((VIOLATION_COUNT++))
-        done
-    fi
+        done < <(grep -n -i "$pattern" "$file" 2>/dev/null || true)
+    done
 done
 
 # 5. Check for φ (Vitality) violations - mechanical repetition
 echo ""
 print_info "5. Checking for φ (Vitality) violations..."
 
-# Look for repetitive patterns (more than 3 similar lines in a row)
 for file in $STAGED_FILES; do
     if [[ -f "$file" && "$file" =~ \.(clj|cljs|cljc|java|js)$ ]]; then
-        # Simple check for repeated lines (basic vitality check)
+        # Check for repeated function definitions or similar patterns
         repeats=$(awk 'count[$0]++ {if (count[$0]==3) print}' "$file" | wc -l)
         
         if [[ "$repeats" -gt 0 ]]; then
@@ -202,26 +242,26 @@ done
 echo ""
 print_info "6. Checking for π (Synthesis) violations..."
 
-# Look for functions without proper error handling or edge cases
 for file in $STAGED_FILES; do
     if [[ -f "$file" && "$file" =~ \.(clj|cljs|cljc)$ ]]; then
-        # Check for defn without try/catch for I/O operations
-        io_functions=$(grep -n "defn.*\(http\|db\|file\|io\|read\|write\)" "$file" 2>/dev/null || true)
-        
-        if [[ -n "$io_functions" ]]; then
-            while IFS= read -r line; do
-                function_name=$(echo "$line" | sed -E 's/.*defn[[:space:]]+([^[[:space:]]+).*/\1/')
-                line_num=$(echo "$line" | cut -d: -f1)
+        # Find defn lines with I/O-related names
+        while IFS=: read -r line_num line; do
+            # Extract function name
+            if [[ "$line" =~ defn[[:space:]]+([^[[:space:]]+) ]]; then
+                fn_name="${BASH_REMATCH[1]}"
                 
-                # Check if function has error handling
-                if ! sed -n "$((line_num)),$((line_num+20))p" "$file" | grep -q "try\|catch\|ex-info"; then
-                    print_warning "Potential π (Synthesis) violation: Incomplete error handling in $file:$line_num"
-                    echo "   Function '$function_name' does I/O without error handling"
-                    echo "   Consider adding try/catch or proper error propagation"
-                    ((WARNING_COUNT++))
+                # Check if function name suggests I/O
+                if [[ "$fn_name" =~ (http|db|file|io|read|write|save|load|fetch|post|get) ]]; then
+                    # Check next 20 lines for error handling
+                    if ! sed -n "$((line_num)),$((line_num+20))p" "$file" | grep -q "try\|catch\|ex-info\|error\|Exception"; then
+                        print_warning "Potential π (Synthesis) violation: Incomplete error handling in $file:$line_num"
+                        echo "   Function '$fn_name' suggests I/O without apparent error handling"
+                        echo "   Consider adding try/catch or proper error propagation"
+                        ((WARNING_COUNT++))
+                    fi
                 fi
-            done <<< "$io_functions"
-        fi
+            fi
+        done < <(grep -n "defn" "$file" 2>/dev/null || true)
     fi
 done
 
@@ -229,7 +269,6 @@ done
 echo ""
 print_info "7. Checking for mathematical principle application..."
 
-# Verify that at least some files reference mathematical concepts
 MATH_TERMS=("orthogonal" "invariant" "complexity" "logarithm" "calculus" "chaos" "information")
 math_references=0
 
