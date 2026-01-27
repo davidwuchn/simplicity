@@ -16,7 +16,7 @@ Thank you for your interest in contributing to Simplicity! This document provide
 
 **易简则天下之理得** (Simplicity allows obtaining the logic of the world)
 
-We follow the **Eight Keys** (see [AGENTS.md](./AGENTS.md)):
+We follow the **Eight Keys** (see [SIMPLICITY.md](./SIMPLICITY.md)):
 - **φ Vitality**, **fractal Clarity**, **π Synthesis**, **μ Directness**, **∃ Truth**, etc.
 
 ---
@@ -87,7 +87,7 @@ bb test        # Ensure all 652 tests pass
 
 ## Coding Standards
 
-Follow the style guide in [AGENTS.md](./AGENTS.md):
+Follow the style guide in [PRACTICAL_GUIDE.md](./PRACTICAL_GUIDE.md):
 
 **Naming**:
 - `kebab-case` for functions and variables.
