@@ -181,6 +181,32 @@ if [ -n "$LARGE_FILES" ]; then
     echo "  Consider using Git LFS for large binary files"
 fi
 
+# Run sarcasmotron Eight Keys violation check
+echo ""
+echo "🔥 Running sarcasmotron analysis..."
+if [ -f "scripts/sarcasmotron-check.sh" ]; then
+    if bash scripts/sarcasmotron-check.sh; then
+        print_success "Sarcasmotron check passed"
+    else
+        SARCA_RESULT=$?
+        if [ $SARCA_RESULT -eq 1 ]; then
+            print_error "Sarcasmotron found Eight Keys violations"
+            echo ""
+            echo "  Fix violations before committing. Review:"
+            echo "  - [SIMPLICITY.md](./SIMPLICITY.md) for Eight Keys definitions"
+            echo "  - [PRACTICAL_GUIDE.md](./PRACTICAL_GUIDE.md) for implementation guidance"
+            exit 1
+        elif [ $SARCA_RESULT -eq 0 ]; then
+            print_success "Sarcasmotron check passed"
+        else
+            print_warning "Sarcasmotron check completed with warnings"
+        fi
+    fi
+else
+    print_warning "sarcasmotron-check.sh not found - skipping philosophical validation"
+    echo "  Consider creating script to enforce Eight Keys principles"
+fi
+
 print_success "All checks passed!"
 
 echo ""
