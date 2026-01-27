@@ -184,7 +184,7 @@ TOTAL                36     181      Security-specific
 
 **Security Philosophy (∀ Vigilance):**
 
-From AGENTS.md:
+From SIMPLICITY.md (Eight Keys):
 > "∀ (Vigilance): Defensive constraint against fallacies and manipulative framing"
 
 Applied to security:

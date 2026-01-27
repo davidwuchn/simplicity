@@ -84,8 +84,10 @@ bb test:documentation # Run documentation contract tests
 ```
 
 ### 3. Code Style & Philosophy
-Follow the **Eight Keys** in [AGENTS.md](../AGENTS.md):
+Follow the **Eight Keys** in [SIMPLICITY.md](../SIMPLICITY.md):
 - **φ (Vitality)**, **fractal (Clarity)**, **π (Synthesis)**, etc.
+
+Follow coding standards in [PRACTICAL_GUIDE.md](../PRACTICAL_GUIDE.md):
 - Use `kebab-case` for names.
 - Predicates end with `?` (e.g., `valid?`).
 - Side effects end with `!` (e.g., `save!`).
@@ -103,7 +105,9 @@ Follow the **Eight Keys** in [AGENTS.md](../AGENTS.md):
 | Tooling/Tasks | `bb.edn` |
 
 ### Key Files
-- **AGENTS.md**: Architecture rules and philosophy
+- **SIMPLICITY.md**: Philosophical foundations & Eight Keys
+- **PRACTICAL_GUIDE.md**: Implementation guidelines & commands
+- **AGENTS.md**: Agentic workflow & workspace navigation
 - **PROJECT_SUMMARY.md**: System map (optimized for LLMs)
 - **docs/hot-reload.md**: How to use the hot reload system
 - **docs/security.md**: Security controls (160 security assertions)
@@ -113,7 +117,9 @@ Follow the **Eight Keys** in [AGENTS.md](../AGENTS.md):
 ## 📖 Learning Resources
 - [Polylith Documentation](https://polylith.gitbook.io/)
 - [Clojure REPL Guide](https://clojure.org/guides/repl/introduction)
-- [AGENTS.md](../AGENTS.md) - **READ THIS FIRST**
+- [AGENTS.md](../AGENTS.md) - **Workspace navigation guide (start here)**
+- [SIMPLICITY.md](../SIMPLICITY.md) - Philosophical foundations & Eight Keys
+- [PRACTICAL_GUIDE.md](../PRACTICAL_GUIDE.md) - Implementation guidelines
 
 ---
 

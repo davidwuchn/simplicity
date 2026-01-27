@@ -121,7 +121,7 @@ bb test            # Run full test suite (652 assertions)
 
 1. **REPL Help**: Run `(help)` or `(banner)` in the REPL.
 2. **Documentation**: Check the `docs/` directory, especially `INDEX.md`.
-3. **Philosophy**: Review `AGENTS.md` to ensure you're following the core principles.
+3. **Philosophy**: Review `SIMPLICITY.md` to ensure you're following the Eight Keys principles.
 4. **Test Documentation**: Review enhanced test infrastructure in `README.md` and `PROJECT_SUMMARY.md`.
 
 ---

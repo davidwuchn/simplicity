@@ -19,7 +19,7 @@ Ensure the nREPL server is running. This is the backbone of the integration.
 Always load the project context before starting complex tasks:
 - Read `PROJECT_SUMMARY.md` for architecture.
 - Read `LLM_CODE_STYLE.md` for coding standards.
-- Read `AGENTS.md` for operational guidelines.
+- Read `AGENTS.md` for workspace navigation and the three-document hierarchy.
 
 ### 3. REPL-Driven Development (RDD)
 Before editing files, validate your logic in the REPL:

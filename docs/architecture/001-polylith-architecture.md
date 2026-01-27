@@ -98,7 +98,7 @@ workspace/
 - **Polylith Tool Maintenance**: Dependency on external tool (mitigated: active community)
 
 **Mitigation:**
-- **Documentation**: Maintain AGENTS.md with clear Polylith guidelines
+- **Documentation**: Maintain PRACTICAL_GUIDE.md with clear Polylith guidelines
 - **Code Reviews**: Enforce architectural constraints during reviews
 - **Onboarding**: Provide Polylith training for new team members
 - **Tooling**: Configure IDE/editor support for Polylith structure
@@ -120,13 +120,13 @@ workspace/
 **Rollout Plan:**
 - ✅ Phase 1: Migrate existing code to Polylith structure
 - ✅ Phase 2: Add `poly check` to pre-commit hooks
-- ✅ Phase 3: Document architecture in AGENTS.md
+- ✅ Phase 3: Document architecture in PRACTICAL_GUIDE.md & AGENTS.md
 - ⏳ Phase 4: Create production project (when needed)
 
 ## Related Documents
 
 - [Polylith Documentation](https://polylith.gitbook.io/)
-- [AGENTS.md](../../AGENTS.md) - Workspace guidelines
+- [AGENTS.md](../../AGENTS.md) - Workspace navigation & three-document hierarchy
 - [ADR-003: Component Separation](./003-component-separation.md)
 
 ## Notes

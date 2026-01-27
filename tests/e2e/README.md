@@ -298,7 +298,7 @@ These E2E tests embody the Eight Keys:
 ## Resources
 
 - [agent-browser Documentation](https://github.com/agent-browser/agent-browser)
-- [Project AGENTS.md](../../AGENTS.md) - Development guidelines
+- [Project AGENTS.md](../../AGENTS.md) - Workspace navigation & guidelines
 - [Security Documentation](../../docs/security.md) - Security controls
 - [Hot Reload Guide](../../docs/hot-reload.md) - Development workflow
 

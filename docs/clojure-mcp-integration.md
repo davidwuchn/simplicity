@@ -54,7 +54,7 @@ Three files provide context to AI assistants:
 
 - **`PROJECT_SUMMARY.md`**: Project overview, architecture, API reference
 - **`LLM_CODE_STYLE.md`**: Coding standards and Polylith constraints
-- **`AGENTS.md`**: Operational guidelines for AI agents
+- **`AGENTS.md`**: Agentic workflow & workspace navigation (three-document hierarchy)
 
 ## Usage Workflows
 

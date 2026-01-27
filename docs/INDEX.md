@@ -15,7 +15,9 @@ This directory contains comprehensive documentation for the Simplicity project.
 ### Architecture & Guidelines
 - **[../PROJECT_SUMMARY.md](../PROJECT_SUMMARY.md)** - Complete project overview (optimized for LLMs)
 - **[../LLM_CODE_STYLE.md](../LLM_CODE_STYLE.md)** - Coding standards and Polylith constraints
-- **[../AGENTS.md](../AGENTS.md)** - AI agent operational guidelines (Eight Keys philosophy)
+- **[../AGENTS.md](../AGENTS.md)** - Agentic workflow & workspace navigation
+- **[../SIMPLICITY.md](../SIMPLICITY.md)** - Eight Keys philosophy & mathematical foundations
+- **[../PRACTICAL_GUIDE.md](../PRACTICAL_GUIDE.md)** - Implementation guidelines & commands
 
 ### API & Deployment
 - **[api.md](./api.md)** - REST API reference

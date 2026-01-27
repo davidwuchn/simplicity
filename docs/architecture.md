@@ -773,4 +773,4 @@ sudo systemctl enable simplicity
 - [Deployment Guide](./deployment-cloudflare.md) - Production deployment instructions
 - [Web Server README](../bases/web-server/README.md) - HTTP server details
 - [Polylith Documentation](https://polylith.gitbook.io/) - Architecture guide
-- [AGENTS.md](../AGENTS.md) - AI agent operational guidelines
+- [AGENTS.md](../AGENTS.md) - Agentic workflow & workspace navigation

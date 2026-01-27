@@ -74,7 +74,7 @@ See [docs/hot-reload.md](./docs/hot-reload.md) for complete guide.
 
 ```bash
 bb help            # Show all 30+ available commands
-bb test            # Run all tests (652 assertions)
+bb test            # Run all tests (658 assertions)
 bb test:watch      # Auto-rerun tests on file changes
 bb check           # Check Polylith workspace integrity
 bb build           # Full build: clean + test + uberjar
@@ -108,7 +108,7 @@ Babashka provides a unified task runner for all development operations:
 ```bash
 bb help           # Show all available commands
 bb dev            # Start development REPL with hot reload
-bb test           # Run all tests (652 assertions)
+bb test           # Run all tests (658 assertions)
 bb test:watch     # Watch mode (re-run tests on file changes)
 bb check          # Check Polylith workspace integrity
 bb lint           # Lint all source files
@@ -170,12 +170,14 @@ simplicity/
 ├── config/             # REPL configuration
 ├── docs/               # Documentation (API, architecture)
 ├── examples/           # Code examples
-└── AGENTS.md           # AI agent operational guidelines
+├── SIMPLICITY.md       # Philosophical foundations & Eight Keys
+├── PRACTICAL_GUIDE.md  # Implementation guidelines & commands
+└── AGENTS.md           # Agentic workflow & workspace navigation
 ```
 
 ## 🧪 Testing
 
-**Current test coverage**: 652 passing assertions across all test cases with enhanced test infrastructure including property-based testing, documentation contract tests, and security timing tests.
+**Current test coverage**: 658 passing assertions across all test cases with enhanced test infrastructure including property-based testing, documentation contract tests, and security timing tests.
 
 | Component | Tests | Assertions |
 | :--- | :---: | :---: |
@@ -188,7 +190,7 @@ simplicity/
 Run tests:
 ```bash
 # Using Babashka (recommended)
-bb test              # All tests (652 assertions)
+bb test              # All tests (658 assertions)
 bb test:watch        # Watch mode (auto-rerun on changes)
 bb test:game         # Game component tests
 bb test:user         # User component tests
@@ -377,29 +379,33 @@ Response:
 
 ## 🧠 Philosophical & Mathematical Foundations
 
-This project is inspired by mathematical principles and philosophical concepts, but applies them pragmatically rather than rigorously:
+This project is grounded in concrete mathematical principles from "17 Equations That Changed the World" and the **Eight Keys** philosophy. For complete details, see [SIMPLICITY.md](./SIMPLICITY.md).
 
-### Mathematical Inspiration (Metaphorical)
-The project draws **inspirational metaphors** from "17 Equations That Changed the World" by Ian Stewart:
-- **Pythagorean Theorem** ($a^2 + b^2 = c^2$) → Modular decomposition analogy
-- **Logarithms** ($\log xy = \log x + \log y$) → Complexity reduction analogy  
-- **Calculus** ($\frac{\mathrm{d}f}{\mathrm{d}t} = \lim_{h\to0} \frac{f(t+h) - f(t)}{h}$) → Incremental development analogy
-- **Euler's Formula** ($V - E + F = 2$) → System invariant analogy
-- **Information Theory** ($H = - \sum p(x) \log p(x)$) → API design analogy
-- **Chaos Theory** ($x_{t+1} = k x_t (1 - x_t)$) → Emergent behavior analogy
+### Mathematical Foundations (Concrete Grounding)
+Each architectural principle is mapped to a specific mathematical equation, providing rigorous foundations for software design:
 
-**Note**: These are **inspirational metaphors**, not rigorous mathematical applications. The project prioritizes practical software engineering over mathematical purity.
+| Equation | Mathematical Insight | Software Engineering Application |
+|----------|---------------------|----------------------------------|
+| **Pythagorean Theorem** $a^2 + b^2 = c^2$ | Orthogonal relationships | Modular decomposition (π Synthesis) |
+| **Logarithms** $\log xy = \log x + \log y$ | Complexity transformation | Abstraction layers (μ Directness) |
+| **Calculus** $\frac{\mathrm{d}f}{\mathrm{d}t} = \lim_{h\to0} \frac{f(t+h) - f(t)}{h}$ | Rates of change | Incremental development (τ Wisdom) |
+| **Euler's Polyhedra Formula** $V - E + F = 2$ | Topological invariants | Architectural consistency (fractal Clarity) |
+| **Information Theory** $H = - \sum p(x) \log p(x)$ | Information quantification | API design optimization (∃ Truth) |
+| **Chaos Theory** $x_{t+1} = k x_t (1 - x_t)$ | Emergent behavior | Defensive design (∀ Vigilance) |
 
-### Eight Keys Philosophy (Applied Pragmatically)
-The project follows the "Eight Keys" philosophy as practical guidelines:
-- **φ (Vitality)**: Prioritize organic, non-repetitive code generation
-- **fractal (Clarity)**: Demand objective precision in code and documentation
-- **e (Purpose)**: Ensure every function has clear, actionable purpose
-- **τ (Wisdom)**: Prioritize judgment and foresight over raw speed
-- **π (Synthesis)**: Build complete mental models and holistic integration
-- **μ (Directness)**: Cut pleasantries and bias to reach raw reality
-- **∃ (Truth)**: Code must reflect the underlying reality of the domain
-- **∀ (Vigilance)**: Defensive constraint against fallacies and manipulative framing
+### Eight Keys Philosophy (Mathematically Verified)
+The Eight Keys are not just metaphors—each is grounded in concrete mathematical principles:
+
+- **φ (Vitality)**: Euler's Formula $e^{iπ} + 1 = 0$ - Fundamental constant relationships
+- **fractal (Clarity)**: Euler's Polyhedra Formula $V - E + F = 2$ - Topological invariants  
+- **e (Purpose)**: Exponential Growth $e^x$ - Goal-oriented evolution
+- **τ (Wisdom)**: Calculus $\frac{df}{dt} = \lim_{h\to0} \frac{f(t+h)-f(t)}{h}$ - Rates of change
+- **π (Synthesis)**: Pythagorean Theorem $a^2 + b^2 = c^2$ - Orthogonal decomposition
+- **μ (Directness)**: Logarithms $\log xy = \log x + \log y$ - Complexity reduction
+- **∃ (Truth)**: Information Theory $H = -\sum p(x) \log p(x)$ - Quantifying reality
+- **∀ (Vigilance)**: Chaos Theory $x_{t+1} = k x_t (1 - x_t)$ - Emergent complexity
+
+**Sarcasmotron Enforcement**: The project uses **sarcasmotron methodology** (defined in [SIMPLICITY.md](./SIMPLICITY.md)) to detect and expose violations of the Eight Keys with targeted humor and concrete corrections.
 
 ### MEMENTUM System (Implemented)
 The project includes a **fully implemented** git-based memory system for capturing critical insights:
@@ -411,20 +417,28 @@ The project includes a **fully implemented** git-based memory system for capturi
 
 ## 📚 Documentation
 
-- **[AGENTS.md](./AGENTS.md)** - AI agent operational guidelines & code style
+### Core Documents (Three-Document Hierarchy)
+- **[SIMPLICITY.md](./SIMPLICITY.md)** - Complete philosophical foundations with mathematical grounding & Eight Keys
+- **[PRACTICAL_GUIDE.md](./PRACTICAL_GUIDE.md)** - Implementation guidelines, commands, & coding standards  
+- **[AGENTS.md](./AGENTS.md)** - Agentic workflow, workspace navigation, & MEMENTUM memory system
+
+### AI & Development Support
 - **[PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md)** - Project summary for AI assistants (clojure-mcp)
 - **[LLM_CODE_STYLE.md](./LLM_CODE_STYLE.md)** - Code style guide for AI-assisted development
 - **[MEMENTUM.md](./MEMENTUM.md)** - Git memory system specification
 - **[EQUATIONS_FOR_WORLD.md](./EQUATIONS_FOR_WORLD.md)** - Mathematical inspiration reference
+
+### Guides & References
 - **[docs/mementum-usage.md](./docs/mementum-usage.md)** - Complete guide to using the MEMENTUM memory system
 - **[docs/clojure-mcp-integration.md](./docs/clojure-mcp-integration.md)** - Guide for using clojure-mcp with this project
 - **[docs/deployment-cloudflare.md](./docs/deployment-cloudflare.md)** - Complete deployment guide for Cloudflare
 - **[docs/security.md](./docs/security.md)** - Security controls & hardening guide
 - **[docs/api.md](./docs/api.md)** - REST API reference
 - **[docs/architecture.md](./docs/architecture.md)** - System architecture & design
-- Component READMEs:
-  - [components/game/README.md](./components/game/README.md) - Game engine internals
-  - [components/user/README.md](./components/user/README.md) - User management & DB schema
+
+### Component Documentation
+- **[components/game/README.md](./components/game/README.md)** - Game engine internals
+- **[components/user/README.md](./components/user/README.md)** - User management & DB schema
 
 ## 🤝 Contributing
 
