@@ -111,8 +111,12 @@
    Security (τ Wisdom): Cost 12 provides ~4x stronger hashing than default cost 10.
    Recommended minimum: 12 (as of 2024). Higher is stronger but slower.
    
-   Computation time at cost 12: ~200-400ms per hash (acceptable for login)."
-  12)
+   Computation time at cost 12: ~200-400ms per hash (acceptable for login).
+   
+   Can be overridden via BCRYPT_WORK_FACTOR environment variable for testing."
+  (or (some-> (System/getenv "BCRYPT_WORK_FACTOR")
+              (Integer/parseInt))
+      12))
 
 (defn hash-password
   "Hash a plain-text password with bcrypt+sha512.

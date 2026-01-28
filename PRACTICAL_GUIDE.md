@@ -451,6 +451,7 @@ Apply mathematical principles from the project's foundation:
 - `PORT` - HTTP server port (default: 3000)
 - `DB_PATH` - SQLite database path (default: `./simplicity.db`)
 - `ENABLE_HSTS` - Enable HSTS header (default: false, **enable only with HTTPS**)
+- `BCRYPT_WORK_FACTOR` - Bcrypt work factor (default: 12, use 4 for faster tests)
 
 **Logging:**
 - `LOG_LEVEL` - DEBUG|INFO|WARN|ERROR (default: INFO, use WARN in production)

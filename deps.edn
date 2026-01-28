@@ -54,7 +54,8 @@
                         ;; May cause timeouts in large test runs
                         ;; Temporarily commented out to diagnose test suite timeout
                         ;; org.clojure/test.check {:mvn/version "1.1.1"}
-                        }}
+                        }
+           :jvm-opts ["--enable-native-access=ALL-UNNAMED"]}
    
    ;; For Polylith test runner (excludes development/src to avoid classloader conflicts)
    :poly-test {:extra-paths ["components/auth/test"
@@ -75,7 +76,8 @@
                             ;; May cause timeouts in large test runs
                             ;; Temporarily commented out to diagnose test suite timeout
                             ;; org.clojure/test.check {:mvn/version "1.1.1"}
-                            }}
+                            }
+               :jvm-opts ["--enable-native-access=ALL-UNNAMED"]}
    
    :poly {:main-opts ["-m" "polylith.clj.core.poly-cli.core"]
           :jvm-opts ["--enable-native-access=ALL-UNNAMED"]

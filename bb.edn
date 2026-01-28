@@ -39,14 +39,16 @@
   ;; Testing Tasks
   ;; ═══════════════════════════════════════════════════════════
   
-   test
-   {:doc "Run all tests"
-    :task (shell "clojure -M:poly test :dev")}
+     test
+     {:doc "Run all tests"
+      :env {:BCRYPT_WORK_FACTOR "4"}
+      :task (shell "clojure -M:poly test :dev")}
   
   test:watch
   {:doc "Run tests in watch mode (re-run on file changes)"
    :requires ([babashka.fs :as fs]
               [babashka.process :as p])
+   :env {:BCRYPT_WORK_FACTOR "4"}
    :task (do
            (println "Watching for file changes...")
            (println "Press Ctrl+C to stop")
@@ -66,6 +68,7 @@
   
   test:auth
   {:doc "Run auth component tests"
+   :env {:BCRYPT_WORK_FACTOR "4"}
    :task (shell "clojure -M:test -e \"(require 'cc.mindward.auth.interface-test 'cc.mindward.auth.documentation-test) (clojure.test/run-tests 'cc.mindward.auth.interface-test 'cc.mindward.auth.documentation-test)\"")}
   
   test:game
@@ -78,10 +81,12 @@
   
   test:user
   {:doc "Run user component tests"
+   :env {:BCRYPT_WORK_FACTOR "4"}
    :task (shell "clojure -M:test -e \"(require 'cc.mindward.user.interface-test 'cc.mindward.user.security-test) (clojure.test/run-tests 'cc.mindward.user.interface-test 'cc.mindward.user.security-test)\"")}
   
   test:web-server
   {:doc "Run web-server base tests"
+   :env {:BCRYPT_WORK_FACTOR "4"}
    :task (shell "clojure -M:test -e \"(require 'cc.mindward.web-server.core-test 'cc.mindward.web-server.security-test) (clojure.test/run-tests 'cc.mindward.web-server.core-test 'cc.mindward.web-server.security-test)\"")}
   
   test:property
@@ -94,10 +99,12 @@
   
     test:documentation
     {:doc "Run documentation contract tests"
+     :env {:BCRYPT_WORK_FACTOR "4"}
       :task (shell "clojure -M:test -e \"(require 'cc.mindward.auth.documentation-test) (clojure.test/run-tests 'cc.mindward.auth.documentation-test)\"")}
   
     test:e2e
     {:doc "Run E2E authentication test (requires server running)"
+     :env {:BCRYPT_WORK_FACTOR "4"}
       :task (shell "./tests/e2e/test-auth.sh")}
   
     ;; ═══════════════════════════════════════════════════════════
