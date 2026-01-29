@@ -237,7 +237,7 @@ The project now includes comprehensive security testing aligned with the **∀ (
 - **Integration security tests**: Real database testing with security scenarios
 
 ### Test Coverage
-Total: **652 passing assertions** across all test suites (including **160 security-focused assertions**)
+Total: **~736 passing assertions** across all test suites (including **160 security-focused assertions**)
 
 #### User Component Security Tests (49 assertions)
 - SQL injection prevention (username, password, score)

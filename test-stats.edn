@@ -1,0 +1,5 @@
+{:assertions 624
+ :test-functions 153
+ :security-assertions 160
+ :last-updated "2026-01-29"
+ :verified-by "bb test:count"}

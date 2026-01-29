@@ -11,7 +11,7 @@ Run these commands first to check the state of the workspace:
 ```bash
 bb check           # Check Polylith architecture integrity
 bb lint            # Check for code style and syntax issues
-bb test            # Run full test suite (652 assertions)
+bb test            # Run full test suite (~736 assertions)
 ```
 
 ---

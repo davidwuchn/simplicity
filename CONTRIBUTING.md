@@ -43,7 +43,7 @@ We follow the **Eight Keys** (see [SIMPLICITY.md](./SIMPLICITY.md)):
 
 ```bash
 bb check       # Check workspace integrity
-bb test        # Run all 652 tests
+bb test        # Run all tests (~736 assertions)
 ```
 
 ---
@@ -80,7 +80,7 @@ Follow the [Polylith architecture](https://polylith.gitbook.io/) principles:
 ```bash
 bb check       # Validate Polylith architecture
 bb lint        # Lint all source files
-bb test        # Ensure all 652 tests pass
+bb test        # Ensure all tests pass (see test-stats.edn)
 ```
 
 ---

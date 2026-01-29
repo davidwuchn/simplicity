@@ -97,15 +97,19 @@
   {:doc "Run performance tests"
    :task (shell "clojure -M:test -e \"(require 'cc.mindward.game.performance-test) (clojure.test/run-tests 'cc.mindward.game.performance-test)\"")}
   
-    test:documentation
-    {:doc "Run documentation contract tests"
-     :env {:BCRYPT_WORK_FACTOR "4"}
-      :task (shell "clojure -M:test -e \"(require 'cc.mindward.auth.documentation-test) (clojure.test/run-tests 'cc.mindward.auth.documentation-test)\"")}
-  
-    test:e2e
-    {:doc "Run E2E authentication test (requires server running)"
-     :env {:BCRYPT_WORK_FACTOR "4"}
-      :task (shell "./tests/e2e/test-auth.sh")}
+   test:documentation
+     {:doc "Run documentation contract tests"
+      :env {:BCRYPT_WORK_FACTOR "4"}
+       :task (shell "clojure -M:test -e \"(require 'cc.mindward.auth.documentation-test) (clojure.test/run-tests 'cc.mindward.auth.documentation-test)\"")}
+   
+     test:e2e
+     {:doc "Run E2E authentication test (requires server running)"
+      :env {:BCRYPT_WORK_FACTOR "4"}
+       :task (shell "./tests/e2e/test-auth.sh")}
+   
+   test:count
+   {:doc "Count test assertions (updates test-stats.edn)"
+    :task (shell "./scripts/count-assertions.clj")}
   
     ;; ═══════════════════════════════════════════════════════════
     ;; Linting & Formatting Tasks

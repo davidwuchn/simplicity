@@ -71,7 +71,7 @@ See **[hot-reload.md](./hot-reload.md)** for more details.
 
 ### 2. Running Tests
 ```bash
-bb test              # Run all 652 tests
+bb test              # Run all tests (~736 assertions)
 bb test:watch        # Watch mode (auto-rerun on changes)
 bb test:game         # Run game component tests
 bb test:user         # Run user component tests
